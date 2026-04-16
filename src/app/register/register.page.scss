@@ -1,0 +1,121 @@
+.register-container {
+  display: flex;
+  flex-direction: column;
+  background-color: #FFF9F5; // Tu blanco hueso característico
+  min-height: 100%;
+  padding: 20px;
+}
+
+// Botón de volver arriba
+.back-header {
+  display: flex;
+  align-items: center;
+  margin-top: 10px;
+  margin-bottom: 20px;
+  .back-text { color: #C62828; font-weight: 600; font-size: 14px; margin-left: -5px; }
+}
+
+.header-titles {
+  margin-bottom: 30px;
+  h1 { font-size: 32px; font-weight: 800; color: #333; margin: 0; }
+  p { font-size: 16px; color: #666; margin-top: 5px; }
+  .dot { color: #FA8072; }
+}
+
+.register-card {
+  width: 100%;
+  background: white !important;
+  border-radius: 35px;
+  padding: 30px 20px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.03);
+  margin: 0;
+  overflow: visible; // Para que las sombras no se corten
+}
+
+.input-group {
+  margin-bottom: 18px;
+  .custom-label {
+    display: block;
+    color: #555;
+    font-size: 11px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    padding-left: 5px;
+    letter-spacing: 0.5px;
+  }
+}
+
+.custom-item {
+  --background: #F0F0F0 !important;
+  --border-radius: 15px;
+  --padding-start: 15px;
+  --highlight-height: 0;
+  height: 55px;
+  
+  ion-input {
+    --color: #000;
+    --placeholder-color: #aaa;
+    font-size: 15px;
+  }
+}
+
+.input-icon { color: #999; font-size: 20px; }
+
+.terms-text {
+  text-align: center;
+  font-size: 12px;
+  color: #999;
+  margin: 10px 0 25px 0;
+  span { color: #C62828; font-weight: 600; text-decoration: underline; }
+}
+
+.main-btn {
+  --background: linear-gradient(to right, #C62828, #FA8072);
+  --border-radius: 30px;
+  height: 60px;
+  font-size: 18px;
+  font-weight: 700;
+  text-transform: none;
+  --box-shadow: 0 8px 20px rgba(198, 40, 40, 0.2);
+}
+
+.divider {
+  width: 100%;
+  text-align: center;
+  border-bottom: 1px solid #eee;
+  line-height: 0.1em;
+  margin: 35px 0;
+  span {
+    background: #FFF9F5;
+    padding: 0 15px;
+    color: #bbb;
+    font-size: 13px;
+  }
+}
+
+.social-row {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-bottom: 30px;
+
+  .social-btn {
+    width: 70px;
+    height: 70px;
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    img { height: 26px; }
+    &:active { transform: scale(0.95); background: #f9f9f9; }
+  }
+}
+
+.footer-text {
+  text-align: center;
+  font-size: 15px;
+  color: #444;
+  .login-link { color: #C62828; font-weight: 700; cursor: pointer; }
+}
