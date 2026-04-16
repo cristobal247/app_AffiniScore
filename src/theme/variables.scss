@@ -1,0 +1,34 @@
+// AffiniScore Global Theme Configuration
+
+:root {
+  /** Primary - Salmón **/
+  --ion-color-primary: #FA8072;
+  --ion-color-primary-rgb: 250, 128, 114;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #dc7164;
+  --ion-color-primary-tint: #fb8d80;
+
+  /** Danger - Rojo Oscuro **/
+  --ion-color-danger: #C62828;
+  --ion-color-danger-rgb: 198, 40, 40;
+  --ion-color-danger-contrast: #ffffff;
+  --ion-color-danger-contrast-rgb: 255, 255, 255;
+  --ion-color-danger-shade: #ae2323;
+  --ion-color-danger-tint: #cc3e3e;
+
+  /** Background - Blanco Hueso **/
+  --ion-background-color: #FFF9F5;
+  --ion-background-color-rgb: 255, 249, 245;
+  --ion-text-color: #000000;
+  --ion-text-color-rgb: 0, 0, 0;
+
+  /** Item Background (Tarjetas y campos) **/
+  --ion-item-background: #ffffff;
+}
+
+/* Forzamos que NO exista modo oscuro para que no se vea negro */
+body.dark {
+  --ion-background-color: #FFF9F5;
+  --ion-text-color: #000000;
+}
