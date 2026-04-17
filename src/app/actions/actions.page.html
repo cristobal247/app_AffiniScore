@@ -1,0 +1,137 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar mode="ios" class="main-header-toolbar">
+    <div class="header-content-wrapper">
+      <div class="brand-group">
+        <ion-avatar class="user-avatar-top">
+          <img src="assets/images/user.png" alt="User" />
+        </ion-avatar>
+        <h1 class="brand-title-gradient">AffiniScore</h1>
+      </div>
+      <ion-buttons slot="end">
+        <ion-button class="btn-settings">
+          <ion-icon name="settings-sharp"></ion-icon>
+        </ion-button>
+      </ion-buttons>
+    </div>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <div class="main-wrapper">
+    
+    <div class="main-section-title">
+      <h1>Registro de Acciones</h1>
+      <p>Celebra los pequeños gestos que fortalecen su unión.</p>
+    </div>
+
+    <ion-grid class="actions-grid ion-no-padding">
+      <ion-row>
+        <ion-col size="6" *ngFor="let item of actionsCatalog" class="ion-no-padding">
+          <div class="action-card-ios" (click)="registerAction(item)">
+            <div class="icon-wrapper">
+              <ion-icon [name]="getIcon(item.category)"></ion-icon>
+            </div>
+            <h2>{{ item.name }}</h2>
+            <span class="points">+{{ item.default_points }} Points</span>
+          </div>
+        </ion-col>
+        
+        <ion-col size="6" class="ion-no-padding">
+          <div class="action-card-ios more-card" (click)="goToFullCatalog()">
+            <div class="icon-wrapper more-icon-bg">
+              <ion-icon name="chevron-forward-outline"></ion-icon>
+            </div>
+            <h2>Más acciones</h2>
+            <span class="points">Ver catálogo</span>
+          </div>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+
+    <div class="main-section-title middle">
+      <div class="title-with-points">
+        <h1>Canje de Puntos</h1>
+        <div class="total-points-pill">
+          <ion-icon name="star-sharp"></ion-icon>
+          <span>1,240</span>
+        </div>
+      </div>
+      <p>Convierte tu esfuerzo en recuerdos.</p>
+    </div>
+
+    <div class="reward-card-white">
+      <div class="reward-image-box">
+        <img src="assets/images/movie_night.png" alt="Movie Night" />
+        <span class="premium-label">PREMIUM</span>
+      </div>
+      <div class="reward-content">
+        <div class="text-side">
+          <h3>Domingo de Películas</h3>
+          <p>Todo listo: palomitas, selección y relax.</p>
+        </div>
+        <div class="points-badge-circle">
+          <span class="pts-number">500</span>
+          <span class="pts-text">POINTS</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="locked-rewards-row">
+      <div class="locked-item-dashed">
+        <ion-icon name="lock-closed"></ion-icon>
+        <span>Masaje Relajante</span>
+      </div>
+      <div class="locked-item-dashed">
+        <ion-icon name="lock-closed"></ion-icon>
+        <span class="small-text">Escapada de Fin de Semana</span>
+      </div>
+    </div>
+
+    <div class="bottom-action-container">
+      <div class="input-header">
+        <ion-icon name="add-circle" class="red-icon"></ion-icon>
+        <span>¿Hiciste algo más?</span>
+      </div>
+      <div class="pill-input-container">
+        <ion-input 
+          placeholder="Escribe tu acción aquí..." 
+          class="custom-input"
+          aria-label="Nueva acción">
+        </ion-input>
+        <ion-button class="btn-registrar-solid">Registrar</ion-button>
+      </div>
+    </div>
+
+  </div>
+</ion-content>
+
+<ion-footer class="ion-no-border">
+  <ion-tab-bar slot="bottom" mode="ios">
+    
+    <ion-tab-button (click)="router.navigate(['/dashboard'])">
+      <ion-icon name="home-outline"></ion-icon>
+      <ion-label>INICIO</ion-label>
+    </ion-tab-button>
+
+    <ion-tab-button tab="actions" class="active-tab">
+      <ion-icon name="flash"></ion-icon>
+      <ion-label>ACCIONES</ion-label>
+    </ion-tab-button>
+
+    <ion-tab-button (click)="router.navigate(['/coach'])">
+      <ion-icon name="headset-outline"></ion-icon>
+      <ion-label>COACH IA</ion-label>
+    </ion-tab-button>
+
+    <ion-tab-button (click)="router.navigate(['/mapa'])">
+      <ion-icon name="map-outline"></ion-icon>
+      <ion-label>MAPA</ion-label>
+    </ion-tab-button>
+
+    <ion-tab-button (click)="router.navigate(['/profile'])">
+      <ion-icon name="person-outline"></ion-icon>
+      <ion-label>PERFIL</ion-label>
+    </ion-tab-button>
+
+  </ion-tab-bar>
+</ion-footer>

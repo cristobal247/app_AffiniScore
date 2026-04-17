@@ -1,0 +1,86 @@
+:host {
+  --ion-background-color: #F8F8F8;
+}
+
+ion-content {
+  --background: #F8F8F8;
+}
+
+.profile-container {
+  padding: 20px 16px;
+}
+
+.user-info-section {
+  text-align: center;
+  margin-top: 20px;
+  margin-bottom: 40px;
+
+  .avatar-circle {
+    ion-icon {
+      font-size: 100px;
+      color: #B0232A; // Rojo AffiniScore
+    }
+  }
+
+  h2 {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 10px 0 4px;
+    color: #1a1a1a;
+  }
+
+  p {
+    font-size: 14px;
+    color: #8E8E93;
+    margin: 0;
+  }
+}
+
+.menu-list {
+  background: transparent;
+  margin-bottom: 40px;
+
+  .menu-item {
+    --background: white;
+    margin-bottom: 10px;
+    border-radius: 16px;
+    --padding-start: 16px;
+    --padding-end: 16px;
+    --inner-padding-end: 0;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
+
+    ion-icon[slot="start"] {
+      color: #B0232A;
+      margin-right: 16px;
+    }
+
+    ion-icon[slot="end"] {
+      font-size: 18px;
+      color: #C7C7CC;
+    }
+
+    ion-label {
+      font-weight: 600;
+      color: #1a1a1a;
+    }
+  }
+}
+
+.logout-btn {
+  margin-top: 20px;
+  --color: #B0232A;
+  font-weight: 700;
+  font-size: 16px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+ion-toolbar {
+  --background: #ffffff;
+  --border-style: none;
+}
+
+ion-back-button {
+  --color: #B0232A; // El rojo de tu marca
+  font-weight: 600;
+}

@@ -1,0 +1,47 @@
+.points-container {
+  display: flex;
+  justify-content: center;
+  margin: 40px 0;
+}
+
+.circular-chart {
+  display: block;
+  margin: 10px auto;
+  max-width: 80%;
+  max-height: 250px;
+}
+
+.circle-bg {
+  fill: none;
+  stroke: #eee;
+  stroke-width: 2.8;
+}
+
+.circle {
+  fill: none;
+  stroke-width: 2.8;
+  stroke-linecap: round;
+  stroke: #B0232A; // Usamos el rojo de AffiniScore
+  transition: stroke-dasharray 1s ease-in-out;
+}
+
+.percentage {
+  fill: #333;
+  font-family: sans-serif;
+  font-size: 0.5rem;
+  font-weight: bold;
+  text-anchor: middle;
+}
+
+.label {
+  fill: #999;
+  font-size: 0.2rem;
+  text-anchor: middle;
+  letter-spacing: 0.1rem;
+}
+
+.streak-card {
+  margin: 20px 0;
+  border-radius: 15px;
+  background: #fff5f7;
+}
