@@ -11,7 +11,7 @@ import {
   restaurantOutline, homeOutline, giftOutline, heartOutline, 
   flashOutline, searchOutline, search, lockClosed, chevronForwardOutline 
 } from 'ionicons/icons';
-import { SupabaseService } from '../../services/supabase';
+import { DisconnectChallenge, SupabaseService } from '../../services/supabase';
 
 @Component({
   selector: 'app-catalog',
@@ -27,6 +27,7 @@ import { SupabaseService } from '../../services/supabase';
 export class CatalogPage implements OnInit {
   allActions: any[] = [];
   filteredActions: any[] = [];
+  disconnectChallenges: DisconnectChallenge[] = [];
 
   constructor(
     private supabaseSvc: SupabaseService,
@@ -42,6 +43,7 @@ export class CatalogPage implements OnInit {
 
   async ngOnInit() {
     await this.loadCatalog();
+    await this.loadDisconnectChallenges();
   }
 
   async loadCatalog() {
@@ -92,6 +94,40 @@ export class CatalogPage implements OnInit {
       mode: 'ios'
     });
     await alert.present();
+  }
+
+  async loadDisconnectChallenges() {
+    this.disconnectChallenges = await this.supabaseSvc.getDisconnectChallenges();
+  }
+
+  async acceptChallenge(item: DisconnectChallenge) {
+    this.disconnectChallenges = await this.supabaseSvc.acceptDisconnectChallenge(item.id);
+
+    const alert = await this.alertCtrl.create({
+      header: 'Reto aceptado',
+      message: `"${item.title}" quedo pendiente de aceptacion de tu pareja.`,
+      buttons: ['OK'],
+      mode: 'ios'
+    });
+    await alert.present();
+  }
+
+  async confirmJointAcceptance(item: DisconnectChallenge) {
+    this.disconnectChallenges = await this.supabaseSvc.confirmJointAcceptance(item.id);
+
+    const alert = await this.alertCtrl.create({
+      header: 'Aceptacion conjunta lista',
+      message: `"${item.title}" ya esta aceptado por ambos. Ya pueden completarlo juntos.`,
+      buttons: ['Genial'],
+      mode: 'ios'
+    });
+    await alert.present();
+  }
+
+  getChallengeDifficultyClass(difficulty: DisconnectChallenge['difficulty']): string {
+    if (difficulty === 'Alto') return 'diff-high';
+    if (difficulty === 'Medio') return 'diff-medium';
+    return 'diff-low';
   }
 
   getIcon(category: string) {

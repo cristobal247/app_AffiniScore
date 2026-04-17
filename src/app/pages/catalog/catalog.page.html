@@ -20,6 +20,8 @@
 
 <ion-content>
   <div class="catalog-list">
+    <h2 class="catalog-section-title">Catalogo de acciones</h2>
+
     <div class="action-item" *ngFor="let item of filteredActions" (click)="registerAction(item)">
       <div class="icon-box">
         <ion-icon [name]="getIcon(item.category)"></ion-icon>
@@ -34,6 +36,56 @@
     <div *ngIf="filteredActions.length === 0" class="no-results">
       <ion-icon name="search-outline"></ion-icon>
       <p>No pillamos ese servicio. ¡Prueba con otro!</p>
+    </div>
+
+    <div class="challenges-section">
+      <h2 class="catalog-section-title">Retos de Desconexion</h2>
+      <p class="section-subtitle">Aceptacion conjunta: primero aceptas tu, luego confirma tu pareja.</p>
+
+      <div class="challenge-item" *ngFor="let challenge of disconnectChallenges">
+        <div class="challenge-head">
+          <h3>{{ challenge.title }}</h3>
+          <span class="difficulty-pill" [ngClass]="getChallengeDifficultyClass(challenge.difficulty)">
+            {{ challenge.difficulty }}
+          </span>
+        </div>
+
+        <p class="challenge-description">{{ challenge.description }}</p>
+
+        <div class="challenge-meta">
+          <span>Categoria: {{ challenge.category }}</span>
+          <span>+{{ challenge.points }} pts</span>
+        </div>
+
+        <div class="challenge-status" [ngClass]="challenge.status">
+          <span *ngIf="challenge.status === 'disponible'">Disponible</span>
+          <span *ngIf="challenge.status === 'pendiente'">Pendiente: falta aceptacion de pareja</span>
+          <span *ngIf="challenge.status === 'aceptado'">Aceptado por ambos</span>
+        </div>
+
+        <div class="challenge-actions">
+          <button
+            class="challenge-btn primary"
+            *ngIf="!challenge.myAccepted"
+            (click)="acceptChallenge(challenge)">
+            Aceptar reto
+          </button>
+
+          <button
+            class="challenge-btn secondary"
+            *ngIf="challenge.myAccepted && !challenge.partnerAccepted"
+            (click)="confirmJointAcceptance(challenge)">
+            Confirmar aceptacion conjunta
+          </button>
+
+          <button
+            class="challenge-btn done"
+            *ngIf="challenge.partnerAccepted"
+            disabled>
+            Listo para completar
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </ion-content>
