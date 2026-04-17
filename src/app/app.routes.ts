@@ -2,20 +2,24 @@ import { Routes } from '@angular/router';
 
 export const routes: Routes = [
   {
-    path: '',
-    redirectTo: 'login', // <--- Que apunte a tu nueva página
-    pathMatch: 'full',
+    path: 'actions',
+    loadComponent: () => import('./actions/actions.page').then(m => m.ActionsPage),
+  },
+  {
+    path: 'catalog',
+    loadComponent: () => import('./pages/catalog/catalog.page').then(m => m.CatalogPage),
   },
   {
     path: 'login',
-    loadComponent: () => import('./login/login.page').then( m => m.LoginPage)
+    loadComponent: () => import('./login/login.page').then(m => m.LoginPage),
   },
   {
     path: 'register',
-    loadComponent: () => import('./register/register.page').then( m => m.RegisterPage)
+    loadComponent: () => import('./register/register.page').then(m => m.RegisterPage),
   },
   {
-    path: 'actions',
-    loadComponent: () => import('./actions/actions.page').then( m => m.ActionsPage)
+    path: '',
+    redirectTo: 'actions',
+    pathMatch: 'full',
   },
 ];

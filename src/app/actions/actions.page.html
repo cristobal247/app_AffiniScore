@@ -1,14 +1,18 @@
 <ion-header class="ion-no-border">
-  <ion-toolbar mode="ios">
-    <ion-avatar slot="start" class="user-avatar-header">
-      <img src="assets/images/user.png" />
-    </ion-avatar>
-    <ion-title>AffiniScore</ion-title>
-    <ion-buttons slot="end">
-      <ion-button color="dark">
-        <ion-icon name="settings-sharp"></ion-icon>
-      </ion-button>
-    </ion-buttons>
+  <ion-toolbar mode="ios" class="main-header-toolbar">
+    <div class="header-content-wrapper">
+      <div class="brand-group">
+        <ion-avatar class="user-avatar-top">
+          <img src="assets/images/user.png" alt="User" />
+        </ion-avatar>
+        <h1 class="brand-title-gradient">AffiniScore</h1>
+      </div>
+      <ion-buttons slot="end">
+        <ion-button class="btn-settings">
+          <ion-icon name="settings-sharp"></ion-icon>
+        </ion-button>
+      </ion-buttons>
+    </div>
   </ion-toolbar>
 </ion-header>
 
@@ -16,7 +20,7 @@
   <div class="main-wrapper">
     
     <div class="main-section-title">
-      <h1>Registro de Acciones<span class="dot">•</span></h1>
+      <h1>Registro de Acciones</h1>
       <p>Celebra los pequeños gestos que fortalecen su unión.</p>
     </div>
 
@@ -31,7 +35,6 @@
             <span class="points">+{{ item.default_points }} Points</span>
           </div>
         </ion-col>
-
         <ion-col size="6" class="ion-no-padding">
           <div class="action-card-ios more-card" (click)="goToFullCatalog()">
             <div class="icon-wrapper more-icon-bg">
@@ -55,22 +58,33 @@
       <p>Convierte tu esfuerzo en recuerdos.</p>
     </div>
 
-    <ion-card class="reward-card-premium ion-no-margin">
-      <div class="reward-image-container">
+    <div class="reward-card-white">
+      <div class="reward-image-box">
         <img src="assets/images/movie_night.png" />
-        <ion-badge color="danger" class="premium-tag">PREMIUM</ion-badge>
+        <span class="premium-label">PREMIUM</span>
       </div>
-      <ion-item lines="none" class="reward-details">
-        <ion-label>
+      <div class="reward-content">
+        <div class="text-side">
           <h3>Domingo de Películas</h3>
           <p>Todo listo: palomitas, selección y relax.</p>
-        </ion-label>
-        <div class="cost-circle" slot="end">
-          <span class="cost-val">500</span>
-          <span class="cost-label">POINTS</span>
         </div>
-      </ion-item>
-    </ion-card>
+        <div class="points-badge-circle">
+          <span class="pts-number">500</span>
+          <span class="pts-text">POINTS</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="locked-rewards-row">
+      <div class="locked-item-dashed">
+        <ion-icon name="lock-closed"></ion-icon>
+        <span>Masaje Relajante</span>
+      </div>
+      <div class="locked-item-dashed">
+        <ion-icon name="lock-closed"></ion-icon>
+        <span class="small-text">Escapada de Fin de Semana</span>
+      </div>
+    </div>
 
     <div class="bottom-action-container">
       <div class="input-header">
@@ -78,10 +92,12 @@
         <span>¿Hiciste algo más?</span>
       </div>
       <div class="pill-input-container">
-        <ion-input placeholder="Escribe tu acción aquí..."></ion-input>
-        <ion-button color="danger" class="btn-registrar">
-          Registrar
-        </ion-button>
+        <ion-input 
+          placeholder="Escribe tu acción aquí..." 
+          class="custom-input"
+          aria-label="Nueva acción">
+        </ion-input>
+        <ion-button class="btn-registrar-solid">Registrar</ion-button>
       </div>
     </div>
 
@@ -90,21 +106,9 @@
 
 <ion-footer class="ion-no-border">
   <ion-tab-bar slot="bottom" mode="ios">
-    <ion-tab-button tab="home">
-      <ion-icon name="home-outline"></ion-icon>
-      <ion-label>INICIO</ion-label>
-    </ion-tab-button>
-    <ion-tab-button tab="actions" class="active-tab">
-      <ion-icon name="flash"></ion-icon>
-      <ion-label>ACCIONES</ion-label>
-    </ion-tab-button>
-    <ion-tab-button tab="coach">
-      <ion-icon name="headset-outline"></ion-icon>
-      <ion-label>COACH IA</ion-label>
-    </ion-tab-button>
-    <ion-tab-button tab="mapa">
-      <ion-icon name="map-outline"></ion-icon>
-      <ion-label>MAPA</ion-label>
-    </ion-tab-button>
+    <ion-tab-button tab="home"><ion-icon name="home-outline"></ion-icon><ion-label>INICIO</ion-label></ion-tab-button>
+    <ion-tab-button tab="actions" class="active-tab"><ion-icon name="flash"></ion-icon><ion-label>ACCIONES</ion-label></ion-tab-button>
+    <ion-tab-button tab="coach"><ion-icon name="headset-outline"></ion-icon><ion-label>COACH IA</ion-label></ion-tab-button>
+    <ion-tab-button tab="mapa"><ion-icon name="map-outline"></ion-icon><ion-label>MAPA</ion-label></ion-tab-button>
   </ion-tab-bar>
 </ion-footer>

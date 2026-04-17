@@ -1,0 +1,140 @@
+/* --- CONFIGURACIÓN DE FONDO Y PÁGINA --- */
+:host {
+  // Forzamos el fondo gris claro característico de iOS
+  --ion-background-color: #F8F8F8;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+ion-content {
+  // Eliminamos cualquier rastro de fondo oscuro heredado
+  --background: #F8F8F8;
+}
+
+/* --- HEADER Y BUSCADOR --- */
+.catalog-header {
+  --background: #FFFFFF;
+  ion-title {
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: #1A1A1A;
+  }
+}
+
+.search-toolbar {
+  --background: #FFFFFF;
+  padding: 0 8px 12px;
+}
+
+// Estilo Premium para el Searchbar
+.custom-search {
+  --background: #F2F2F2;
+  --border-radius: 14px;
+  --icon-color: #B0232A; // Lupa roja AffiniScore
+  --clear-button-color: #B0232A;
+  --placeholder-color: #8E8E93;
+  --color: #1A1A1A;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  margin: 0;
+  height: 50px;
+}
+
+/* --- LISTADO DE ACCIONES --- */
+.catalog-list {
+  background: #F8F8F8; // Refuerzo para asegurar que no se vea negro al scrollear
+  padding: 10px 0 30px; // Espacio extra al final para que no tape el footer
+  min-height: 100%;
+}
+
+.action-item {
+  background: #FFFFFF;
+  margin: 10px 16px;
+  padding: 14px;
+  border-radius: 22px;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03); // Sombra muy suave
+  border: 1px solid #F0F0F0;
+  transition: transform 0.2s ease, background 0.2s ease;
+
+  // Efecto visual al presionar (Feedback de usuario)
+  &:active {
+    background: #F9F9F9;
+    transform: scale(0.97);
+  }
+
+  .icon-box {
+    width: 44px;
+    height: 44px;
+    background: #FFF5F5;
+    border-radius: 14px; // Estilo squircle de Apple
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-right: 14px;
+    flex-shrink: 0; // Evita que el icono se aplaste si el texto es largo
+
+    ion-icon {
+      color: #B0232A;
+      font-size: 22px;
+    }
+  }
+
+  .info {
+    flex: 1;
+    h3 {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 700;
+      color: #1A1A1A;
+      letter-spacing: -0.3px;
+    }
+    p {
+      margin: 2px 0 0;
+      font-size: 12px;
+      color: #8E8E93;
+      font-weight: 400;
+    }
+  }
+
+  .points-tag {
+    background: #FEEEEE;
+    color: #B0232A;
+    padding: 5px 12px;
+    border-radius: 12px;
+    font-weight: 800;
+    font-size: 11px;
+    flex-shrink: 0;
+  }
+}
+
+/* --- ESTADOS VACÍOS --- */
+.no-results {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: 80px;
+  color: #CCCCCC;
+  text-align: center;
+  padding: 0 40px;
+
+  ion-icon {
+    font-size: 60px;
+    margin-bottom: 15px;
+    opacity: 0.4;
+  }
+
+  p {
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+}
+
+/* --- OPTIMIZACIÓN DE RENDERIZADO --- */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

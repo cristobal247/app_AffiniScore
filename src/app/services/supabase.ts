@@ -1,80 +1,61 @@
 import { Injectable } from '@angular/core';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { environment } from 'src/environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
-export class SupabaseService { // <--- Verifica este nombre
+export class SupabaseService {
   private supabase: SupabaseClient;
 
   constructor() {
-    this.supabase = createClient('https://fojvwsegibjssttbzghe.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZvanZ3c2VnaWJqc3N0dGJ6Z2hlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU5NDEyNzAsImV4cCI6MjA5MTUxNzI3MH0.U5zTiaKAIfmMfpeEGOHsE-ZGI4_3EJmpdPVVozRq48o');
+    this.supabase = createClient(
+      environment.supabaseUrl,
+      environment.supabaseKey
+    );
   }
 
-  /**
-   * AUTENTICACIÓN: Inicio de Sesión
-   */
-  async signIn(email: string, pass: string) {
+  // --- AUTENTICACIÓN (Lo que te pide el error) ---
+
+  async signIn(email: string, password: string) {
     return await this.supabase.auth.signInWithPassword({
-      email: email,
-      password: pass,
+      email,
+      password,
     });
   }
 
-  /**
-   * AUTENTICACIÓN: Registro de Usuario Nuevo
-   */
-  async signUp(email: string, pass: string) {
+  async signUp(email: string, password: string) {
     return await this.supabase.auth.signUp({
-      email: email,
-      password: pass,
+      email,
+      password,
     });
   }
 
-  /**
-   * CATÁLOGO: Trae la lista de actos de servicio
-   * Tabla: acts_of_service_catalog
-   */
-  // Dentro de supabase.ts
+  // --- FUNCIONES DEL CATÁLOGO ---
+
   async getCatalog() {
     return await this.supabase
-      .from('acts_of_service_catalog')
-      .select('id, name, default_points, category'); // Nombres exactos de tu captura
+      .from('catalog_actions')
+      .select('*')
+      .limit(6)
+      .order('default_points', { ascending: false });
   }
 
-  /**
-   * PUNTOS: Registra una acción realizada en el historial
-   * Tabla: points_ledger
-   */
-  async saveActionPoint(actionId: string, points: number) {
-    // 1. Obtenemos el usuario que está logueado actualmente
-    const { data: { user } } = await this.supabase.auth.getUser();
-    
-    if (!user) return { error: { message: 'Usuario no identificado' } };
-
-    // 2. Insertamos el registro en el libro contable de puntos
+  async getFullCatalog() {
     return await this.supabase
-      .from('points_ledger')
-      .insert([
-        { 
-          user_id: user.id, 
-          action_id: actionId, 
-          points_earned: points 
-        }
-      ]);
+      .from('catalog_actions')
+      .select('*')
+      .order('name', { ascending: true });
   }
 
-  /**
-   * SESIÓN: Obtener el usuario actual (útil para perfiles)
-   */
-  async getCurrentUser() {
-    return await this.supabase.auth.getUser();
-  }
+  async saveActionPoint(actionId: string, points: number) {
+    const { data: { user } } = await this.supabase.auth.getUser();
+    if (!user) return { error: 'Usuario no autenticado' };
 
-  /**
-   * SESIÓN: Cerrar sesión
-   */
-  async signOut() {
-    return await this.supabase.auth.signOut();
+    return await this.supabase.from('user_actions_log').insert({
+      user_id: user.id,
+      action_id: actionId,
+      points_earned: points
+    });
   }
 }
