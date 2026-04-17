@@ -26,4 +26,14 @@ export const routes: Routes = [
     redirectTo: 'login', // O 'actions' si ya estás logueada
     pathMatch: 'full',
   },
+  {
+    path: 'home',
+    loadComponent: () => import('./pages/home/home.page').then( m => m.HomePage)
+  },
+  {
+    path: 'dashboard', // O 'home'
+    loadComponent: () => import('./pages/home/home.page').then(m => m.HomePage)
+  },
+
+
 ];

@@ -26,8 +26,19 @@
   }
 }
 
+/* Buscamos la clase de los campos y aseguramos visibilidad */
+.custom-input {
+  --color: #1a1a1a !important; /* Texto casi negro */
+  --placeholder-color: #8e8e93;
+  --placeholder-opacity: 0.6;
+  font-weight: 500;
+  
+  /* Esto asegura que el texto se vea mientras escribes */
+  color: #1a1a1a !important; 
+}
+
 .custom-item {
-  --background: #f4f4f7;
+  --background: #f4f4f7 !important;
   --border-radius: 14px;
   --padding-start: 16px;
   --highlight-height: 0;
@@ -36,7 +47,7 @@
   ion-label {
     font-size: 12px;
     font-weight: 700;
-    color: #B0232A; // Rojo Affini
+    color: #B0232A !important; // Rojo Affini
     text-transform: uppercase;
     letter-spacing: 0.5px;
     margin-bottom: 8px !important;

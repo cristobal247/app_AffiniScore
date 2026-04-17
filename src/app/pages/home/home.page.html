@@ -1,0 +1,37 @@
+<ion-content class="ion-padding ion-text-center">
+  <div class="welcome-section ion-margin-top">
+    <ion-text color="primary">
+      <h2 style="font-weight: 800; font-size: 28px;">¡Hola de nuevo!</h2>
+    </ion-text>
+    <p style="color: #8e8e93;">Tu afinidad hoy</p>
+  </div>
+
+  <div class="points-container">
+    <svg viewBox="0 0 36 36" class="circular-chart">
+      <path class="circle-bg"
+        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+      />
+      <path class="circle"
+        [attr.stroke-dasharray]="((points / meta) * 100) + ', 100'"
+        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+      />
+      <text x="18" y="20.35" class="percentage">{{ points }}</text>
+      <text x="18" y="25" class="label">PTS</text>
+    </svg>
+  </div>
+
+  <ion-card mode="ios" class="streak-card ion-no-margin ion-margin-bottom">
+    <ion-item lines="none">
+      <ion-icon name="flash" slot="start" color="warning"></ion-icon>
+      <ion-label>
+        <h3 style="font-weight: 700;">Racha de 5 días</h3>
+        <p>¡No pierdan el impulso!</p>
+      </ion-label>
+    </ion-item>
+  </ion-card>
+
+  <ion-button expand="block" shape="round" color="danger" (click)="goToActions()" style="height: 50px; font-weight: 700; margin-top: 20px;">
+    <ion-icon slot="start" name="heart"></ion-icon>
+    Sumar puntos ahora
+  </ion-button>
+</ion-content>

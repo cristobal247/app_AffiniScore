@@ -34,7 +34,7 @@ export class RegisterPage {
   async onRegister() {
     if (!this.email || !this.password) {
       this.showAlert('Atención', 'Debes completar todos los campos.');
-      return;
+      return;  
     }
 
     const loading = await this.loadingCtrl.create({
