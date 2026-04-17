@@ -2,14 +2,6 @@ import { Routes } from '@angular/router';
 
 export const routes: Routes = [
   {
-    path: 'actions',
-    loadComponent: () => import('./actions/actions.page').then(m => m.ActionsPage),
-  },
-  {
-    path: 'catalog',
-    loadComponent: () => import('./pages/catalog/catalog.page').then(m => m.CatalogPage),
-  },
-  {
     path: 'login',
     loadComponent: () => import('./login/login.page').then(m => m.LoginPage),
   },
@@ -18,8 +10,20 @@ export const routes: Routes = [
     loadComponent: () => import('./register/register.page').then(m => m.RegisterPage),
   },
   {
+    path: 'actions', // Tu página principal actual
+    loadComponent: () => import('./actions/actions.page').then(m => m.ActionsPage),
+  },
+  {
+    path: 'catalog',
+    loadComponent: () => import('./pages/catalog/catalog.page').then(m => m.CatalogPage),
+  },
+  {
+    path: 'profile', // <--- AÑADE ESTO
+    loadComponent: () => import('./pages/profile/profile.page').then(m => m.ProfilePage),
+  },
+  {
     path: '',
-    redirectTo: 'actions',
+    redirectTo: 'login', // O 'actions' si ya estás logueada
     pathMatch: 'full',
   },
 ];

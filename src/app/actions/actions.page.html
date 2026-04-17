@@ -35,6 +35,7 @@
             <span class="points">+{{ item.default_points }} Points</span>
           </div>
         </ion-col>
+        
         <ion-col size="6" class="ion-no-padding">
           <div class="action-card-ios more-card" (click)="goToFullCatalog()">
             <div class="icon-wrapper more-icon-bg">
@@ -60,7 +61,7 @@
 
     <div class="reward-card-white">
       <div class="reward-image-box">
-        <img src="assets/images/movie_night.png" />
+        <img src="assets/images/movie_night.png" alt="Movie Night" />
         <span class="premium-label">PREMIUM</span>
       </div>
       <div class="reward-content">
@@ -106,9 +107,31 @@
 
 <ion-footer class="ion-no-border">
   <ion-tab-bar slot="bottom" mode="ios">
-    <ion-tab-button tab="home"><ion-icon name="home-outline"></ion-icon><ion-label>INICIO</ion-label></ion-tab-button>
-    <ion-tab-button tab="actions" class="active-tab"><ion-icon name="flash"></ion-icon><ion-label>ACCIONES</ion-label></ion-tab-button>
-    <ion-tab-button tab="coach"><ion-icon name="headset-outline"></ion-icon><ion-label>COACH IA</ion-label></ion-tab-button>
-    <ion-tab-button tab="mapa"><ion-icon name="map-outline"></ion-icon><ion-label>MAPA</ion-label></ion-tab-button>
+    
+    <ion-tab-button (click)="router.navigate(['/dashboard'])">
+      <ion-icon name="home-outline"></ion-icon>
+      <ion-label>INICIO</ion-label>
+    </ion-tab-button>
+
+    <ion-tab-button tab="actions" class="active-tab">
+      <ion-icon name="flash"></ion-icon>
+      <ion-label>ACCIONES</ion-label>
+    </ion-tab-button>
+
+    <ion-tab-button (click)="router.navigate(['/coach'])">
+      <ion-icon name="headset-outline"></ion-icon>
+      <ion-label>COACH IA</ion-label>
+    </ion-tab-button>
+
+    <ion-tab-button (click)="router.navigate(['/mapa'])">
+      <ion-icon name="map-outline"></ion-icon>
+      <ion-label>MAPA</ion-label>
+    </ion-tab-button>
+
+    <ion-tab-button (click)="router.navigate(['/profile'])">
+      <ion-icon name="person-outline"></ion-icon>
+      <ion-label>PERFIL</ion-label>
+    </ion-tab-button>
+
   </ion-tab-bar>
 </ion-footer>

@@ -1,67 +1,50 @@
-<ion-content [fullscreen]="true">
-  <div class="register-container">
-    
-    <div class="back-header">
-      <ion-back-button defaultHref="login" text="" color="danger"></ion-back-button>
-      <span class="back-text">Volver al inicio</span>
+<ion-header class="ion-no-border">
+  <ion-toolbar mode="ios">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/login" text="Volver"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Nueva Cuenta</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <div class="register-wrapper">
+    <div class="header-section">
+      <h1>Únete a AffiniScore</h1>
+      <p>Comienza a fortalecer tu conexión hoy mismo.</p>
     </div>
 
-    <div class="header-titles">
-      <h1>Crea tu cuenta</h1>
-      <p>Comienza la aventura con tu pareja <span class="dot">•</span></p>
-    </div>
+    <div class="form-container">
+      <ion-item lines="none" class="custom-item">
+        <ion-label position="stacked">Email</ion-label>
+        <ion-input 
+          type="email" 
+          [(ngModel)]="email" 
+          placeholder="nombre@ejemplo.com"
+          class="custom-input">
+        </ion-input>
+      </ion-item>
 
-    <ion-card class="register-card">
-      
-      <div class="input-group">
-        <ion-label class="custom-label">¿CÓMO TE LLAMAS?</ion-label>
-        <ion-item lines="none" class="custom-item">
-          <ion-input type="text" [(ngModel)]="nombre" placeholder="Tu nombre o apodo"></ion-input>
-          <ion-icon name="person-outline" slot="end" class="input-icon"></ion-icon>
-        </ion-item>
-      </div>
+      <ion-item lines="none" class="custom-item ion-margin-top">
+        <ion-label position="stacked">Contraseña</ion-label>
+        <ion-input 
+          type="password" 
+          [(ngModel)]="password" 
+          placeholder="Mínimo 6 caracteres"
+          class="custom-input">
+        </ion-input>
+      </ion-item>
 
-      <div class="input-group">
-        <ion-label class="custom-label">CORREO ELECTRÓNICO</ion-label>
-        <ion-item lines="none" class="custom-item">
-          <ion-input type="email" [(ngModel)]="email" placeholder="amor@ejemplo.com"></ion-input>
-          <ion-icon name="mail-outline" slot="end" class="input-icon"></ion-icon>
-        </ion-item>
-      </div>
-
-      <div class="input-group">
-        <ion-label class="custom-label">CONTRASEÑA</ion-label>
-        <ion-item lines="none" class="custom-item">
-          <ion-input type="password" [(ngModel)]="password" placeholder="Mínimo 6 caracteres"></ion-input>
-          <ion-icon name="lock-closed-outline" slot="end" class="input-icon"></ion-icon>
-        </ion-item>
-      </div>
-
-      <div class="terms-text">
-        <p>Al registrarte, aceptas nuestros <span>Términos y Privacidad</span></p>
-      </div>
-
-      <ion-button expand="block" class="main-btn" (click)="onRegister()">
+      <ion-button 
+        expand="block" 
+        (click)="onRegister()" 
+        class="btn-register ion-margin-top">
         Crear mi cuenta
       </ion-button>
-    </ion-card>
-
-    <div class="divider">
-      <span>O regístrate con</span>
     </div>
 
-    <div class="social-row">
-      <div class="social-btn">
-        <img src="assets/images/google_icon.png">
-      </div>
-      <div class="social-btn">
-        <img src="assets/images/apple_icon.png">
-      </div>
-    </div>
-
-    <div class="footer-text">
-      <p>¿Ya tienes cuenta? <span class="login-link" (click)="goToLogin()">Inicia Sesión</span></p>
-    </div>
-
+    <p class="footer-text">
+      ¿Ya tienes cuenta? <span (click)="router.navigate(['/login'])">Inicia sesión</span>
+    </p>
   </div>
 </ion-content>
