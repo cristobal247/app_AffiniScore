@@ -95,6 +95,14 @@ ion-toolbar.main-header-toolbar { --background: #FFFFFF; --border-style: none; p
   }
 }
 
-ion-tab-bar { --background: white; border-top-left-radius: 35px; border-top-right-radius: 35px; padding: 10px 8px; box-shadow: 0 -10px 25px rgba(0,0,0,0.03); }
+ion-tab-bar {
+  --background: white;
+  border-top-left-radius: 35px;
+  border-top-right-radius: 35px;
+  padding: 10px 8px;
+  box-shadow: 0 -10px 25px rgba(0,0,0,0.03);
+  outline: none !important;
+  border: none !important;
+}
 .active-tab { background: #FEEEEE; border-radius: 22px; --color-selected: var(--affini-red); }
 ion-tab-button ion-label { font-weight: 700; font-size: 10px; }

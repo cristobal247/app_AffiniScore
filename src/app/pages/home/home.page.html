@@ -30,8 +30,34 @@
     </ion-item>
   </ion-card>
 
-  <ion-button expand="block" shape="round" color="danger" (click)="goToActions()" style="height: 50px; font-weight: 700; margin-top: 20px;">
+  <ion-button expand="block" shape="round" color="danger" (click)="goToActions()" style="height: 50px; font-weight: 700;  margin-top: 20px;">
     <ion-icon slot="start" name="heart"></ion-icon>
     Sumar puntos ahora
   </ion-button>
+  
 </ion-content>
+
+<ion-footer class="ion-no-border">
+  <ion-tab-bar slot="bottom" mode="ios">
+    <ion-tab-button tab="dashboard" class="active-tab">
+      <ion-icon name="home-outline"></ion-icon>
+      <ion-label>INICIO</ion-label>
+    </ion-tab-button>
+    <ion-tab-button (click)="router.navigate(['/actions'])">
+      <ion-icon name="flash"></ion-icon>
+      <ion-label>ACCIONES</ion-label>
+    </ion-tab-button>
+    <ion-tab-button (click)="router.navigate(['/coach'])">
+      <ion-icon name="headset-outline"></ion-icon>
+      <ion-label>COACH IA</ion-label>
+    </ion-tab-button>
+    <ion-tab-button (click)="router.navigate(['/mapa'])">
+      <ion-icon name="map-outline"></ion-icon>
+      <ion-label>MAPA</ion-label>
+    </ion-tab-button>
+    <ion-tab-button (click)="router.navigate(['/profile'])">
+      <ion-icon name="person-outline"></ion-icon>
+      <ion-label>PERFIL</ion-label>
+    </ion-tab-button>
+  </ion-tab-bar>
+</ion-footer>
