@@ -4,10 +4,11 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { 
   IonContent, IonHeader, IonTitle, IonToolbar, IonText, 
-  IonCard, IonItem, IonLabel, IonIcon, IonBadge, IonButton 
+  IonCard, IonItem, IonLabel, IonIcon, IonBadge, IonButton, 
+  IonFooter, IonTabBar, IonTabButton 
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { heart, flash, settingsSharp } from 'ionicons/icons';
+import { heart, flash, settingsSharp, homeOutline, headsetOutline, mapOutline, personOutline } from 'ionicons/icons';
 import { SupabaseService } from '../../services/supabase'; // Ajusta la ruta si es necesario
 
 @Component({
@@ -18,15 +19,16 @@ import { SupabaseService } from '../../services/supabase'; // Ajusta la ruta si 
   imports: [
     CommonModule, FormsModule,
     IonContent, IonHeader, IonTitle, IonToolbar, IonText, 
-    IonCard, IonItem, IonLabel, IonIcon, IonBadge, IonButton
+    IonCard, IonItem, IonLabel, IonIcon, IonBadge, IonButton,
+    IonFooter, IonTabBar, IonTabButton
   ]
 })
 export class HomePage implements OnInit {
   points: number = 0;
   meta: number = 2000; // Meta para el cálculo del círculo
 
-  constructor(private supabaseSvc: SupabaseService, private router: Router) {
-    addIcons({ heart, flash, settingsSharp });
+  constructor(private supabaseSvc: SupabaseService, public router: Router) {
+    addIcons({flash,heart,homeOutline,headsetOutline,mapOutline,personOutline,settingsSharp});
   }
 
   async ngOnInit() {

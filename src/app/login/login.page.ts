@@ -78,8 +78,8 @@ export class LoginPage implements OnInit {
       } else {
         console.log('Login exitoso:', data);
         
-        // 4. ¡NUEVO! Redirección a la pantalla de Acciones tras éxito
-        this.router.navigateByUrl('/actions'); 
+        // 4. Redirección a la pantalla de Home tras éxito
+        this.router.navigateByUrl('/home');
       }
     } catch (err) {
       this.showAlert('Error Crítico', 'No se pudo establecer conexión con el servidor.');
