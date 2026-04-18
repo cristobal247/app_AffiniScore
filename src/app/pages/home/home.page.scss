@@ -1,8 +1,8 @@
-// Forzar fondo blanco hueso en Home
+// Forzar fondo blanco hueso en Home (también en dark mode)
 
 ion-content {
-  --background: #F8F8F8 !important;
-  background: #F8F8F8 !important;
+  --background: #FFF9F5 !important;
+  background: #FFF9F5 !important;
 }
 // Barra de navegación inferior igual a actions.page.scss
 ion-tab-bar {
@@ -80,12 +80,6 @@ ion-tab-button ion-label {
   color: #222 !important;
 }
 
-
-// Forzar fondo blanco hueso aunque el dispositivo esté en dark mode
-ion-content {
-  --background: #FFF9F5 !important;
-  background: #FFF9F5 !important;
-}
 
 html, body, body.dark, html.dark {
   --ion-background-color: #FFF9F5 !important;
