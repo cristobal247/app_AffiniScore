@@ -1,0 +1,11 @@
+# Registro de Dependencias y Frameworks - AffiniScore
+
+De acuerdo con la definición tecnológica actualizada para la arquitectura del proyecto y las exigencias de auditoría, a continuación se detallan las herramientas, librerías y paquetes externos utilizados para el desarrollo de la aplicación. Este documento debe ser almacenado obligatoriamente en la carpeta **Producto** del repositorio [1, 2].
+
+### Stack Tecnológico: Frontend e Integraciones
+
+*   **Ionic Framework y Angular (Versión 17.0.0):** Framework y tecnología principal seleccionada para el desarrollo del frontend de la aplicación móvil. Se adoptó específicamente porque su estructura permite la integración nativa y fluida del avatar conversacional animado con Inteligencia Artificial, tal como fue instruido para cumplir con los requerimientos del cliente [3, 4].
+*   **supabase-js (Versión 2.39.0):** Dependencia utilizada para integrar el backend (BaaS) en la nube, gestionar el sistema de autenticación de usuarios y asegurar la sincronización de la base de datos de la pareja en tiempo real [5].
+*   **@angular/google-maps (Versión 17.0.0):** Paquete externo requerido para consumir la API de Google Maps. Es fundamental para implementar la visualización de la ubicación, habilitar el geovallado (geofencing) para el modo "Tiempo de Calidad" y capturar las coordenadas exactas para la alerta del botón S.O.S [6, 7].
+*   **pdfmake o jspdf (Versión 0.2.9):** Librería de JavaScript estrictamente necesaria para la generación, renderizado y exportación automática del reporte de afinidad de la pareja en formato PDF [8, 9].
+*   **APIs de Inteligencia Artificial (Google AI Studio / Gemini):** Servicios externos en la nube consumidos a través de la API REST alojada en el servidor de la empresa del cliente [3, 10]. Son esenciales para dar vida al avatar interactivo (Terapeuta Virtual), ejecutar el análisis de evidencias multimedia para la validación automática de puntos y detectar la emocionalidad en el chat privado [4, 11, 12].
