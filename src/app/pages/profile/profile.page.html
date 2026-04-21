@@ -1,0 +1,44 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar mode="ios">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/actions" text="Atrás"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Mi Perfil</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="profile-container">
+    <div class="user-info-section">
+      <div class="avatar-circle">
+        <ion-icon src="assets/icons/hero/outline/user-circle.svg"></ion-icon>
+      </div>
+      <h2>{{ userEmail }}</h2>
+      <p>Miembro de AffiniScore</p>
+    </div>
+
+    <!-- BOTÓN PARA IR A VINCULACIÓN QR -->
+    <ion-card class="qr-linking-card" (click)="goToQr()" button="true">
+      <ion-card-content class="qr-card-content">
+        <ion-icon name="qr-code-outline" class="heart-icon" color="primary"></ion-icon>
+        <h3 class="qr-title">Vincular con tu Pareja</h3>
+        <p class="qr-subtitle">Usa tu código QR para conectar tu cuenta.</p>
+      </ion-card-content>
+    </ion-card>
+
+    <ion-list lines="none" class="menu-list">
+      <ion-item button class="menu-item">
+        <ion-icon slot="start" src="assets/icons/hero/outline/heart.svg"></ion-icon>
+        <ion-label>Nuestra Relación</ion-label>
+        <ion-icon slot="end" src="assets/icons/hero/outline/chevron-right.svg"></ion-icon>
+      </ion-item>
+    </ion-list>
+
+    <div class="action-section">
+      <ion-button expand="block" fill="clear" color="danger" (click)="logout()" class="logout-btn">
+        <ion-icon slot="start" src="assets/icons/hero/outline/arrow-right-on-rectangle.svg"></ion-icon>
+        Cerrar Sesión
+      </ion-button>
+    </div>
+  </div>
+</ion-content>

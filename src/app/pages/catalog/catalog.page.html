@@ -1,0 +1,39 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar mode="ios" class="catalog-header">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/actions" text="Atrás" color="danger"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Catálogo de Servicios</ion-title>
+  </ion-toolbar>
+
+  <ion-toolbar mode="ios" class="search-toolbar">
+    <ion-searchbar 
+      mode="ios"
+      placeholder="¿Qué hiciste hoy?" 
+      (ionInput)="onSearchChange($event)" 
+      [debounce]="200"
+      show-clear-button="always"
+      class="custom-search">
+    </ion-searchbar>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="catalog-list">
+    <div class="action-item" *ngFor="let item of filteredActions" (click)="registerAction(item)">
+      <div class="icon-box">
+        <span class="emoji-icon" style="font-size: 24px;">{{ getEmoji(item.category) }}</span>
+      </div>
+      <div class="info">
+        <h3>{{ item.name }}</h3>
+        <p>{{ item.category }}</p>
+      </div>
+      <div class="points-tag">+{{ item.default_points }}</div>
+    </div>
+
+    <div *ngIf="filteredActions.length === 0" class="no-results">
+      <ion-icon src="assets/icons/hero/outline/magnifying-glass.svg"></ion-icon>
+      <p>No pillamos ese servicio. ¡Prueba con otro!</p>
+    </div>
+  </div>
+</ion-content>

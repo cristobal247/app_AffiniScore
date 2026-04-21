@@ -1,0 +1,125 @@
+/*
+ * App Global CSS - AffiniScore
+ * ----------------------------------------------------------------------------
+ */
+
+/* 1. IMPORTACIONES CORE (Deben ir al principio) */
+@import "@ionic/angular/css/core.css";
+@import "@ionic/angular/css/normalize.css";
+@import "@ionic/angular/css/structure.css";
+@import "@ionic/angular/css/typography.css";
+@import "@ionic/angular/css/display.css";
+
+/* Utilidades opcionales */
+@import "@ionic/angular/css/padding.css";
+@import "@ionic/angular/css/float-elements.css";
+@import "@ionic/angular/css/text-alignment.css";
+@import "@ionic/angular/css/text-transformation.css";
+@import "@ionic/angular/css/flex-utils.css";
+
+/* Paleta de colores (Sistema) */
+@import '@ionic/angular/css/palettes/dark.system.css';
+
+
+/*Para que los iconos y capas del mapa se vean bien en la app*/
+@import "leaflet/dist/leaflet.css";
+
+/* 2. RESET TOTAL DE TIPOGRAFÍA (Estilo Apple Pro) */
+:root {
+  /* Jerarquía de fuentes: prioriza las del sistema Apple */
+  --ion-font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Roboto, sans-serif;
+}
+
+* {
+  /* El !important es necesario para ganarle a los componentes internos de Ionic */
+  font-family: var(--ion-font-family) !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* 3. CORRECCIÓN DE "TOSQUEDAD" (Pesos y Espaciado) */
+
+h1, h2, h3, h4, b, strong, ion-title {
+  /* Bajamos el peso a 700 para que no se vea tosco en Windows/Android */
+  font-weight: 700 !important; 
+  /* Juntamos las letras (Clave del look premium) */
+  letter-spacing: -0.04em !important; 
+}
+
+p, span, ion-label, ion-input, .points {
+  font-weight: 400 !important;
+  letter-spacing: -0.01em !important;
+  color: #333; // Un negro menos puro para que no sea tan fuerte
+}
+
+/* 4. AJUSTES DE COMPONENTES */
+
+// Títulos de la cabecera
+ion-title {
+  font-size: 20px !important;
+}
+
+// Quitamos las mayúsculas forzadas de los botones (Muy estilo Android viejo)
+ion-button, ion-tab-button {
+  text-transform: none !important;
+  font-weight: 600 !important;
+}
+
+/* 6. TAB BAR - Icono relleno activo con animacion sutil */
+ion-tab-button .tab-icon {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  display: inline-block;
+}
+
+ion-tab-button .tab-icon ion-icon {
+  position: absolute;
+  inset: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+ion-tab-button .icon-solid {
+  opacity: 0;
+  transform: scale(0.9);
+  color: var(--ion-color-primary);
+}
+
+ion-tab-button .icon-outline {
+  opacity: 1;
+  color: #9aa0a6;
+}
+
+ion-tab-button.tab-selected .icon-solid {
+  opacity: 1;
+  transform: scale(1);
+}
+
+ion-tab-button.tab-selected .icon-outline {
+  opacity: 0;
+}
+
+
+// Ajuste del Toolbar para que sea siempre blanco y limpio
+ion-header ion-toolbar {
+  --background: #ffffff;
+  --border-style: none;
+  padding-top: calc(var(--ion-safe-area-top, 45px) + 26px) !important;
+}
+
+/* 5. FIX PARA EL RENDERIZADO EN NAVEGADORES WEB */
+body {
+  line-height: 1.3;
+  background-color: #f8f8f8;
+}
+
+// Seleccionamos específicamente el texto de los items para que no herede estilos raros
+ion-item {
+  --inner-padding-end: 0;
+  --padding-start: 0;
+}
+
+ion-content {
+  --overflow: auto !important;
+}

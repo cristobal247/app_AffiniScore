@@ -1,0 +1,38 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar mode="ios">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/actions" text="Atrás"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Chat de Pareja</ion-title>
+    <ion-avatar slot="end" class="chat-avatar">
+      <img src="assets/images/user.png" alt="Pareja">
+    </ion-avatar>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="chat-bg">
+  <div class="chat-container">
+    <div *ngFor="let msg of messages" class="message-wrapper" [class.mine]="isMine(msg)">
+      <div class="message-bubble">
+        <p>{{ msg.content }}</p>
+        <span class="message-time">{{ msg.created_at | date:'shortTime' }}</span>
+      </div>
+    </div>
+  </div>
+</ion-content>
+
+<ion-footer class="ion-no-border">
+  <ion-toolbar>
+    <div class="input-container">
+      <ion-input 
+        [(ngModel)]="newMessage" 
+        placeholder="Escribe un mensaje..." 
+        class="chat-input"
+        (keyup.enter)="sendMessage()"
+      ></ion-input>
+      <ion-button fill="clear" (click)="sendMessage()" class="send-btn" [disabled]="!newMessage.trim()">
+        <ion-icon slot="icon-only" name="send-outline"></ion-icon>
+      </ion-button>
+    </div>
+  </ion-toolbar>
+</ion-footer>

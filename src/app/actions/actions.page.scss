@@ -1,0 +1,104 @@
+:host {
+  --ion-background-color: #F8F8F8;
+  --affini-red: #B0232A;
+  --ios-gray: #8E8E93;
+}
+
+ion-toolbar.main-header-toolbar { --background: #FFFFFF; --border-style: none; padding-top: 12px; }
+.header-content-wrapper { display: flex; justify-content: space-between; align-items: center; padding: 0 16px; }
+.brand-group { display: flex; align-items: center; gap: 10px; }
+.brand-title-gradient { font-size: 22px; font-weight: 700; background: linear-gradient(to right, #E05A5A, #F08A7D); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.user-avatar-top { width: 38px; height: 38px; img { border-radius: 50%; } }
+.btn-settings { --color: var(--affini-red); }
+
+.main-wrapper { padding: 16px; }
+
+.main-section-title {
+  margin-bottom: 24px;
+  h1 { font-size: 30px; font-weight: 700; letter-spacing: -1.2px; color: #1A1A1A; margin: 0; }
+  p { color: var(--ios-gray); font-size: 15px; margin-top: 4px; }
+  &.middle { margin-top: 35px; }
+  .title-with-points { display: flex; justify-content: space-between; align-items: center; }
+}
+
+.total-points-pill {
+  background: white; border-radius: 20px; padding: 6px 14px; display: flex; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+  ion-icon { color: var(--affini-red); margin-right: 6px; }
+  span { font-weight: 700; font-size: 15px; color: #1A1A1A; }
+}
+
+.action-card-ios {
+  background: white; border-radius: 24px; padding: 20px 16px; margin: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); border: 1px solid #F5F5F5;
+  display: flex; flex-direction: column; align-items: flex-start; text-align: left; position: relative; transition: transform 0.25s ease, opacity 0.25s ease;
+  .icon-wrapper { width: 44px; height: 44px; background: #FFF7F7; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin-bottom: 12px; }
+  .emoji-icon { font-size: 22px; line-height: 1; }
+  h2 { font-size: 14.5px; font-weight: 600; color: #1A1A1A; margin: 0; }
+  .points { font-size: 10.5px; color: #B0B0B0; margin-top: 4px; }
+  &.more-card { border: 1.2px dashed #D0D0D0; background: rgba(255, 255, 255, 0.4); .more-icon-bg { background: #F4F4F4; ion-icon { color: #999; } } h2 { color: #999; } }
+  &.is-completing { transform: scale(0.98); opacity: 0.6; }
+  .check-overlay { position: absolute; top: 10px; right: 10px; color: #32a852; font-size: 20px; }
+}
+
+.reward-card-white {
+  background: white; border-radius: 35px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05); margin-bottom: 20px;
+  .reward-image-box {
+    position: relative; height: 210px;
+    img { width: 100%; height: 100%; object-fit: cover; }
+    .premium-label { position: absolute; bottom: 15px; left: 15px; background: #F08A7D; color: white; padding: 6px 14px; border-radius: 12px; font-size: 10px; font-weight: 800; }
+  }
+  .reward-content {
+    padding: 20px; display: flex; justify-content: space-between; align-items: center;
+    h3 { font-size: 18px; font-weight: 700; margin: 0; color: #1A1A1A; }
+    p { color: var(--ios-gray); font-size: 13.5px; margin-top: 4px; }
+  }
+}
+
+.points-badge-circle {
+  background: #FFF5F5; width: 65px; height: 65px; border-radius: 50%; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 1px solid #FFEBEB;
+  .pts-number { color: var(--affini-red); font-weight: 800; font-size: 19px; line-height: 1; }
+  .pts-text { font-size: 8px; font-weight: 700; color: #444; margin-top: 2px; }
+}
+
+.locked-rewards-row {
+  display: flex; gap: 12px; margin-bottom: 40px;
+  .locked-item-dashed {
+    flex: 1; height: 100px; border: 1.5px dashed #E0E0E0; border-radius: 30px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 8px; color: #BDBDBD;
+    ion-icon { font-size: 24px; }
+    span { font-size: 12px; font-weight: 600; text-align: center; padding: 0 10px; }
+  }
+}
+
+// --- SECCIÓN INFERIOR CORREGIDA (Visibilidad del texto) ---
+.bottom-action-container {
+  background: #F2F2F2; border-radius: 35px; padding: 25px 20px;
+  .input-header { display: flex; align-items: center; margin-bottom: 15px; .red-icon { font-size: 24px; color: var(--affini-red); } span { font-weight: 700; font-size: 17px; margin-left: 10px; color: #1A1A1A; } }
+  
+  .pill-input-container {
+    background: white; border-radius: 50px; display: flex; align-items: center; padding: 5px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    
+    // Forzar color de texto y placeholder
+    .custom-input {
+      --padding-start: 18px;
+      --color: #333333;           // Color del texto al escribir (Oscuro)
+      --placeholder-color: #999;  // Color del texto de guía
+      --placeholder-opacity: 1;
+      font-size: 15px;
+      font-weight: 400;
+    }
+
+    .btn-registrar-solid { 
+      --background: var(--affini-red); 
+      --border-radius: 25px; 
+      height: 44px; 
+      margin: 0;
+      font-weight: 700; 
+      text-transform: none; 
+      padding: 0 20px; 
+    }
+  }
+}
+
+ion-content {
+  --overflow: auto;
+}
+

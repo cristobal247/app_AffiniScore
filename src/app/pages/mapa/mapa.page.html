@@ -1,0 +1,69 @@
+<ion-header class="ion-no-border map-header">
+  <ion-toolbar mode="ios" class="map-toolbar">
+    <div class="header-content-wrapper">
+      <div class="brand-group">
+        <ion-avatar class="user-avatar-top">
+          <img src="assets/images/user.png" alt="User" />
+        </ion-avatar>
+        <span class="brand-title">AffiniScore</span>
+      </div>
+      <ion-buttons slot="end">
+        <ion-button class="btn-settings">
+          <ion-icon src="assets/icons/hero/outline/cog-6-tooth.svg"></ion-icon>
+        </ion-button>
+      </ion-buttons>
+    </div>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="map-page">
+  <div class="page-wrapper">
+    <h2 class="page-title">Mapa de Conexión</h2>
+
+    <div class="tip-card">
+      <div class="tip-icon">
+        <ion-icon src="assets/icons/hero/outline/map-pin.svg"></ion-icon>
+      </div>
+      <div class="tip-copy">
+        <p>Están cerca del lugar de su primera cita. Vayan para ganar 100 Affini Points</p>
+      </div>
+      <ion-button size="small" class="tip-cta">Ver ruta</ion-button>
+    </div>
+
+    <div class="map-card">
+      <div id="map"></div>
+      <div class="map-avatar">
+        <img src="assets/images/user.png" alt="Tu" />
+        <span>Tu</span>
+      </div>
+      <div class="map-target">
+        <ion-icon src="assets/icons/hero/outline/paper-airplane.svg"></ion-icon>
+      </div>
+      <div class="map-favorite">
+        <ion-icon src="assets/icons/hero/outline/heart.svg"></ion-icon>
+      </div>
+      <div class="map-tag">
+        <p class="tag-title">DESTINO ESPECIAL</p>
+        <p class="tag-sub">Café del Corazón</p>
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <span class="stat-label">DISTANCIA</span>
+        <span class="stat-value">2.4 <small>km</small></span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">TIEMPO</span>
+        <span class="stat-value">12 <small>min</small></span>
+      </div>
+      <button 
+        class="sos-button" 
+        [class.recording]="isRecording"
+        type="button" 
+        (click)="handleSOS()">
+        {{ isRecording ? '🛑 ENVIAR SOS' : 'SOS' }}
+      </button>
+    </div>
+  </div>
+</ion-content>

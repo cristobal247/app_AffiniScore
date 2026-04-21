@@ -1,0 +1,298 @@
+// Variables de la paleta basada en la imagen
+$bg-color: #f7f5f2; // Color beige/crema claro de fondo general
+$text-dark: #3a3a3a;
+$text-light: #7e7e7e;
+$red-brand: #bd343a;
+$red-light: #fbecec;
+$white: #ffffff;
+
+// Aplicar fondo a la pantalla
+.dashboard-bg {
+  --background: #{$bg-color};
+}
+
+// Estilos de la cabecera (iguales a las otras pantallas para mantener consistencia)
+.main-header-toolbar {
+  --background: #{$bg-color};
+  --border-width: 0 !important;
+  --min-height: 70px;
+  padding: 10px 16px;
+
+  .header-content-wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      .user-avatar-top {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        overflow: hidden;
+      }
+
+      .brand-title {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 800;
+        color: $red-brand;
+      }
+    }
+
+    .btn-settings {
+      --color: #{$text-dark};
+      --padding-end: 0;
+      margin: 0;
+    }
+  }
+}
+
+// Contenedor general
+.dashboard-container {
+  padding: 0 20px 40px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+// Encabezado "Bienvenido de nuevo"
+.dashboard-header {
+  margin-top: 10px;
+
+  .welcome-badge {
+    color: $red-brand;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+
+  .dashboard-title {
+    margin: 4px 0 0 0;
+    font-size: 32px;
+    font-weight: 800;
+    color: #4a4a4a;
+    letter-spacing: -0.5px;
+  }
+}
+
+// Tarjeta Principal: AffiniScore Actual
+.main-score-card {
+  margin: 0;
+  border-radius: 36px;
+  background: $white;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.02);
+  position: relative;
+  overflow: hidden;
+
+  // Fondo de ondas SVG
+  .wave-bg-svg {
+    position: absolute;
+    bottom: -30%;
+    left: 0;
+    width: 200%;
+    height: 100%;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0.8;
+  }
+
+  .score-card-content {
+    padding: 32px 28px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .score-subtitle {
+    font-size: 14px;
+    font-weight: 700;
+    color: #555;
+  }
+
+  .score-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 4px;
+
+    .giant-percentage {
+      margin: 0;
+      font-size: 72px;
+      font-weight: 800;
+      color: $red-brand;
+      line-height: 1;
+      letter-spacing: -3px;
+    }
+
+    .trend-pill {
+      background: $red-light;
+      color: $red-brand;
+      padding: 6px 14px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      
+      ion-icon {
+        font-size: 14px;
+      }
+    }
+  }
+
+  .score-description {
+    margin: 20px 0 32px 0;
+    font-size: 15px;
+    color: $text-light;
+    line-height: 1.5;
+    font-weight: 500;
+
+    .red-text {
+      color: $red-brand;
+      font-weight: 700;
+    }
+  }
+
+  .boost-btn {
+    --background: linear-gradient(135deg, #df5b61 0%, #bd343a 100%);
+    --color: white;
+    --border-radius: 24px;
+    --box-shadow: 0 10px 20px rgba($red-brand, 0.25);
+    margin: 0;
+    width: fit-content;
+    padding: 0 24px;
+    height: 48px;
+    font-weight: 800;
+    font-size: 14px;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+}
+
+// Tarjeta de Reflexión Diaria
+.daily-reflection-card {
+  margin: 0;
+  border-radius: 32px;
+  background: #f1efe9; // Gris beige sutil
+  box-shadow: none;
+  padding: 28px;
+
+  .reflection-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+
+    .pin-icon {
+      font-size: 18px;
+      color: $red-brand;
+    }
+    .reflection-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: $text-dark;
+    }
+  }
+
+  .quote-text {
+    margin: 0 0 28px 0;
+    font-size: 20px;
+    font-style: italic;
+    font-weight: 500;
+    color: #4a4a4a;
+    line-height: 1.4;
+  }
+
+  .reflection-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .coach-label {
+      font-size: 12px;
+      color: #999;
+      font-weight: 600;
+    }
+
+    .respond-btn {
+      background: transparent;
+      border: none;
+      color: $red-brand;
+      font-size: 14px;
+      font-weight: 800;
+      padding: 0;
+    }
+  }
+}
+
+// Tarjeta de Recuerdos
+.memories-card {
+  margin: 0;
+  border-radius: 32px;
+  background: $white;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.03);
+  overflow: hidden;
+
+  .memory-image-container {
+    width: 100%;
+    height: 200px;
+    overflow: hidden;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  .memory-content {
+    padding: 24px 28px;
+
+    .memory-badge {
+      color: $red-brand;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .memory-title {
+      margin: 0 0 12px 0;
+      font-size: 24px;
+      font-weight: 800;
+      color: $text-dark;
+    }
+
+    .memory-desc {
+      margin: 0 0 24px 0;
+      font-size: 15px;
+      color: $text-light;
+      line-height: 1.5;
+      font-weight: 500;
+    }
+
+    .gallery-btn {
+      background: transparent;
+      border: none;
+      color: $red-brand;
+      font-size: 14px;
+      font-weight: 800;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      ion-icon {
+        font-size: 18px;
+      }
+    }
+  }
+}

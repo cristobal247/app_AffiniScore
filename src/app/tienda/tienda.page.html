@@ -1,0 +1,75 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar mode="ios" class="tienda-header-toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/actions" text="" color="dark"></ion-back-button>
+    </ion-buttons>
+    <ion-title>La Tienda Real</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="tienda-bg">
+  <div class="tienda-container">
+    
+    <!-- 1. Contador de Puntos -->
+    <div class="points-header">
+      <span class="points-label">Tus Affini Points</span>
+      <h1 class="points-value">{{ points }}</h1>
+    </div>
+
+    <!-- 2. El Terapeuta de Pareja IA -->
+    <div class="ai-therapist-card">
+      <div class="ai-avatar">
+        <span class="emoji-icon">🦉</span>
+      </div>
+      <div class="ai-content">
+        <h3 class="ai-title">Terapeuta IA</h3>
+        <p class="ai-quote">
+          "Basado en tus actos de servicio de esta semana, tienes puntos suficientes para un premio. ¡Te lo has ganado!"
+        </p>
+      </div>
+    </div>
+
+    <!-- 3. Catálogo de Recompensas -->
+    <h2 class="section-title">Recompensas Disponibles</h2>
+
+    <div class="rewards-grid">
+      <ion-card class="reward-card" *ngFor="let reward of rewards">
+        <div class="reward-card-content">
+          <div class="reward-header">
+            <div class="icon-wrapper">
+              <ion-icon [name]="reward.icon"></ion-icon>
+            </div>
+            <div class="reward-info">
+              <h3 class="reward-title">{{ reward.title }}</h3>
+              <span class="reward-points">{{ reward.points }} pts</span>
+            </div>
+          </div>
+
+          <!-- Estado Idle: Botón Canjear -->
+          <div class="reward-actions" *ngIf="reward.status === 'idle'">
+            <button class="btn-redeem" (click)="initiateRedeem(reward)" [disabled]="points < reward.points">
+              Canjear
+            </button>
+          </div>
+
+          <!-- Estado Pending: Esperando Validación -->
+          <div class="reward-pending" *ngIf="reward.status === 'pending'">
+            <p class="pending-text">Esperando validación de tu pareja...</p>
+            <div class="pending-buttons">
+              <button class="btn-postpone" (click)="cancelRedeem(reward)">Posponer</button>
+              <button class="btn-accept" (click)="confirmRedeem(reward)">Aceptar</button>
+            </div>
+          </div>
+
+          <!-- Estado Success: Confirmado -->
+          <div class="reward-success" *ngIf="reward.status === 'success'">
+            <ion-icon name="checkmark-circle" color="success"></ion-icon>
+            <span>¡Recompensa Canjeada!</span>
+          </div>
+
+        </div>
+      </ion-card>
+    </div>
+
+  </div>
+</ion-content>

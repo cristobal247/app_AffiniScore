@@ -1,0 +1,50 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar mode="ios">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/login" text="Volver"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Nueva Cuenta</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <div class="register-wrapper">
+    <div class="header-section">
+      <h1>Únete a AffiniScore</h1>
+      <p>Comienza a fortalecer tu conexión hoy mismo.</p>
+    </div>
+
+    <div class="form-container">
+      <ion-item lines="none" class="custom-item">
+        <ion-label position="stacked">Email</ion-label>
+        <ion-input 
+          type="email" 
+          [(ngModel)]="email" 
+          placeholder="nombre@ejemplo.com"
+          class="custom-input">
+        </ion-input>
+      </ion-item>
+
+      <ion-item lines="none" class="custom-item ion-margin-top">
+        <ion-label position="stacked">Contraseña</ion-label>
+        <ion-input 
+          type="password" 
+          [(ngModel)]="password" 
+          placeholder="Mínimo 6 caracteres"
+          class="custom-input">
+        </ion-input>
+      </ion-item>
+
+      <ion-button 
+        expand="block" 
+        (click)="onRegister()" 
+        class="btn-register ion-margin-top">
+        Crear mi cuenta
+      </ion-button>
+    </div>
+
+    <p class="footer-text">
+      ¿Ya tienes cuenta? <span (click)="router.navigate(['/login'])">Inicia sesión</span>
+    </p>
+  </div>
+</ion-content>

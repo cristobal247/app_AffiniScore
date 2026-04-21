@@ -1,0 +1,86 @@
+:host {
+  --ion-background-color: #ffffff;
+}
+
+.register-wrapper {
+  padding: 20px 10px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  justify-content: center;
+
+  .header-section {
+    margin-bottom: 40px;
+    h1 {
+      font-size: 28px;
+      font-weight: 800;
+      color: #1a1a1a;
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+    p {
+      font-size: 15px;
+      color: #8e8e93;
+      margin: 0;
+    }
+  }
+}
+
+/* Buscamos la clase de los campos y aseguramos visibilidad */
+.custom-input {
+  --color: #1a1a1a !important; /* Texto casi negro */
+  --placeholder-color: #8e8e93;
+  --placeholder-opacity: 0.6;
+  font-weight: 500;
+  
+  /* Esto asegura que el texto se vea mientras escribes */
+  color: #1a1a1a !important; 
+}
+
+.custom-item {
+  --background: #f4f4f7 !important;
+  --border-radius: 14px;
+  --padding-start: 16px;
+  --highlight-height: 0;
+  margin-bottom: 10px;
+
+  ion-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #B0232A !important; // Rojo Affini
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px !important;
+  }
+
+  ion-input {
+    --padding-top: 10px;
+    --padding-bottom: 10px;
+    font-size: 16px;
+    font-weight: 500;
+  }
+}
+
+.btn-register {
+  --background: #B0232A;
+  --background-activated: #8e1c22;
+  --border-radius: 14px;
+  --box-shadow: 0 4px 12px rgba(176, 35, 42, 0.2);
+  margin-top: 30px;
+  height: 52px;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.footer-text {
+  text-align: center;
+  margin-top: 30px;
+  font-size: 14px;
+  color: #8e8e93;
+
+  span {
+    color: #B0232A;
+    font-weight: 700;
+    cursor: pointer;
+  }
+}

@@ -1,0 +1,263 @@
+:host {
+	--bone: #fff9f5;
+	--accent: #d85158;
+	--accent-soft: #f3d8d9;
+	--ink: #2c2c2c;
+	--muted: #8f8f8f;
+}
+
+ion-content.map-page {
+	--background: var(--bone);
+	background: var(--bone);
+}
+
+.map-toolbar {
+	--background: #ffffff;
+	border-style: none;
+	padding-top: 10px;
+}
+
+.header-content-wrapper {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 0 16px;
+}
+
+.brand-group {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.user-avatar-top {
+	width: 36px;
+	height: 36px;
+	img {
+		border-radius: 50%;
+	}
+}
+
+.brand-title {
+	font-size: 18px;
+	font-weight: 700;
+	color: #d3545c;
+}
+
+.btn-settings {
+	--color: #d3545c;
+}
+
+.page-wrapper {
+	padding: 16px 16px 90px;
+}
+
+.page-title {
+	margin: 6px 0 14px;
+	font-size: 24px;
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.tip-card {
+	background: #ffffff;
+	border-radius: 22px;
+	padding: 14px 14px 16px;
+	border: 2px solid #e8b7b7;
+	box-shadow: 0 8px 18px rgba(0, 0, 0, 0.04);
+	display: grid;
+	grid-template-columns: 40px 1fr auto;
+	align-items: center;
+	gap: 10px;
+}
+
+.tip-icon {
+	width: 34px;
+	height: 34px;
+	border-radius: 12px;
+	background: #fdeaea;
+	display: grid;
+	place-items: center;
+	color: var(--accent);
+	font-size: 18px;
+}
+
+.tip-copy p {
+	margin: 0;
+	font-size: 12.5px;
+	line-height: 1.3;
+	color: #6b6b6b;
+}
+
+.tip-cta {
+	--background: var(--accent);
+	--border-radius: 18px;
+	--padding-start: 12px;
+	--padding-end: 12px;
+	text-transform: none;
+	font-weight: 600;
+	font-size: 12px;
+	color: #fff;
+}
+
+.map-card {
+	position: relative;
+	margin-top: 16px;
+	border-radius: 22px;
+	overflow: hidden;
+	background: #f1f1f1;
+	box-shadow: 0 14px 26px rgba(0, 0, 0, 0.08);
+	min-height: 300px;
+}
+
+#map {
+	height: 300px;
+	width: 100%;
+}
+
+.map-avatar {
+	position: absolute;
+	left: 50%;
+	top: 45%;
+	transform: translate(-50%, -50%);
+	text-align: center;
+	color: #fff;
+	font-size: 11px;
+}
+
+.map-avatar img {
+	width: 44px;
+	height: 44px;
+	border-radius: 50%;
+	border: 3px solid #ffffff;
+	box-shadow: 0 0 0 3px rgba(216, 81, 88, 0.35), 0 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+.map-avatar span {
+	display: block;
+	margin-top: 4px;
+	background: rgba(0, 0, 0, 0.45);
+	padding: 2px 8px;
+	border-radius: 10px;
+}
+
+.map-target,
+.map-favorite {
+	position: absolute;
+	right: 14px;
+	width: 34px;
+	height: 34px;
+	border-radius: 50%;
+	background: #ffffff;
+	box-shadow: 0 8px 18px rgba(0, 0, 0, 0.15);
+	display: grid;
+	place-items: center;
+	color: var(--accent);
+}
+
+.map-target {
+	top: 44%;
+}
+
+.map-favorite {
+	top: 58%;
+}
+
+.map-tag {
+	position: absolute;
+	right: 14px;
+	bottom: 14px;
+	background: #ffffff;
+	border-radius: 12px;
+	padding: 8px 10px;
+	box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
+	text-align: right;
+}
+
+.tag-title {
+	margin: 0;
+	font-size: 9px;
+	letter-spacing: 0.6px;
+	color: var(--accent);
+	font-weight: 700;
+}
+
+.tag-sub {
+	margin: 2px 0 0;
+	font-size: 11px;
+	color: var(--ink);
+	font-weight: 600;
+}
+
+.stats-row {
+	margin-top: 16px;
+	display: grid;
+	grid-template-columns: 1fr 1fr auto;
+	gap: 10px;
+	align-items: center;
+}
+
+.stat-card {
+	background: #ffffff;
+	border-radius: 16px;
+	padding: 10px 12px;
+	box-shadow: 0 6px 14px rgba(0, 0, 0, 0.05);
+}
+
+.stat-label {
+	display: block;
+	font-size: 10px;
+	letter-spacing: 0.8px;
+	color: var(--muted);
+	font-weight: 700;
+}
+
+.stat-value {
+	font-size: 18px;
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.stat-value small {
+	font-size: 12px;
+	color: var(--muted);
+}
+
+.sos-button {
+	width: auto;
+	min-width: 46px;
+	height: 46px;
+	border-radius: 23px;
+	border: none;
+	background: var(--accent);
+	color: #ffffff;
+	font-weight: 700;
+	font-size: 11px;
+	padding: 0 12px;
+	box-shadow: 0 10px 20px rgba(216, 81, 88, 0.35);
+	transition: all 0.3s ease;
+
+	&.recording {
+		background: #ff3b3b;
+		animation: pulse-red 1.5s infinite;
+	}
+}
+
+@keyframes pulse-red {
+	0% {
+		box-shadow: 0 0 0 0 rgba(255, 59, 59, 0.7);
+	}
+	70% {
+		box-shadow: 0 0 0 15px rgba(255, 59, 59, 0);
+	}
+	100% {
+		box-shadow: 0 0 0 0 rgba(255, 59, 59, 0);
+	}
+}
+
+
+html, body, body.dark, html.dark {
+	--ion-background-color: var(--bone) !important;
+	background: var(--bone) !important;
+	color-scheme: light !important;
+}
