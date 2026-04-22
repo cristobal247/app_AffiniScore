@@ -50,9 +50,12 @@ export class RegisterPage {
     if (error) {
       this.showAlert('Error en registro', error.message);
     } else {
+      const needsEmailConfirmation = !data?.session;
       const alert = await this.alertCtrl.create({
         header: '¡Cuenta creada!',
-        message: 'Ya puedes iniciar sesión para empezar a sumar puntos.',
+        message: needsEmailConfirmation
+          ? 'Te enviamos un correo de confirmacion. Debes validarlo antes de iniciar sesion.'
+          : 'Registro completado. Ya puedes iniciar sesion para empezar a sumar puntos.',
         buttons: [{
           text: 'Ir al Login',
           handler: () => { this.router.navigate(['/login']); }

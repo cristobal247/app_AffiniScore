@@ -7,7 +7,7 @@
 ion-toolbar.main-header-toolbar { --background: #FFFFFF; --border-style: none; padding-top: 12px; }
 .header-content-wrapper { display: flex; justify-content: space-between; align-items: center; padding: 0 16px; }
 .brand-group { display: flex; align-items: center; gap: 10px; }
-.brand-title-gradient { font-size: 22px; font-weight: 700; background: linear-gradient(to right, #E05A5A, #F08A7D); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.brand-title-gradient { font-size: 22px; font-weight: 700; background: linear-gradient(to right, #E05A5A, #F08A7D); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 .user-avatar-top { width: 38px; height: 38px; img { border-radius: 50%; } }
 .btn-settings { --color: var(--affini-red); }
 
@@ -29,14 +29,11 @@ ion-toolbar.main-header-toolbar { --background: #FFFFFF; --border-style: none; p
 
 .action-card-ios {
   background: white; border-radius: 24px; padding: 20px 16px; margin: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); border: 1px solid #F5F5F5;
-  display: flex; flex-direction: column; align-items: flex-start; text-align: left; position: relative; transition: transform 0.25s ease, opacity 0.25s ease;
-  .icon-wrapper { width: 44px; height: 44px; background: #FFF7F7; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin-bottom: 12px; }
-  .emoji-icon { font-size: 22px; line-height: 1; }
+  display: flex; flex-direction: column; align-items: flex-start; text-align: left;
+  .icon-wrapper { width: 44px; height: 44px; background: #FFF7F7; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin-bottom: 12px; ion-icon { font-size: 20px; color: var(--affini-red); } }
   h2 { font-size: 14.5px; font-weight: 600; color: #1A1A1A; margin: 0; }
   .points { font-size: 10.5px; color: #B0B0B0; margin-top: 4px; }
   &.more-card { border: 1.2px dashed #D0D0D0; background: rgba(255, 255, 255, 0.4); .more-icon-bg { background: #F4F4F4; ion-icon { color: #999; } } h2 { color: #999; } }
-  &.is-completing { transform: scale(0.98); opacity: 0.6; }
-  .check-overlay { position: absolute; top: 10px; right: 10px; color: #32a852; font-size: 20px; }
 }
 
 .reward-card-white {
@@ -98,7 +95,14 @@ ion-toolbar.main-header-toolbar { --background: #FFFFFF; --border-style: none; p
   }
 }
 
-ion-content {
-  --overflow: auto;
+ion-tab-bar {
+  --background: white;
+  border-top-left-radius: 35px;
+  border-top-right-radius: 35px;
+  padding: 10px 8px;
+  box-shadow: 0 -10px 25px rgba(0,0,0,0.03);
+  outline: none !important;
+  border: none !important;
 }
-
+.active-tab { background: #FEEEEE; border-radius: 22px; --color-selected: var(--affini-red); }
+ion-tab-button ion-label { font-weight: 700; font-size: 10px; }

@@ -73,13 +73,12 @@ export class LoginPage implements OnInit {
       const { data, error } = await this.supabaseSvc.signIn(this.email, this.password);
 
       if (error) {
-        // Si hay error (ej: usuario no existe o clave mala)
-        this.showAlert('Error de Acceso', 'Correo o contraseña incorrectos.');
+        await this.handleLoginError(error);
       } else {
         console.log('Login exitoso:', data);
         
-        // 4. Redirección a la pantalla de Home tras éxito
-        this.router.navigateByUrl('/home');
+        // 4. ¡NUEVO! Redirección a la pantalla de Acciones tras éxito
+        this.router.navigateByUrl('/actions'); 
       }
     } catch (err) {
       this.showAlert('Error Crítico', 'No se pudo establecer conexión con el servidor.');
@@ -87,6 +86,46 @@ export class LoginPage implements OnInit {
       // Siempre quitamos el cargando al terminar
       loading.dismiss();
     }
+  }
+
+  private async handleLoginError(error: { code?: string; message?: string }) {
+    if (error.code === 'email_not_confirmed') {
+      const alert = await this.alertCtrl.create({
+        header: 'Confirma tu correo',
+        message: 'Tu cuenta existe, pero falta confirmar el correo. Revisa tu bandeja o spam.',
+        buttons: [
+          {
+            text: 'Reenviar correo',
+            handler: () => {
+              this.resendConfirmationEmail();
+            },
+          },
+          {
+            text: 'Entendido',
+            role: 'cancel',
+          },
+        ],
+      });
+      await alert.present();
+      return;
+    }
+
+    this.showAlert('Error de Acceso', 'Correo o contraseña incorrectos.');
+  }
+
+  private async resendConfirmationEmail() {
+    if (!this.email) {
+      await this.showAlert('Atencion', 'Ingresa tu correo para reenviar la confirmacion.');
+      return;
+    }
+
+    const { error } = await this.supabaseSvc.resendSignupConfirmation(this.email);
+    if (error) {
+      await this.showAlert('No se pudo reenviar', error.message || 'Intenta nuevamente en unos minutos.');
+      return;
+    }
+
+    await this.showAlert('Correo reenviado', 'Te enviamos un nuevo enlace de confirmacion. Revisa tambien spam.');
   }
 
   /**

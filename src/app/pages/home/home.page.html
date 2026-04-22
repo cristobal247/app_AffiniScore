@@ -1,100 +1,63 @@
-<ion-header class="ion-no-border">
-  <ion-toolbar mode="ios" class="main-header-toolbar">
-    <div class="header-content-wrapper">
-      <div class="brand-group">
-        <ion-avatar class="user-avatar-top">
-          <img src="assets/images/user.png" alt="User" />
-        </ion-avatar>
-        <h1 class="brand-title">AffiniScore</h1>
-      </div>
-      <ion-buttons slot="end">
-        <ion-button class="btn-settings">
-          <ion-icon src="assets/icons/hero/outline/cog-6-tooth.svg"></ion-icon>
-        </ion-button>
-      </ion-buttons>
-    </div>
-  </ion-toolbar>
-</ion-header>
-
-<ion-content class="dashboard-bg">
-  <div class="dashboard-container">
-    
-    <!-- Título de Sección -->
-    <div class="dashboard-header">
-      <span class="welcome-badge">BIENVENIDO DE NUEVO</span>
-      <h1 class="dashboard-title">Panel de Control</h1>
-      
-      <!-- Se mantiene visible el Nivel y los Puntos Totales -->
-      <div class="points-summary-badge" style="margin-top: 8px; display: inline-flex; align-items: center; gap: 6px; background: #fbecec; color: #bd343a; padding: 6px 12px; border-radius: 20px; font-weight: 700; font-size: 13px;">
-        <ion-icon name="star-outline"></ion-icon>
-        Nivel {{ nivelAfinidad }} • {{ points }} PTS Totales
-      </div>
-    </div>
-
-    <!-- Tarjeta Principal: AffiniScore Actual -->
-    <ion-card class="main-score-card">
-      
-      <!-- Olas SVG en el fondo -->
-      <svg class="wave-bg-svg" viewBox="0 0 1440 320" preserveAspectRatio="none">
-        <path fill="none" stroke="rgba(184, 59, 66, 0.2)" stroke-width="4" 
-              d="M0,160 C320,300,420,0,720,160 C1020,320,1120,0,1440,160"></path>
-      </svg>
-      
-      <div class="score-card-content">
-        <span class="score-subtitle">AffiniScore Actual</span>
-        
-        <div class="score-row">
-          <h2 class="giant-percentage">{{ porcentajeAfinidad }}%</h2>
-          <div class="trend-pill">
-            <ion-icon name="trending-up-outline"></ion-icon>
-            <span>+5% este mes</span>
-          </div>
-        </div>
-
-        <p class="score-description">
-          Tu conexión sigue floreciendo. Has acumulado <strong class="red-text">{{ points }} AffiniPoints</strong> esta semana.
-        </p>
-
-        <ion-button class="boost-btn" (click)="goToActions()">
-          Impulsar Conexión
-        </ion-button>
-      </div>
-    </ion-card>
-
-    <!-- Tarjeta 2: Reflexión Diaria -->
-    <ion-card class="daily-reflection-card">
-      <div class="reflection-header">
-        <ion-icon name="location" class="pin-icon"></ion-icon>
-        <span class="reflection-title">Reflexión Diaria</span>
-      </div>
-      
-      <p class="quote-text">
-        "El amor no es algo que se encuentra, es algo que se construye día a día con pequeños gestos de gratitud."
-      </p>
-
-      <div class="reflection-footer">
-        <span class="coach-label">Coach IA</span>
-        <button class="respond-btn">Responder +</button>
-      </div>
-    </ion-card>
-
-    <!-- Tarjeta 3: Recuerdos -->
-    <ion-card class="memories-card">
-      <div class="memory-image-container">
-        <img src="https://images.unsplash.com/photo-1511895426328-dc8714191300?q=80&w=800&auto=format&fit=crop" alt="Recuerdo de pareja">
-      </div>
-      <div class="memory-content">
-        <span class="memory-badge">HACE UN AÑO</span>
-        <h3 class="memory-title">Recuerdos</h3>
-        <p class="memory-desc">
-          Aquel viaje espontáneo a la costa donde el tiempo pareció detenerse.
-        </p>
-        <button class="gallery-btn">
-          <ion-icon name="images-outline"></ion-icon>
-          <span>Ver galería completa</span>
-        </button>
-      </div>
-    </ion-card>
-
+<ion-content class="ion-padding ion-text-center">
+  <div class="welcome-section ion-margin-top">
+    <ion-text color="primary">
+      <h2 style="font-weight: 800; font-size: 28px;">¡Hola de nuevo!</h2>
+    </ion-text>
+    <p style="color: #8e8e93;">Tu afinidad hoy</p>
   </div>
+
+  <div class="points-container">
+    <svg viewBox="0 0 36 36" class="circular-chart">
+      <path class="circle-bg"
+        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+      />
+      <path class="circle"
+        [attr.stroke-dasharray]="((points / meta) * 100) + ', 100'"
+        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+      />
+      <text x="18" y="20.35" class="percentage">{{ points }}</text>
+      <text x="18" y="25" class="label">PTS</text>
+    </svg>
+  </div>
+
+  <ion-card mode="ios" class="streak-card ion-no-margin ion-margin-bottom">
+    <ion-item lines="none">
+      <ion-icon name="flash" slot="start" color="warning"></ion-icon>
+      <ion-label>
+        <h3 style="font-weight: 700;">Racha de 5 días</h3>
+        <p>¡No pierdan el impulso!</p>
+      </ion-label>
+    </ion-item>
+  </ion-card>
+
+  <ion-button expand="block" shape="round" color="danger" (click)="goToActions()" style="height: 50px; font-weight: 700;  margin-top: 20px;">
+    <ion-icon slot="start" name="heart"></ion-icon>
+    Sumar puntos ahora
+  </ion-button>
+  
 </ion-content>
+
+<ion-footer class="ion-no-border">
+  <ion-tab-bar slot="bottom" mode="ios">
+    <ion-tab-button tab="dashboard" class="active-tab">
+      <ion-icon name="home-outline"></ion-icon>
+      <ion-label>INICIO</ion-label>
+    </ion-tab-button>
+    <ion-tab-button (click)="router.navigate(['/actions'])">
+      <ion-icon name="flash"></ion-icon>
+      <ion-label>ACCIONES</ion-label>
+    </ion-tab-button>
+    <ion-tab-button (click)="router.navigate(['/coach'])">
+      <ion-icon name="headset-outline"></ion-icon>
+      <ion-label>COACH IA</ion-label>
+    </ion-tab-button>
+    <ion-tab-button (click)="router.navigate(['/mapa'])">
+      <ion-icon name="map-outline"></ion-icon>
+      <ion-label>MAPA</ion-label>
+    </ion-tab-button>
+    <ion-tab-button (click)="router.navigate(['/profile'])">
+      <ion-icon name="person-outline"></ion-icon>
+      <ion-label>PERFIL</ion-label>
+    </ion-tab-button>
+  </ion-tab-bar>
+</ion-footer>

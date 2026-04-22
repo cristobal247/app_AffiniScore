@@ -20,10 +20,6 @@
 /* Paleta de colores (Sistema) */
 @import '@ionic/angular/css/palettes/dark.system.css';
 
-
-/*Para que los iconos y capas del mapa se vean bien en la app*/
-@import "leaflet/dist/leaflet.css";
-
 /* 2. RESET TOTAL DE TIPOGRAFÍA (Estilo Apple Pro) */
 :root {
   /* Jerarquía de fuentes: prioriza las del sistema Apple */
@@ -66,46 +62,10 @@ ion-button, ion-tab-button {
   font-weight: 600 !important;
 }
 
-/* 6. TAB BAR - Icono relleno activo con animacion sutil */
-ion-tab-button .tab-icon {
-  position: relative;
-  width: 24px;
-  height: 24px;
-  display: inline-block;
-}
-
-ion-tab-button .tab-icon ion-icon {
-  position: absolute;
-  inset: 0;
-  transition: opacity 0.2s ease, transform 0.2s ease;
-}
-
-ion-tab-button .icon-solid {
-  opacity: 0;
-  transform: scale(0.9);
-  color: var(--ion-color-primary);
-}
-
-ion-tab-button .icon-outline {
-  opacity: 1;
-  color: #9aa0a6;
-}
-
-ion-tab-button.tab-selected .icon-solid {
-  opacity: 1;
-  transform: scale(1);
-}
-
-ion-tab-button.tab-selected .icon-outline {
-  opacity: 0;
-}
-
-
 // Ajuste del Toolbar para que sea siempre blanco y limpio
-ion-header ion-toolbar {
+ion-toolbar {
   --background: #ffffff;
   --border-style: none;
-  padding-top: calc(var(--ion-safe-area-top, 45px) + 26px) !important;
 }
 
 /* 5. FIX PARA EL RENDERIZADO EN NAVEGADORES WEB */
@@ -118,8 +78,4 @@ body {
 ion-item {
   --inner-padding-end: 0;
   --padding-start: 0;
-}
-
-ion-content {
-  --overflow: auto !important;
 }

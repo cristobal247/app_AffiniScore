@@ -13,7 +13,7 @@ ion-content {
 .user-info-section {
   text-align: center;
   margin-top: 20px;
-  margin-bottom: 20px;
+  margin-bottom: 40px;
 
   .avatar-circle {
     ion-icon {
@@ -36,69 +36,24 @@ ion-content {
   }
 }
 
-.qr-linking-card {
-  margin: 0 0 30px 0;
-  border-radius: 24px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.05);
-  background: white;
-
-  .qr-card-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 24px;
-    text-align: center;
-
-    .heart-icon {
-      font-size: 36px;
-      margin-bottom: 12px;
-    }
-
-    .qr-title {
-      font-size: 20px;
-      font-weight: 700;
-      color: #1a1a1a;
-      margin: 0 0 8px 0;
-    }
-
-    .qr-subtitle {
-      font-size: 14px;
-      color: #666;
-      margin: 0 0 20px 0;
-      line-height: 1.4;
-    }
-
-    .qr-wrapper {
-      background: white;
-      padding: 12px;
-      border-radius: 16px;
-      border: 1px solid #E5E5EA;
-      margin-bottom: 24px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .scan-btn {
-      --background: #B0232A;
-      --border-radius: 12px;
-      margin: 0;
-      width: 100%;
-      height: 48px;
-      font-weight: 600;
-      text-transform: none;
-      letter-spacing: 0;
-
-      ion-icon {
-        margin-right: 8px;
-      }
-    }
-  }
-}
-
 .menu-list {
   background: transparent;
-  margin-bottom: 40px;
+  margin-bottom: 22px;
+
+  .section-title-item {
+    --background: transparent;
+    margin-bottom: 10px;
+
+    ion-icon {
+      color: #B0232A;
+      margin-right: 10px;
+    }
+
+    ion-label {
+      font-weight: 700;
+      color: #1a1a1a;
+    }
+  }
 
   .menu-item {
     --background: white;
@@ -122,12 +77,41 @@ ion-content {
     ion-label {
       font-weight: 600;
       color: #1a1a1a;
+
+      h3 {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      p {
+        margin: 4px 0 0;
+        font-size: 12px;
+        color: #8E8E93;
+      }
+    }
+
+    ion-toggle {
+      padding-left: 10px;
+      --track-background-checked: #B0232A;
     }
   }
 }
 
+.notification-actions {
+  margin-top: 6px;
+  margin-bottom: 24px;
+
+  ion-button {
+    margin-top: 10px;
+    text-transform: none;
+    font-weight: 700;
+    letter-spacing: 0;
+  }
+}
+
 .logout-btn {
-  margin-top: 20px;
+  margin-top: 8px;
   --color: #B0232A;
   font-weight: 700;
   font-size: 16px;
@@ -143,78 +127,4 @@ ion-toolbar {
 ion-back-button {
   --color: #B0232A; // El rojo de tu marca
   font-weight: 600;
-}
-
-// Estilos del Modal del Escáner
-ion-modal {
-  --background: rgba(0, 0, 0, 0.9);
-}
-
-.scanner-header {
-  ion-toolbar {
-    --background: transparent;
-  }
-  .scanner-title {
-    color: white;
-    font-weight: 600;
-  }
-}
-
-.scanner-content {
-  --background: transparent;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-}
-
-.scanner-backdrop {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-  padding: 20px;
-
-  .scanner-viewport {
-    width: 250px;
-    height: 250px;
-    border: 3px solid #34C759; // Verde escáner
-    border-radius: 24px;
-    position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-bottom: 40px;
-
-    .camera-placeholder {
-      font-size: 48px;
-      color: rgba(255, 255, 255, 0.5);
-    }
-
-    .scanner-line {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 3px;
-      background: #34C759;
-      box-shadow: 0 0 10px #34C759;
-      animation: scan 2s infinite linear;
-    }
-  }
-
-  .scanner-helper-text {
-    color: white;
-    text-align: center;
-    font-size: 16px;
-    line-height: 1.5;
-    max-width: 300px;
-  }
-}
-
-@keyframes scan {
-  0% { top: 0; }
-  50% { top: 100%; }
-  100% { top: 0; }
 }
