@@ -5,11 +5,24 @@ import { Router } from '@angular/router';
 import { 
   IonContent, IonHeader, IonTitle, IonToolbar, IonButton, 
   IonIcon, IonItem, IonLabel, IonList, LoadingController,
-  IonButtons, IonBackButton, IonCard, IonCardContent
+  IonButtons, IonBackButton, IonCard, IonCardContent, IonToggle
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { logOutOutline, personCircleOutline, chevronForwardOutline, heartOutline, qrCodeOutline } from 'ionicons/icons';
+import { logOutOutline, personCircleOutline, chevronForwardOutline, heartOutline, qrCodeOutline, shieldCheckmarkOutline, notificationsOutline, checkmarkCircleOutline, phonePortraitOutline } from 'ionicons/icons';
 import { SupabaseService } from '../../services/supabase';
+
+export interface PrivacySettings {
+  profileVisibleToPartner: boolean;
+  showStreak: boolean;
+  shareActivityStatus: boolean;
+}
+
+export interface NotificationSettings {
+  pushEnabled: boolean;
+  dailyReminder: boolean;
+  challengeInvites: boolean;
+  scoreMilestones: boolean;
+}
 
 @Component({
   selector: 'app-profile',
@@ -18,20 +31,33 @@ import { SupabaseService } from '../../services/supabase';
   standalone: true,
   imports: [
     IonContent, IonHeader, IonTitle, IonToolbar, IonButton, 
-    IonIcon, IonItem, IonLabel, IonList, 
+    IonIcon, IonItem, IonLabel, IonList, IonToggle,
     IonButtons, IonBackButton, IonCard, IonCardContent,
     CommonModule, FormsModule
   ]
 })
 export class ProfilePage implements OnInit {
   userEmail: string | undefined = '';
+  
+  privacySettings: PrivacySettings = {
+    profileVisibleToPartner: true,
+    showStreak: true,
+    shareActivityStatus: true,
+  };
+  
+  notificationSettings: NotificationSettings = {
+    pushEnabled: false,
+    dailyReminder: true,
+    challengeInvites: true,
+    scoreMilestones: true,
+  };
 
   constructor(
     private supabaseSvc: SupabaseService,
     private router: Router,
     private loadingCtrl: LoadingController
   ) {
-    addIcons({ logOutOutline, personCircleOutline, chevronForwardOutline, heartOutline, qrCodeOutline });
+    addIcons({ logOutOutline, personCircleOutline, chevronForwardOutline, heartOutline, qrCodeOutline, shieldCheckmarkOutline, notificationsOutline, checkmarkCircleOutline, phonePortraitOutline });
   }
 
   async ngOnInit() {
@@ -41,6 +67,23 @@ export class ProfilePage implements OnInit {
 
   goToQr() {
     this.router.navigateByUrl('/qr');
+  }
+
+  onPrivacyChange(): void {
+    console.log('Privacy updated', this.privacySettings);
+  }
+
+  onNotificationChange(): void {
+    console.log('Notifications updated', this.notificationSettings);
+  }
+
+  enablePushNotifications(): void {
+    this.notificationSettings.pushEnabled = true;
+    console.log('Push notifications enabled');
+  }
+
+  sendTestNotification(): void {
+    console.log('Test notification sent');
   }
 
   async logout() {

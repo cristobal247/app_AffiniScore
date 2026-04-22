@@ -18,7 +18,7 @@
   --ion-color-danger-tint: #cc3e3e;
 
   /** Background - Blanco Hueso **/
-  --ion-background-color: #FFF9F5;
+  --ion-background-color: #F8F8F8;
   --ion-background-color-rgb: 255, 249, 245;
   --ion-text-color: #000000;
   --ion-text-color-rgb: 0, 0, 0;
@@ -31,6 +31,6 @@
 
 /* Forzamos que NO exista modo oscuro para que no se vea negro */
 body.dark {
-  --ion-background-color: #FFF9F5;
+  --ion-background-color: #F8F8F8;
   --ion-text-color: #000000;
 }

@@ -1,0 +1,67 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar mode="ios" class="main-header-toolbar">
+    <div class="header-content-wrapper">
+      <div class="brand-group">
+        <ion-avatar class="user-avatar-top">
+          <img src="assets/images/user.png" alt="User" />
+        </ion-avatar>
+        <h1 class="brand-title-gradient">AffiniScore</h1>
+      </div>
+      <ion-buttons slot="end">
+      </ion-buttons>
+    </div>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="page-content">
+  <div class="content-wrapper">
+    <!-- Hero -->
+    <div class="hero-section">
+      <h1>Retos de<br>Desconexión</h1>
+      <p>Elijan un reto juntos, dejen el celular y ganen puntos. Construyan momentos reales, libres de notificaciones.</p>
+    </div>
+
+    <!-- Stats -->
+    <div class="modo-presente-card">
+      <div class="card-top">
+        <div class="icon-circle">
+          <ion-icon name="flash"></ion-icon>
+        </div>
+        <div class="racha-pill">RACHA: 5 DÍAS</div>
+      </div>
+      <h2>Modo Presente</h2>
+      <p>Han compartido 12 horas sin pantallas esta semana.</p>
+    </div>
+
+    <div class="puntos-card">
+      <h2>+450</h2>
+      <p>PUNTOS ACUMULADOS</p>
+    </div>
+
+    <!-- Challenges Grid -->
+    <div class="challenges-grid">
+      <div class="grid-card" *ngFor="let item of disconnectChallenges; let i = index">
+        <img [src]="getChallengeImage(i)" class="card-image" />
+        <div class="card-body">
+          <h3>{{ item.title }}</h3>
+          
+          <div class="points-pill-container">
+            <span class="points-pill">Gana +{{ item.points }} Puntos</span>
+          </div>
+          
+          <p class="card-desc">{{ item.description }}</p>
+          
+          <button class="action-btn" *ngIf="!item.myAccepted" (click)="acceptChallenge(item)">
+            Aceptar Reto
+          </button>
+          <button class="action-btn outline-btn" *ngIf="item.myAccepted && !item.partnerAccepted" (click)="confirmJointAcceptance(item)">
+            Confirmar Pareja
+          </button>
+          <button class="action-btn done-btn" *ngIf="item.partnerAccepted" disabled>
+            Completado
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</ion-content>

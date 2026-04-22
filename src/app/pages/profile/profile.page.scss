@@ -98,7 +98,22 @@ ion-content {
 
 .menu-list {
   background: transparent;
-  margin-bottom: 40px;
+  margin-bottom: 22px;
+
+  .section-title-item {
+    --background: transparent;
+    margin-bottom: 10px;
+
+    ion-icon {
+      color: #B0232A;
+      margin-right: 10px;
+    }
+
+    ion-label {
+      font-weight: 700;
+      color: #1a1a1a;
+    }
+  }
 
   .menu-item {
     --background: white;
@@ -122,7 +137,36 @@ ion-content {
     ion-label {
       font-weight: 600;
       color: #1a1a1a;
+
+      h3 {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      p {
+        margin: 4px 0 0;
+        font-size: 12px;
+        color: #8E8E93;
+      }
     }
+
+    ion-toggle {
+      padding-left: 10px;
+      --track-background-checked: #B0232A;
+    }
+  }
+}
+
+.notification-actions {
+  margin-top: 6px;
+  margin-bottom: 24px;
+
+  ion-button {
+    margin-top: 10px;
+    text-transform: none;
+    font-weight: 700;
+    letter-spacing: 0;
   }
 }
 

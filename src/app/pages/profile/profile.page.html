@@ -26,13 +26,122 @@
       </ion-card-content>
     </ion-card>
 
-    <ion-list lines="none" class="menu-list">
-      <ion-item button class="menu-item">
-        <ion-icon slot="start" src="assets/icons/hero/outline/heart.svg"></ion-icon>
-        <ion-label>Nuestra Relación</ion-label>
-        <ion-icon slot="end" src="assets/icons/hero/outline/chevron-right.svg"></ion-icon>
+    <ion-list lines="none" class="menu-list privacy-list">
+      <ion-item class="section-title-item" lines="none">
+        <ion-icon slot="start" name="shield-checkmark-outline"></ion-icon>
+        <ion-label>Privacidad de Perfil</ion-label>
+      </ion-item>
+
+      <ion-item class="menu-item">
+        <ion-label>
+          <h3>Perfil visible para tu pareja</h3>
+          <p>Permite que vea tu progreso y estado general.</p>
+        </ion-label>
+        <ion-toggle
+          slot="end"
+          [(ngModel)]="privacySettings.profileVisibleToPartner"
+          (ionChange)="onPrivacyChange()"
+          color="danger">
+        </ion-toggle>
+      </ion-item>
+
+      <ion-item class="menu-item">
+        <ion-label>
+          <h3>Mostrar racha diaria</h3>
+          <p>Comparte tu racha activa de acciones positivas.</p>
+        </ion-label>
+        <ion-toggle
+          slot="end"
+          [(ngModel)]="privacySettings.showStreak"
+          (ionChange)="onPrivacyChange()"
+          color="danger">
+        </ion-toggle>
+      </ion-item>
+
+      <ion-item class="menu-item">
+        <ion-label>
+          <h3>Compartir estado de actividad</h3>
+          <p>Muestra si completaste una actividad reciente.</p>
+        </ion-label>
+        <ion-toggle
+          slot="end"
+          [(ngModel)]="privacySettings.shareActivityStatus"
+          (ionChange)="onPrivacyChange()"
+          color="danger">
+        </ion-toggle>
       </ion-item>
     </ion-list>
+
+    <ion-list lines="none" class="menu-list notifications-list">
+      <ion-item class="section-title-item" lines="none">
+        <ion-icon slot="start" name="notifications-outline"></ion-icon>
+        <ion-label>Sistema de Notificaciones Push</ion-label>
+      </ion-item>
+
+      <ion-item class="menu-item">
+        <ion-label>
+          <h3>Notificaciones activas</h3>
+          <p>Habilita avisos de AffiniScore en este dispositivo.</p>
+        </ion-label>
+        <ion-toggle
+          slot="end"
+          [(ngModel)]="notificationSettings.pushEnabled"
+          (ionChange)="onNotificationChange()"
+          color="danger">
+        </ion-toggle>
+      </ion-item>
+
+      <ion-item class="menu-item">
+        <ion-label>
+          <h3>Recordatorio diario</h3>
+          <p>Recibe un aviso para sumar puntos cada dia.</p>
+        </ion-label>
+        <ion-toggle
+          slot="end"
+          [(ngModel)]="notificationSettings.dailyReminder"
+          (ionChange)="onNotificationChange()"
+          color="danger">
+        </ion-toggle>
+      </ion-item>
+
+      <ion-item class="menu-item">
+        <ion-label>
+          <h3>Invitaciones a retos</h3>
+          <p>Te avisa cuando tu pareja te invita a un reto.</p>
+        </ion-label>
+        <ion-toggle
+          slot="end"
+          [(ngModel)]="notificationSettings.challengeInvites"
+          (ionChange)="onNotificationChange()"
+          color="danger">
+        </ion-toggle>
+      </ion-item>
+
+      <ion-item class="menu-item">
+        <ion-label>
+          <h3>Hitos de puntuacion</h3>
+          <p>Recibe avisos cuando superen objetivos de afinidad.</p>
+        </ion-label>
+        <ion-toggle
+          slot="end"
+          [(ngModel)]="notificationSettings.scoreMilestones"
+          (ionChange)="onNotificationChange()"
+          color="danger">
+        </ion-toggle>
+      </ion-item>
+    </ion-list>
+
+    <div class="notification-actions">
+      <ion-button expand="block" fill="outline" color="danger" (click)="enablePushNotifications()">
+        <ion-icon slot="start" name="phone-portrait-outline"></ion-icon>
+        Permitir notificaciones
+      </ion-button>
+
+      <ion-button expand="block" fill="clear" color="danger" (click)="sendTestNotification()">
+        <ion-icon slot="start" name="checkmark-circle-outline"></ion-icon>
+        Enviar notificacion de prueba
+      </ion-button>
+    </div>
 
     <div class="action-section">
       <ion-button expand="block" fill="clear" color="danger" (click)="logout()" class="logout-btn">

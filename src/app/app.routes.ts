@@ -1,17 +1,22 @@
 import { Routes } from '@angular/router';
+import { publicGuard } from './guards/public.guard';
+import { authGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
   {
     path: 'login',
     loadComponent: () => import('./login/login.page').then(m => m.LoginPage),
+    canActivate: [publicGuard]
   },
   {
     path: 'register',
     loadComponent: () => import('./register/register.page').then(m => m.RegisterPage),
+    canActivate: [publicGuard]
   },
   {
     path: 'tabs',
     loadComponent: () => import('./tabs/tabs.page').then(m => m.TabsPage),
+    canActivate: [authGuard],
     children: [
       {
         path: 'dashboard',
@@ -34,6 +39,10 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/coach/coach.page').then(m => m.CoachPage)
       },
       {
+        path: 'retos',
+        loadComponent: () => import('./pages/retos/retos.page').then(m => m.RetosPage)
+      },
+      {
         path: '',
         redirectTo: 'dashboard',
         pathMatch: 'full'
@@ -43,6 +52,7 @@ export const routes: Routes = [
   {
     path: 'catalog',
     loadComponent: () => import('./pages/catalog/catalog.page').then(m => m.CatalogPage),
+    canActivate: [authGuard]
   },
   {
     path: '',
@@ -80,16 +90,23 @@ export const routes: Routes = [
     pathMatch: 'full'
   },
   {
+    path: 'retos',
+    redirectTo: 'tabs/retos',
+    pathMatch: 'full'
+  },
+  {
     path: 'qr',
-    loadComponent: () => import('./pages/qr/qr.page').then( m => m.QrPage)
+    loadComponent: () => import('./pages/QR/qr.page').then( m => m.QrPage),
+    canActivate: [authGuard]
   },
   {
     path: 'chat',
-    loadComponent: () => import('./pages/chat/chat.page').then( m => m.ChatPage)
+    loadComponent: () => import('./pages/Chat/chat.page').then( m => m.ChatPage),
+    canActivate: [authGuard]
   },
   {
     path: 'tienda',
-    loadComponent: () => import('./tienda/tienda.page').then( m => m.TiendaPage)
+    loadComponent: () => import('./tienda/tienda.page').then( m => m.TiendaPage),
+    canActivate: [authGuard]
   }
-
 ];

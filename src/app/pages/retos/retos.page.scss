@@ -1,0 +1,243 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+:host {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  --ion-background-color: #F8F8F8;
+}
+
+.custom-header {
+  --background: #F8F8F8;
+  padding: 10px 16px 0;
+  
+  .menu-icon {
+    font-size: 26px;
+    color: #F06292;
+  }
+  
+  .app-title {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 800;
+    font-size: 20px;
+    color: #F06292;
+    text-align: center;
+  }
+  
+  .avatar-circle {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin-right: 4px;
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+}
+
+.page-content {
+  --background: #F8F8F8;
+}
+
+.content-wrapper {
+  padding: 10px 24px 40px;
+}
+
+/* Hero Section */
+.hero-section {
+  text-align: center;
+  margin-bottom: 32px;
+  margin-top: 10px;
+
+  h1 {
+    font-family: 'Manrope', sans-serif;
+    font-size: 36px;
+    font-weight: 800;
+    color: #2E2F2D;
+    line-height: 1.15;
+    margin: 0 0 16px 0;
+  }
+
+  p {
+    font-size: 15px;
+    color: #767775;
+    line-height: 1.5;
+    margin: 0;
+    padding: 0 8px;
+  }
+}
+
+/* Modo Presente Card */
+.modo-presente-card {
+  background: linear-gradient(135deg, #CF303B, #F6676D);
+  border-radius: 32px;
+  padding: 24px 28px;
+  color: white;
+  margin-bottom: 16px;
+  box-shadow: 0 12px 24px rgba(207, 48, 59, 0.2);
+
+  .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .icon-circle {
+    ion-icon {
+      font-size: 28px;
+      color: white;
+    }
+  }
+
+  .racha-pill {
+    background: rgba(255, 255, 255, 0.25);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+  }
+
+  h2 {
+    font-family: 'Manrope', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    margin: 0 0 8px 0;
+    color: white;
+    letter-spacing: -0.5px;
+  }
+
+  p {
+    font-size: 15px;
+    font-weight: 500;
+    opacity: 0.95;
+    margin: 0;
+    line-height: 1.4;
+  }
+}
+
+/* Puntos Card */
+.puntos-card {
+  background: white;
+  border-radius: 32px;
+  padding: 28px;
+  text-align: center;
+  margin-bottom: 32px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+
+  h2 {
+    font-family: 'Manrope', sans-serif;
+    font-size: 52px;
+    font-weight: 800;
+    color: #9E1424;
+    margin: 0 0 4px 0;
+    letter-spacing: -1px;
+  }
+
+  p {
+    font-size: 12px;
+    font-weight: 800;
+    color: #555;
+    letter-spacing: 1px;
+    margin: 0;
+  }
+}
+
+/* Challenges Grid */
+.challenges-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.grid-card {
+  background: white;
+  border-radius: 32px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+  display: flex;
+  flex-direction: column;
+
+  .card-image {
+    width: 100%;
+    height: 140px;
+    object-fit: cover;
+  }
+
+  .card-body {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  h3 {
+    font-family: 'Manrope', sans-serif;
+    font-size: 16px;
+    font-weight: 800;
+    color: #2E2F2D;
+    margin: 0 0 10px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .points-pill-container {
+    margin-bottom: 12px;
+  }
+
+  .points-pill {
+    background: #FFF0F4;
+    color: #F06292;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 800;
+  }
+
+  .card-desc {
+    font-size: 12px;
+    color: #767775;
+    line-height: 1.4;
+    margin: 0 0 16px 0;
+    flex: 1;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .action-btn {
+    width: 100%;
+    background: linear-gradient(90deg, #DE3E4A, #F56B72);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    padding: 12px 0;
+    font-weight: 700;
+    font-size: 12px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    box-shadow: 0 6px 16px rgba(221, 62, 74, 0.25);
+    margin-top: auto;
+    transition: transform 0.2s;
+
+    &:active {
+      transform: scale(0.95);
+    }
+    
+    &.outline-btn {
+      background: white;
+      color: #DE3E4A;
+      border: 1px solid #DE3E4A;
+      box-shadow: none;
+    }
+
+    &.done-btn {
+      background: #E8E8E5;
+      color: #767775;
+      box-shadow: none;
+    }
+  }
+}

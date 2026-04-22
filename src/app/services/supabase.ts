@@ -2,6 +2,18 @@ import { Injectable } from '@angular/core';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { environment } from 'src/environments/environment';
 
+export interface DisconnectChallenge {
+  id: string;
+  title: string;
+  description: string;
+  points: number;
+  difficulty: 'Bajo' | 'Medio' | 'Alto';
+  category: string;
+  myAccepted: boolean;
+  partnerAccepted: boolean;
+  status: 'disponible' | 'pendiente' | 'aceptado';
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -45,6 +57,11 @@ export class SupabaseService {
   async getCurrentUser() {
     const { data: { user } } = await this.supabase.auth.getUser();
     return user;
+  }
+
+  // Escuchar cambios de estado de autenticación (login, logout, expiración)
+  onAuthStateChange(callback: (event: string, session: any) => void) {
+    return this.supabase.auth.onAuthStateChange(callback);
   }
 
   /* ========================================================================
@@ -231,5 +248,180 @@ export class SupabaseService {
         longitude,
         audio_url: audioUrl
       });
+  }
+
+  /* ========================================================================
+     6. S7: RETOS DE DESCONEXION (CATALOGO + ACEPTACION CONJUNTA)
+     ======================================================================== */
+
+  private readonly baseDisconnectChallenges: DisconnectChallenge[] = [
+    {
+      id: 'dc1',
+      title: 'Cena sin móviles',
+      description: 'Dejad los móviles en otra habitación durante toda la cena.',
+      points: 150,
+      difficulty: 'Medio',
+      category: 'Citas',
+      myAccepted: false,
+      partnerAccepted: false,
+      status: 'disponible',
+    },
+    {
+      id: 'dc2',
+      title: 'Tarde de juegos de mesa',
+      description: 'Apagad las pantallas y jugad a un juego de mesa durante 2 horas.',
+      points: 200,
+      difficulty: 'Alto',
+      category: 'Hogar',
+      myAccepted: false,
+      partnerAccepted: false,
+      status: 'disponible',
+    },
+    {
+      id: 'dc3',
+      title: 'Paseo de 30 minutos',
+      description: 'Dad un paseo juntos sin mirar el móvil.',
+      points: 100,
+      difficulty: 'Bajo',
+      category: 'Bienestar',
+      myAccepted: false,
+      partnerAccepted: false,
+      status: 'disponible',
+    }
+  ];
+
+  private async getStorageKey(key: string): Promise<string> {
+    const user = await this.getCurrentUser();
+    return user ? `${key}_${user.id}` : key;
+  }
+
+  private readLocalJson<T>(key: string, fallback: T): T {
+    const raw = localStorage.getItem(key);
+    if (!raw) return fallback;
+    try {
+      return JSON.parse(raw) as T;
+    } catch {
+      return fallback;
+    }
+  }
+
+  private writeLocalJson<T>(key: string, value: T): void {
+    localStorage.setItem(key, JSON.stringify(value));
+  }
+
+  async getDisconnectChallenges(): Promise<DisconnectChallenge[]> {
+    const key = await this.getStorageKey('affiniscore:disconnect-challenges');
+    const user = await this.getCurrentUser();
+
+    if (!user) {
+      return this.readLocalJson<DisconnectChallenge[]>(key, this.baseDisconnectChallenges);
+    }
+
+    const { data, error } = await this.supabase
+      .from('user_disconnect_challenges')
+      .select('challenge_id, my_accepted, partner_accepted');
+
+    if (error || !data) {
+      return this.readLocalJson<DisconnectChallenge[]>(key, this.baseDisconnectChallenges);
+    }
+
+    const stateById = new Map<string, { my_accepted: boolean; partner_accepted: boolean }>();
+    data.forEach((row: { challenge_id: string; my_accepted: boolean; partner_accepted: boolean }) => {
+      stateById.set(row.challenge_id, {
+        my_accepted: row.my_accepted,
+        partner_accepted: row.partner_accepted,
+      });
+    });
+
+    const merged: DisconnectChallenge[] = this.baseDisconnectChallenges.map((challenge) => {
+      const state = stateById.get(challenge.id);
+      if (!state) return challenge;
+
+      const status: DisconnectChallenge['status'] = state.partner_accepted
+        ? 'aceptado'
+        : state.my_accepted
+          ? 'pendiente'
+          : 'disponible';
+
+      return {
+        ...challenge,
+        myAccepted: state.my_accepted,
+        partnerAccepted: state.partner_accepted,
+        status,
+      };
+    });
+
+    this.writeLocalJson(key, merged);
+    return merged;
+  }
+
+  private async saveLocalChallenges(challenges: DisconnectChallenge[]): Promise<void> {
+    const key = await this.getStorageKey('affiniscore:disconnect-challenges');
+    this.writeLocalJson(key, challenges);
+  }
+
+  async acceptDisconnectChallenge(challengeId: string): Promise<DisconnectChallenge[]> {
+    const challenges = await this.getDisconnectChallenges();
+    const updated: DisconnectChallenge[] = challenges.map((challenge) => {
+      if (challenge.id !== challengeId) return challenge;
+
+      const status: DisconnectChallenge['status'] = challenge.partnerAccepted ? 'aceptado' : 'pendiente';
+
+      return {
+        ...challenge,
+        myAccepted: true,
+        status,
+      };
+    });
+
+    await this.saveLocalChallenges(updated);
+
+    const user = await this.getCurrentUser();
+    if (!user) return updated;
+
+    await this.supabase
+      .from('user_disconnect_challenges')
+      .upsert({
+        user_id: user.id,
+        challenge_id: challengeId,
+        my_accepted: true,
+        partner_accepted: updated.find((item) => item.id === challengeId)?.partnerAccepted ?? false,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id,challenge_id' });
+
+    return updated;
+  }
+
+  async confirmJointAcceptance(challengeId: string): Promise<DisconnectChallenge[]> {
+    const challenges = await this.getDisconnectChallenges();
+    const updated: DisconnectChallenge[] = challenges.map((challenge) => {
+      if (challenge.id !== challengeId) return challenge;
+
+      const status: DisconnectChallenge['status'] = 'aceptado';
+
+      return {
+        ...challenge,
+        myAccepted: true,
+        partnerAccepted: true,
+        status,
+      };
+    });
+
+    await this.saveLocalChallenges(updated);
+
+    const user = await this.getCurrentUser();
+    if (!user) return updated;
+
+    await this.supabase
+      .from('user_disconnect_challenges')
+      .upsert({
+        user_id: user.id,
+        challenge_id: challengeId,
+        my_accepted: true,
+        partner_accepted: true,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id,challenge_id' });
+
+    return updated;
   }
 }

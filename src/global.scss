@@ -123,3 +123,12 @@ ion-item {
 ion-content {
   --overflow: auto !important;
 }
+/* Shared Premium Header Styles */
+ion-toolbar.main-header-toolbar { --background: #F8F8F8 !important; --border-style: none !important; padding-top: 12px !important; }
+.header-content-wrapper { display: flex !important; justify-content: space-between !important; align-items: center !important; padding: 0 16px !important; width: 100% !important; }
+.brand-group { display: flex !important; align-items: center !important; gap: 10px !important; }
+.brand-title-gradient { font-size: 22px !important; font-weight: 800 !important; font-family: 'Manrope', sans-serif !important; background: linear-gradient(to right, #E05A5A, #F08A7D) !important; background-clip: text !important; -webkit-background-clip: text !important; -webkit-text-fill-color: transparent !important; margin: 0 !important; }
+ion-avatar.user-avatar-top { width: 38px !important; height: 38px !important; }
+.user-avatar-top img { border-radius: 50% !important; width: 100% !important; height: 100% !important; object-fit: cover !important; }
+.btn-settings { --color: #B0232A !important; }
+

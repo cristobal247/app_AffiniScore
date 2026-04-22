@@ -1,5 +1,5 @@
 // Variables de la paleta basada en la imagen
-$bg-color: #f7f5f2; // Color beige/crema claro de fondo general
+$bg-color: #F8F8F8; // Color beige/crema claro de fondo general
 $text-dark: #3a3a3a;
 $text-light: #7e7e7e;
 $red-brand: #bd343a;
@@ -11,46 +11,7 @@ $white: #ffffff;
   --background: #{$bg-color};
 }
 
-// Estilos de la cabecera (iguales a las otras pantallas para mantener consistencia)
-.main-header-toolbar {
-  --background: #{$bg-color};
-  --border-width: 0 !important;
-  --min-height: 70px;
-  padding: 10px 16px;
 
-  .header-content-wrapper {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-
-    .brand-group {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-
-      .user-avatar-top {
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        overflow: hidden;
-      }
-
-      .brand-title {
-        margin: 0;
-        font-size: 18px;
-        font-weight: 800;
-        color: $red-brand;
-      }
-    }
-
-    .btn-settings {
-      --color: #{$text-dark};
-      --padding-end: 0;
-      margin: 0;
-    }
-  }
-}
 
 // Contenedor general
 .dashboard-container {

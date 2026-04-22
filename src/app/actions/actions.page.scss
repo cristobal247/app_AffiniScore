@@ -4,12 +4,7 @@
   --ios-gray: #8E8E93;
 }
 
-ion-toolbar.main-header-toolbar { --background: #FFFFFF; --border-style: none; padding-top: 12px; }
-.header-content-wrapper { display: flex; justify-content: space-between; align-items: center; padding: 0 16px; }
-.brand-group { display: flex; align-items: center; gap: 10px; }
-.brand-title-gradient { font-size: 22px; font-weight: 700; background: linear-gradient(to right, #E05A5A, #F08A7D); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-.user-avatar-top { width: 38px; height: 38px; img { border-radius: 50%; } }
-.btn-settings { --color: var(--affini-red); }
+
 
 .main-wrapper { padding: 16px; }
 
