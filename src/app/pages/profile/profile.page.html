@@ -10,9 +10,18 @@
 <ion-content>
   <div class="profile-container">
     <div class="user-info-section">
-      <div class="avatar-circle">
-        <ion-icon src="assets/icons/hero/outline/user-circle.svg"></ion-icon>
+      <div class="avatar-container" (click)="triggerFileInput()">
+        <div class="avatar-circle">
+          <img *ngIf="avatarUrl" [src]="avatarUrl" alt="Avatar" />
+          <ion-icon *ngIf="!avatarUrl" src="assets/icons/hero/outline/user-circle.svg"></ion-icon>
+        </div>
+        <div class="edit-badge">
+          <ion-icon name="camera-outline"></ion-icon>
+        </div>
       </div>
+      <!-- Hidden file input -->
+      <input type="file" #fileInput accept="image/*" style="display: none;" (change)="onFileSelected($event)">
+      
       <h2>{{ userEmail }}</h2>
       <p>Miembro de AffiniScore</p>
     </div>

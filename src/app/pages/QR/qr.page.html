@@ -30,7 +30,7 @@
   </div>
 
   <!-- MODAL DE ESCÁNER DE QR -->
-  <ion-modal [isOpen]="isScannerOpen" (didDismiss)="closeScanner()">
+  <ion-modal [isOpen]="isScannerOpen" (didDismiss)="closeScanner()" (ionModalDidPresent)="onModalDidPresent()">
     <ng-template>
       <ion-header class="ion-no-border scanner-header">
         <ion-toolbar color="transparent">
@@ -43,10 +43,9 @@
       
       <ion-content class="scanner-content">
         <div class="scanner-backdrop">
-          <div class="scanner-viewport">
-            <ion-icon name="camera-outline" class="camera-placeholder"></ion-icon>
-            <div class="scanner-line"></div>
-          </div>
+          <!-- Contenedor donde se insertará el lector de QR real -->
+          <div id="qr-reader" style="width: 100%; max-width: 600px; margin: 0 auto;"></div>
+          
           <p class="scanner-helper-text">Coloca el código QR de tu pareja en el recuadro para escanearlo automáticamente.</p>
         </div>
       </ion-content>

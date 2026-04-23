@@ -63,6 +63,41 @@ export class SupabaseService {
       .single();
   }
 
+  // Subir imagen de avatar al Storage
+  async uploadAvatar(file: File) {
+    const user = await this.getCurrentUser();
+    if (!user) return { error: 'Usuario no autenticado' };
+
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${user.id}_${new Date().getTime()}.${fileExt}`;
+    const filePath = `public/${fileName}`;
+
+    const { error: uploadError } = await this.supabase.storage
+      .from('avatars')
+      .upload(filePath, file);
+
+    if (uploadError) {
+      return { error: uploadError.message };
+    }
+
+    const { data: { publicUrl } } = this.supabase.storage
+      .from('avatars')
+      .getPublicUrl(filePath);
+
+    return { publicUrl };
+  }
+
+  // Actualizar la URL del avatar en el perfil
+  async updateAvatarUrl(url: string) {
+    const user = await this.getCurrentUser();
+    if (!user) return { error: 'Usuario no autenticado' };
+
+    return await this.supabase
+      .from('user_profiles')
+      .update({ avatar_url: url, updated_at: new Date() })
+      .eq('id', user.id);
+  }
+
   /* ========================================================================
      3. CATÁLOGO Y REGISTRO DE ACCIONES
      ======================================================================== */

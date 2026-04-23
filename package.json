@@ -34,6 +34,7 @@
     "@types/google.maps": "^3.64.0",
     "angularx-qrcode": "^20.0.0",
     "heroicons": "^2.2.0",
+    "html5-qrcode": "^2.3.8",
     "ionicons": "^7.4.0",
     "leaflet": "^1.9.4",
     "rxjs": "~7.8.0",
