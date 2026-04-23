@@ -30,8 +30,8 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/profile/profile.page').then(m => m.ProfilePage)
       },
       {
-        path: 'coach',
-        loadComponent: () => import('./pages/coach/coach.page').then(m => m.CoachPage)
+        path: 'chat',
+        loadComponent: () => import('./pages/Chat/chat.page').then(m => m.ChatPage)
       },
       {
         path: '',
@@ -75,17 +75,18 @@ export const routes: Routes = [
     pathMatch: 'full'
   },
   {
-    path: 'coach',
-    redirectTo: 'tabs/coach',
+    path: 'chat',
+    redirectTo: 'tabs/chat',
     pathMatch: 'full'
   },
   {
     path: 'qr',
-    loadComponent: () => import('./pages/qr/qr.page').then( m => m.QrPage)
+    loadComponent: () => import('./pages/QR/qr.page').then( m => m.QrPage)
   },
   {
-    path: 'chat',
-    loadComponent: () => import('./pages/chat/chat.page').then( m => m.ChatPage)
+    path: 'coach',
+    redirectTo: 'tabs/chat',
+    pathMatch: 'full'
   },
   {
     path: 'tienda',
