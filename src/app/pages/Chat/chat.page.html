@@ -14,7 +14,7 @@
   <div class="chat-container">
     <div *ngFor="let msg of messages" class="message-wrapper" [class.mine]="isMine(msg)">
       <div class="message-bubble">
-        <p>{{ msg.content }}</p>
+        <p>{{ msg.message }}</p>
         <span class="message-time">{{ msg.created_at | date:'shortTime' }}</span>
       </div>
     </div>

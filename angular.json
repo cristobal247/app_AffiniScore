@@ -18,7 +18,7 @@
         "build": {
           "builder": "@angular-devkit/build-angular:application",
           "options": {
-            "allowedCommonJsDependencies": ["leaflet"],
+            "allowedCommonJsDependencies": ["leaflet", "qrcode"],
             "outputPath": {
               "base": "www",
               "browser": ""
@@ -50,8 +50,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "6kb",
-                  "maximumError": "10kb"
+                  "maximumWarning": "30kb",
+                  "maximumError": "50kb"
                 }
               ],
               "fileReplacements": [

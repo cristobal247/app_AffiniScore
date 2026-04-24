@@ -6,7 +6,7 @@ import { RouterModule } from '@angular/router';
 import { 
   IonContent, IonHeader, IonToolbar, IonGrid, IonRow, IonCol, 
   IonIcon, IonLabel, IonButtons, IonButton, 
-  IonAvatar, IonInput,
+  IonAvatar, IonInput, IonCard, IonCardTitle,
   LoadingController, AlertController 
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
@@ -16,7 +16,8 @@ import {
   chevronForwardOutline, lockClosed, personOutline, checkmarkCircle, chatbubblesOutline,
   cartOutline
 } from 'ionicons/icons';
-import { SupabaseService } from '../services/supabase';
+import { SupabaseService, Activity } from '../services/supabase';
+import { EmojiPipe } from '../pipes/emoji.pipe';
 
 @Component({
   selector: 'app-actions',
@@ -26,15 +27,21 @@ import { SupabaseService } from '../services/supabase';
   imports: [
     IonContent, IonHeader, IonToolbar, IonGrid, IonRow, IonCol, 
     IonIcon, IonLabel, IonButtons, IonButton, 
-    IonAvatar, IonInput, RouterModule,
-    CommonModule, FormsModule
+    IonAvatar, IonInput, RouterModule, IonCard, IonCardTitle,
+    CommonModule, FormsModule, EmojiPipe
   ]
 })
 export class ActionsPage implements OnInit {
-  actionsCatalog: any[] = [];
+  actionsCatalog: Activity[] = [];
   newActionName = '';
-  private catalogPool: any[] = [];
-  private poolIndex = 0;
+  
+  get rutinas(): Activity[] {
+    return this.actionsCatalog.filter(a => a.activity_type === 'ROUTINE').slice(0, 5);
+  }
+
+  get retos(): Activity[] {
+    return this.actionsCatalog.filter(a => a.activity_type === 'CHALLENGE').slice(0, 5);
+  }
   
   points: number = 0;
   nivelAfinidad: number = 1;
@@ -79,38 +86,20 @@ export class ActionsPage implements OnInit {
   }
 
   private async refreshCatalog() {
-    const { data } = await this.supabaseSvc.getFullCatalog();
-    if (data) {
-      this.catalogPool = data;
-      // Usamos slice(0, 5) para tomar solo las primeras 5 acciones
-      this.actionsCatalog = data.slice(0, 5);
-      this.poolIndex = this.actionsCatalog.length;
-    }
+    const [routinesRes, challengesRes] = await Promise.all([
+      this.supabaseSvc.getCatalog('ROUTINE'),
+      this.supabaseSvc.getCatalog('CHALLENGE')
+    ]);
+    const routines = routinesRes.data || [];
+    const challenges = challengesRes.data || [];
+    this.actionsCatalog = [...routines, ...challenges];
   }
 
   goToFullCatalog() {
     this.navCtrl.navigateForward('/catalog', { animationDirection: 'forward' });
   }
 
-  getIcon(category: string) {
-    const icons: Record<string, string> = { 
-      'Citas': 'assets/icons/hero/outline/building-storefront.svg', 
-      'Hogar': 'assets/icons/hero/outline/home.svg', 
-      'Detalles': 'assets/icons/hero/outline/gift.svg', 
-      'Bienestar': 'assets/icons/hero/outline/heart.svg' 
-    };
-    return icons[category] || 'assets/icons/hero/outline/bolt.svg';
-  }
 
-  getEmoji(category: string) {
-    const emojis: Record<string, string> = {
-      'Citas': '🥂',
-      'Hogar': '🏡',
-      'Detalles': '🎁',
-      'Bienestar': '💆‍♀️'
-    };
-    return emojis[category] || '✨';
-  }
 
   async registerAction(item: any) {
     if (item?.isCompleting) {
@@ -149,17 +138,8 @@ export class ActionsPage implements OnInit {
   }
 
   private replaceCard(item: any) {
-    const index = this.actionsCatalog.findIndex((entry) => entry.id === item.id);
-    if (index === -1) {
-      return;
-    }
-
-    this.actionsCatalog.splice(index, 1);
-    const nextItem = this.catalogPool[this.poolIndex];
-    if (nextItem) {
-      this.poolIndex += 1;
-      this.actionsCatalog.splice(index, 0, nextItem);
-    }
+    // Ya no usamos catalogPool, puedes dejar esta función vacía o recargar el catálogo
+    this.refreshCatalog();
   }
 
   async addCustomAction() {

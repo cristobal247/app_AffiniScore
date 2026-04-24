@@ -5,16 +5,9 @@ import {
   IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, 
   IonBackButton, IonFooter, IonInput, IonButton, IonIcon, IonAvatar
 } from '@ionic/angular/standalone';
-import { SupabaseService } from '../../services/supabase';
+import { SupabaseService, ChatMessage } from '../../services/supabase';
 import { addIcons } from 'ionicons';
 import { sendOutline } from 'ionicons/icons';
-
-interface Message {
-  id: string;
-  sender_id: string;
-  content: string;
-  created_at: string;
-}
 
 @Component({
   selector: 'app-chat',
@@ -30,9 +23,10 @@ interface Message {
 export class ChatPage implements OnInit, OnDestroy {
   @ViewChild(IonContent, { static: false }) content!: IonContent;
   
-  messages: Message[] = [];
+  messages: ChatMessage[] = [];
   newMessage: string = '';
   currentUserId: string = '';
+  roomId: string = 'default-room-id'; // TODO: Obtener desde la ruta o el estado
   private subscription: any;
 
   constructor(private supabaseSvc: SupabaseService) {
@@ -48,9 +42,9 @@ export class ChatPage implements OnInit, OnDestroy {
     await this.loadMessages();
     
     // Suscribirse a nuevos mensajes
-    this.subscription = this.supabaseSvc.subscribeToMessages((newMsg) => {
+    this.subscription = this.supabaseSvc.subscribeToRoomMessages(this.roomId, (newMsg: ChatMessage) => {
       // Prevenir duplicados si ya lo agregamos por el Optimistic UI
-      const exists = this.messages.some(m => m.content === newMsg.content && m.sender_id === newMsg.sender_id);
+      const exists = this.messages.some(m => m.message === newMsg.message && m.sender_id === newMsg.sender_id);
       if (!exists) {
         this.messages.push(newMsg);
         this.scrollToBottom();
@@ -66,7 +60,7 @@ export class ChatPage implements OnInit, OnDestroy {
   }
 
   async loadMessages() {
-    const { data, error } = await this.supabaseSvc.getMessages();
+    const { data, error } = await this.supabaseSvc.getMessagesByRoom(this.roomId);
     if (data) {
       this.messages = data;
       this.scrollToBottom();
@@ -78,10 +72,12 @@ export class ChatPage implements OnInit, OnDestroy {
     if (!trimmed) return;
 
     // Para que la UI se sienta instantánea (Optimistic UI) agregamos el mensaje a la vista inmediatamente
-    const tempMsg: Message = {
+    const tempMsg: ChatMessage = {
       id: Math.random().toString(),
+      room_id: this.roomId,
       sender_id: this.currentUserId,
-      content: trimmed,
+      sender_type: 'USER',
+      message: trimmed,
       created_at: new Date().toISOString()
     };
     
@@ -91,7 +87,7 @@ export class ChatPage implements OnInit, OnDestroy {
     this.newMessage = '';
     
     // Enviamos a Supabase
-    await this.supabaseSvc.sendMessage(trimmed);
+    await this.supabaseSvc.sendMessage(this.roomId, trimmed);
   }
 
   scrollToBottom() {
@@ -102,7 +98,7 @@ export class ChatPage implements OnInit, OnDestroy {
     }, 100);
   }
 
-  isMine(msg: Message): boolean {
+  isMine(msg: ChatMessage): boolean {
     return msg.sender_id === this.currentUserId;
   }
 }

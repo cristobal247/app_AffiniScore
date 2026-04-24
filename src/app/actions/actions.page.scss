@@ -97,3 +97,23 @@ ion-content {
   --overflow: auto;
 }
 
+.reto-card-ios {
+  background: white; border-radius: 24px; margin: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+  display: flex; flex-direction: column; overflow: hidden;
+  .reto-img { width: 100%; height: 110px; object-fit: cover; }
+  .reto-content { padding: 14px 12px; display: flex; flex-direction: column; align-items: flex-start; }
+  .reto-title { font-size: 15px; font-weight: 700; color: #1A1A1A; margin: 0 0 8px 0; }
+  .reto-points-pill { background: #FFF0F2; color: #EC4862; padding: 5px 10px; border-radius: 12px; font-size: 10px; font-weight: 700; margin-bottom: 10px; }
+  .reto-desc { font-size: 11.5px; color: #666; line-height: 1.4; margin: 0 0 14px 0; }
+  .btn-aceptar-reto { 
+    --background: #EA5556; 
+    --border-radius: 20px; 
+    --box-shadow: none; 
+    font-size: 12px; 
+    font-weight: 700; 
+    margin: 0; 
+    width: 100%; 
+    height: 36px;
+    text-transform: none;
+  }
+}

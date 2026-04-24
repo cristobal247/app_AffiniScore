@@ -22,11 +22,12 @@
   <div class="catalog-list">
     <div class="action-item" *ngFor="let item of filteredActions" (click)="registerAction(item)">
       <div class="icon-box">
-        <span class="emoji-icon" style="font-size: 24px;">{{ getEmoji(item.category) }}</span>
+        <span class="emoji-icon" style="font-size: 24px;">{{ item.subcategory | emoji }}</span>
       </div>
       <div class="info">
         <h3>{{ item.name }}</h3>
-        <p>{{ item.category }}</p>
+        <p class="category-text">{{ item.subcategory || item.category }}</p>
+        <p class="desc-text" *ngIf="item.description">{{ item.description }}</p>
       </div>
       <div class="points-tag">+{{ item.default_points }}</div>
     </div>

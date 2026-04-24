@@ -11,7 +11,8 @@ import {
   restaurantOutline, homeOutline, giftOutline, heartOutline, 
   flashOutline, searchOutline, search, lockClosed, chevronForwardOutline 
 } from 'ionicons/icons';
-import { SupabaseService } from '../../services/supabase';
+import { SupabaseService, Activity } from '../../services/supabase';
+import { EmojiPipe } from '../../pipes/emoji.pipe';
 
 @Component({
   selector: 'app-catalog',
@@ -21,12 +22,12 @@ import { SupabaseService } from '../../services/supabase';
   imports: [
     IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, 
     IonBackButton, IonSearchbar, IonIcon, 
-    CommonModule, FormsModule
+    CommonModule, FormsModule, EmojiPipe
   ]
 })
 export class CatalogPage implements OnInit {
-  allActions: any[] = [];
-  filteredActions: any[] = [];
+  allActions: Activity[] = [];
+  filteredActions: Activity[] = [];
 
   constructor(
     private supabaseSvc: SupabaseService,
@@ -71,7 +72,8 @@ export class CatalogPage implements OnInit {
 
     this.filteredActions = this.allActions.filter(action => 
       action.name.toLowerCase().includes(query) || 
-      action.category.toLowerCase().includes(query)
+      action.category.toLowerCase().includes(query) ||
+      (action.subcategory && action.subcategory.toLowerCase().includes(query))
     );
   }
 
@@ -94,13 +96,5 @@ export class CatalogPage implements OnInit {
     await alert.present();
   }
 
-  getEmoji(category: string) {
-    const emojis: Record<string, string> = { 
-      'Citas': '🥂', 
-      'Hogar': '🏡', 
-      'Detalles': '🎁', 
-      'Bienestar': '💆‍♀️' 
-    };
-    return emojis[category] || '✨';
-  }
+
 }

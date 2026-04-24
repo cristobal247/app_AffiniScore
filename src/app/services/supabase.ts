@@ -2,6 +2,34 @@ import { Injectable } from '@angular/core';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { environment } from 'src/environments/environment';
 
+export interface ChatRoom {
+  id: string;
+  partnership_id?: string;
+  room_type: 'COUPLE' | 'PRIVATE_AI' | 'GROUP_AI';
+  created_at?: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  room_id: string;
+  sender_id?: string;
+  sender_type: 'USER' | 'AI';
+  message: string;
+  metadata?: any;
+  created_at?: string;
+}
+
+export interface Activity {
+  id: string;
+  name: string;
+  activity_type: 'ROUTINE' | 'CHALLENGE';
+  category: 'ACTO_SERVICIO' | 'RETO_DESCONEXION' | string;
+  subcategory?: string;
+  default_points: number;
+  description?: string;
+  isCompleting?: boolean;
+}
+
 export interface DisconnectChallenge {
   id: string;
   title: string;
@@ -85,20 +113,22 @@ export class SupabaseService {
      ======================================================================== */
 
   // Traer 6 acciones para la vista rápida
-  async getCatalog() {
+  async getCatalog(activityType: 'ROUTINE' | 'CHALLENGE' = 'ROUTINE') {
     return await this.supabase
-      .from('catalog_actions')
+      .from('activity_catalog')
       .select('*')
+      .eq('activity_type', activityType)
       .limit(6)
       .order('default_points', { ascending: false });
   }
 
   // Traer el catálogo completo para el buscador
-  async getFullCatalog() {
-    return await this.supabase
-      .from('catalog_actions')
-      .select('*')
-      .order('name', { ascending: true });
+  async getFullCatalog(activityType?: 'ROUTINE' | 'CHALLENGE') {
+    let query = this.supabase.from('activity_catalog').select('*');
+    if (activityType) {
+      query = query.eq('activity_type', activityType);
+    }
+    return query.order('name', { ascending: true });
   }
 
   // Registrar una acción y sumar puntos
@@ -151,13 +181,14 @@ export class SupabaseService {
   }
 
   // Crear una nueva acción en el catálogo
-  async createCatalogAction(name: string, category: string, defaultPoints: number) {
+  async createCatalogAction(name: string, category: string, defaultPoints: number, activityType: 'ROUTINE' | 'CHALLENGE' = 'ROUTINE') {
     return await this.supabase
-      .from('catalog_actions')
+      .from('activity_catalog')
       .insert({
         name,
         category,
-        default_points: defaultPoints
+        default_points: defaultPoints,
+        activity_type: activityType
       })
       .select('*')
       .single();
@@ -167,34 +198,47 @@ export class SupabaseService {
      4. CHAT EN TIEMPO REAL
      ======================================================================== */
 
-  // Obtener todos los mensajes (ordenados cronológicamente)
-  async getMessages() {
+  // Obtener una sala de chat específica por ID
+  async getRoomDetails(roomId: string) {
     return await this.supabase
-      .from('messages')
+      .from('chat_rooms')
       .select('*')
+      .eq('id', roomId)
+      .single();
+  }
+
+  // Obtener todos los mensajes de una sala (ordenados cronológicamente)
+  async getMessagesByRoom(roomId: string) {
+    return await this.supabase
+      .from('chat_messages')
+      .select('*')
+      .eq('room_id', roomId)
       .order('created_at', { ascending: true });
   }
 
-  // Enviar un nuevo mensaje
-  async sendMessage(content: string) {
+  // Enviar un nuevo mensaje a una sala
+  async sendMessage(roomId: string, message: string, senderType: 'USER' | 'AI' = 'USER', metadata: any = {}) {
     const user = await this.getCurrentUser();
-    if (!user) return { error: 'Usuario no autenticado' };
+    if (!user && senderType === 'USER') return { error: 'Usuario no autenticado' };
 
     return await this.supabase
-      .from('messages')
+      .from('chat_messages')
       .insert({
-        sender_id: user.id,
-        content: content
+        room_id: roomId,
+        sender_id: senderType === 'USER' ? user?.id : null,
+        sender_type: senderType,
+        message: message,
+        metadata: metadata
       });
   }
 
   // Suscribirse a nuevos mensajes en tiempo real
-  subscribeToMessages(callback: (payload: any) => void) {
+  subscribeToRoomMessages(roomId: string, callback: (payload: any) => void) {
     const channel = this.supabase
-      .channel('public:messages')
+      .channel(`room:${roomId}`)
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages' },
+        { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `room_id=eq.${roomId}` },
         (payload) => {
           callback(payload.new);
         }

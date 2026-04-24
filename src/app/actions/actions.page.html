@@ -27,29 +27,82 @@
       <p>Celebra los pequeños gestos que fortalecen su unión.</p>
     </div>
 
+    <h3 style="padding-left: 16px; font-weight: 700; color: #1e293b; margin-top: 10px;">Acciones de Servicio</h3>
     <ion-grid class="actions-grid ion-no-padding">
       <ion-row>
-        <ion-col size="6" *ngFor="let item of actionsCatalog" class="ion-no-padding">
-          <div class="action-card-ios" [class.is-completing]="item.isCompleting" (click)="registerAction(item)">
+        <ion-col size="6" *ngFor="let item of rutinas" class="ion-no-padding">
+          <ion-card class="action-card-ios" [class.is-completing]="item.isCompleting" (click)="registerAction(item)">
             <div class="icon-wrapper">
-              <span class="emoji-icon">{{ getEmoji(item.category) }}</span>
+              <span class="emoji-icon">{{ item.subcategory | emoji }}</span>
             </div>
             <div class="check-overlay" *ngIf="item.isCompleting">
               <ion-icon src="assets/icons/hero/outline/check-circle.svg"></ion-icon>
             </div>
-            <h2>{{ item.name }}</h2>
+            <h2 style="font-size: 1rem; font-weight: 700; color: #1A1A1A; margin-top: 8px; margin-bottom: 4px;">{{ item.name }}</h2>
             <span class="points">+{{ item.default_points }} Points</span>
-          </div>
+          </ion-card>
         </ion-col>
         
+        <!-- Tarjeta especial "Más acciones" movida aquí -->
         <ion-col size="6" class="ion-no-padding">
-          <div class="action-card-ios more-card" (click)="goToFullCatalog()">
+          <ion-card class="action-card-ios more-card" (click)="goToFullCatalog()">
             <div class="icon-wrapper more-icon-bg">
               <ion-icon src="assets/icons/hero/outline/chevron-right.svg"></ion-icon>
             </div>
-            <h2>Más acciones</h2>
+            <h2 style="font-size: 1rem; font-weight: 700; color: #1A1A1A; margin-top: 8px; margin-bottom: 4px;">Más acciones</h2>
             <span class="points">Ver catálogo</span>
-          </div>
+          </ion-card>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+
+    <div class="bottom-action-container" style="margin-bottom: 24px; margin-top: 16px;">
+      <div class="input-header">
+        <ion-icon src="assets/icons/hero/outline/plus-circle.svg" class="red-icon"></ion-icon>
+        <span>¿Hiciste algo más?</span>
+      </div>
+      <div class="pill-input-container">
+        <ion-input 
+          placeholder="Escribe tu acción aquí..." 
+          class="custom-input"
+          aria-label="Nueva acción"
+          [(ngModel)]="newActionName"
+          (keyup.enter)="addCustomAction()">
+        </ion-input>
+        <ion-button class="btn-registrar-solid" (click)="addCustomAction()">Registrar</ion-button>
+      </div>
+    </div>
+
+    <h3 style="padding-left: 16px; font-weight: 800; color: #1e293b; margin-top: 24px; font-size: 24px;">Retos de Desconexión</h3>
+    <p style="padding-left: 16px; color: #666; font-size: 14px; margin-top: -10px; margin-bottom: 16px; line-height: 1.4; padding-right: 16px;">
+      Elijan un reto juntos, dejen el celular y ganen puntos. Construyan momentos reales, libres de notificaciones.
+    </p>
+
+    <ion-grid class="actions-grid ion-no-padding">
+      <ion-row>
+        <ion-col size="6" *ngFor="let item of retos; let i = index" class="ion-no-padding">
+          <ion-card class="reto-card-ios">
+            <img [src]="i % 2 === 0 ? 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=400' : 'https://images.unsplash.com/photo-1542361345-89e58247f2d5?q=80&w=400'" alt="Reto" class="reto-img" />
+            <div class="reto-content">
+              <h2 class="reto-title">{{ item.name }}</h2>
+              <span class="reto-points-pill">Gana +{{ item.default_points }} Puntos</span>
+              <p class="reto-desc">{{ item.description || 'Desconéctense de las pantallas por un rato y reconecten entre ustedes.' }}</p>
+              <ion-button expand="block" class="btn-aceptar-reto" (click)="registerAction(item)">
+                Aceptar Reto
+              </ion-button>
+            </div>
+          </ion-card>
+        </ion-col>
+        
+        <!-- Tarjeta especial "Más retos" -->
+        <ion-col size="6" class="ion-no-padding">
+          <ion-card class="reto-card-ios more-card" (click)="goToFullCatalog()" style="justify-content: center; align-items: center; text-align: center; border: 1.5px dashed #D0D0D0; background: rgba(255, 255, 255, 0.4); box-shadow: none; height: calc(100% - 12px);">
+            <div class="icon-wrapper more-icon-bg" style="width: 50px; height: 50px; background: #F4F4F4; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin-bottom: 12px; margin-top: auto;">
+              <ion-icon src="assets/icons/hero/outline/chevron-right.svg" style="font-size: 24px; color: #999;"></ion-icon>
+            </div>
+            <h2 style="font-size: 1.1rem; font-weight: 700; color: #999; margin: 0 0 6px 0;">Más retos</h2>
+            <span style="font-size: 11px; color: #B0B0B0; font-weight: 600; margin-bottom: auto;">Ver catálogo completo</span>
+          </ion-card>
         </ion-col>
       </ion-row>
     </ion-grid>
@@ -71,22 +124,7 @@
       Entrar a la Tienda
     </ion-button>
 
-    <div class="bottom-action-container">
-      <div class="input-header">
-        <ion-icon src="assets/icons/hero/outline/plus-circle.svg" class="red-icon"></ion-icon>
-        <span>¿Hiciste algo más?</span>
-      </div>
-      <div class="pill-input-container">
-        <ion-input 
-          placeholder="Escribe tu acción aquí..." 
-          class="custom-input"
-          aria-label="Nueva acción"
-          [(ngModel)]="newActionName"
-          (keyup.enter)="addCustomAction()">
-        </ion-input>
-        <ion-button class="btn-registrar-solid" (click)="addCustomAction()">Registrar</ion-button>
-      </div>
-    </div>
+
 
   </div>
 </ion-content>
