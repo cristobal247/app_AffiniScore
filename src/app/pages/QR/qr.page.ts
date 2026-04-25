@@ -26,7 +26,7 @@ import { Html5QrcodeScanner } from 'html5-qrcode';
 export class QrPage implements OnInit {
   qrData: string = 'affiniscore_link_token_default';
   isScannerOpen: boolean = false;
-  private html5QrcodeScanner: Html5QrcodeScanner | null = null;
+  private html5QrcodeScanner: any | null = null;
 
   constructor(
     private supabaseSvc: SupabaseService,
@@ -62,8 +62,8 @@ export class QrPage implements OnInit {
     );
 
     this.html5QrcodeScanner.render(
-      (decodedText) => this.onScanSuccess(decodedText),
-      (errorMessage) => {
+      (decodedText: string) => this.onScanSuccess(decodedText),
+      (errorMessage: string) => {
         // Ignoramos los errores de frame por defecto
       }
     );
