@@ -35,8 +35,8 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/profile/profile.page').then(m => m.ProfilePage)
       },
       {
-        path: 'coach',
-        loadComponent: () => import('./pages/coach/coach.page').then(m => m.CoachPage)
+        path: 'chat',
+        loadComponent: () => import('./pages/Chat/chat.page').then(m => m.ChatPage)
       },
       {
         path: 'retos',
@@ -85,8 +85,8 @@ export const routes: Routes = [
     pathMatch: 'full'
   },
   {
-    path: 'coach',
-    redirectTo: 'tabs/coach',
+    path: 'chat',
+    redirectTo: 'tabs/chat',
     pathMatch: 'full'
   },
   {
@@ -103,6 +103,11 @@ export const routes: Routes = [
     path: 'chat',
     loadComponent: () => import('./pages/Chat/chat.page').then( m => m.ChatPage),
     canActivate: [authGuard]
+  },
+  {
+    path: 'coach',
+    redirectTo: 'tabs/chat',
+    pathMatch: 'full'
   },
   {
     path: 'tienda',

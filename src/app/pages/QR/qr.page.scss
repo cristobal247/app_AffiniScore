@@ -98,31 +98,22 @@ ion-modal {
   height: 100%;
   padding: 20px;
 
-  .scanner-viewport {
-    width: 250px;
-    height: 250px;
-    border: 3px solid #34C759; // Verde escáner
-    border-radius: 24px;
-    position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-bottom: 40px;
-
-    .camera-placeholder {
-      font-size: 48px;
-      color: rgba(255, 255, 255, 0.5);
-    }
-
-    .scanner-line {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 3px;
-      background: #34C759;
-      box-shadow: 0 0 10px #34C759;
-      animation: scan 2s infinite linear;
+  #qr-reader {
+    background: transparent;
+    border: none;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    
+    // Override some html5-qrcode inline styles
+    button {
+      background: #B0232A !important;
+      color: white !important;
+      border: none !important;
+      padding: 8px 16px !important;
+      border-radius: 8px !important;
+      margin: 10px 5px !important;
     }
   }
 
@@ -133,10 +124,4 @@ ion-modal {
     line-height: 1.5;
     max-width: 300px;
   }
-}
-
-@keyframes scan {
-  0% { top: 0; }
-  50% { top: 100%; }
-  100% { top: 0; }
 }
