@@ -1,0 +1,172 @@
+════════════════════════════════════════════════════════════════════════════════
+  🎯 GUÍA RÁPIDA - TESTING Y DEFENSA (Tarea 3 - Ignacio)
+════════════════════════════════════════════════════════════════════════════════
+
+📍 TU UBICACIÓN: /AffiniScore-Project/
+
+📂 ARCHIVOS PRINCIPALES PARA REVISAR:
+   └─ TESTING_AND_DEFENSE_GUIDE.md  ← LÉEME PRIMERO (Guía completa)
+   └─ TAREAS_COMPLETADAS_RESUMEN.md ← Resumen técnico
+   └─ frontend/src/app/pages/profile/bingo.page.ts
+   └─ frontend/src/app/pages/profile/memories.page.ts
+   └─ frontend/src/app/pages/mapa/mapa.page.ts
+   └─ frontend/src/app/services/supabase.ts
+
+════════════════════════════════════════════════════════════════════════════════
+  ⚡ INICIO RÁPIDO (3 pasos)
+════════════════════════════════════════════════════════════════════════════════
+
+1. INSTALAR & CORRER
+   $ cd frontend
+   $ npm install
+   $ npm start
+   → App abre en http://localhost:4200
+
+2. LOGIN
+   Email: test@example.com
+   Password: test123456
+
+3. TESTEAR FEATURES (Lee TESTING_AND_DEFENSE_GUIDE.md)
+
+════════════════════════════════════════════════════════════════════════════════
+  ✨ FEATURES IMPLEMENTADOS (4 de 5)
+════════════════════════════════════════════════════════════════════════════════
+
+✅ 3.1 PRIVACIDAD & TOGGLES
+   Ubicación: Profile tab → Configuración
+   Qué hace: Guardar preferencias (ubicación, racha, actividad)
+   Proof: Cada toggle guarda en tiempo real → reload y sigue guardado
+
+✅ 3.2 BINGO DE CONEXIÓN
+   Ubicación: Profile tab → Botón "Jugar Bingo"
+   Qué hace: Grilla 3×3 con 9 tareas, gana al completar línea
+   Proof: Clickea 3 celdas en raya → "¡¡¡GANARON!!!" 🎉
+
+✅ 3.3 GEOFENCING + MAPBOX
+   Ubicación: Mapa tab
+   Qué hace: Activa "Modo Tiempo de Calidad" si pareja está <50m
+   Proof: Click "Monitorear" → card azul aparece con "+50 pts bonus"
+
+✅ 3.4 GALERÍA DE RECUERDOS
+   Ubicación: Profile tab → Botón "Ver Recuerdos"
+   Qué hace: Muestra fotos compartidas con la pareja
+   Proof: Interfaz elegante con tarjetas de fotos + fechas
+
+❌ 3.5 PUSH NOTIFICATIONS
+   Estado: No implementado aún (opcional)
+
+════════════════════════════════════════════════════════════════════════════════
+  🎤 PARA DEFENDER MENCIONA
+════════════════════════════════════════════════════════════════════════════════
+
+1. PRIVACIDAD
+   "Implementé toggles que guardan INMEDIATAMENTE en Supabase"
+   Archivo: profile.page.ts línea 151-198
+
+2. BINGO
+   "Usé un algoritmo que detecta 8 líneas (3H+3V+2D), no es hardcodeado"
+   Archivo: supabase.ts línea 883-906 (checkBingoWin method)
+
+3. GEOFENCING
+   "Fórmula de Haversine para calcular distancia GPS real"
+   Archivo: supabase.ts línea 914-930 (calculateHaversineDistance)
+
+4. MEMORIES
+   "Integración con Supabase Storage para descargar imágenes públicas"
+   Archivo: memories.page.ts línea 46-58
+
+════════════════════════════════════════════════════════════════════════════════
+  ✅ CÓDIGO COMPLETO
+════════════════════════════════════════════════════════════════════════════════
+
+Total de líneas nuevas: ~900
+Total de métodos nuevos: 22
+Total de interfaces nuevas: 8
+Archivos creados: 6
+Archivos modificados: 5
+
+════════════════════════════════════════════════════════════════════════════════
+  🐛 ERRORES CORREGIDOS HOY
+════════════════════════════════════════════════════════════════════════════════
+
+FIXED: checkmarkCircle → checkmarkCircleOutline
+  - mapa.page.ts (línea 18, 68)
+  - actions.page.ts (línea 16)
+  - mapa.page.html (línea 79)
+
+El build ahora compila sin errores de iconos ✓
+
+════════════════════════════════════════════════════════════════════════════════
+  📋 CHECKLIST ANTES DE DEFENDER
+════════════════════════════════════════════════════════════════════════════════
+
+□ npm run build   ← sin errores
+□ npm start       ← sin errores en console
+□ Login funciona
+□ Privacy toggles guardan
+□ Bingo se carga y puedo ganar
+□ Mapa carga sin errores
+□ Geofencing activa con <50m
+□ Memories galería visible
+□ Todos los toasts muestran
+
+════════════════════════════════════════════════════════════════════════════════
+  🔗 GIT COMMANDS
+════════════════════════════════════════════════════════════════════════════════
+
+Ver cambios:
+  $ git status
+
+Hacer commit:
+  $ .\commit-fixes.bat
+
+Hacer push:
+  $ .\push.bat
+
+Ver rama actual:
+  $ git branch -a
+
+════════════════════════════════════════════════════════════════════════════════
+  📚 LEER PRIMERO
+════════════════════════════════════════════════════════════════════════════════
+
+👉 TESTING_AND_DEFENSE_GUIDE.md
+   - Instrucciones paso a paso para cada feature
+   - Qué puntos clave defender
+   - Soluciones a problemas comunes
+   - Código clave para mostrar
+
+👉 TAREAS_COMPLETADAS_RESUMEN.md
+   - Resumen técnico de implementación
+   - Interfaces y métodos
+   - Esquemas de bases de datos
+
+════════════════════════════════════════════════════════════════════════════════
+  ¿PROBLEMAS?
+════════════════════════════════════════════════════════════════════════════════
+
+❌ Build falla
+   → npm install
+   → npm run build
+
+❌ Privacy no guarda
+   → Verifica que estés logueado
+   → Abre F12 → Network → busca request a Supabase
+
+❌ Bingo no muestra
+   → Verifica que llegues a /tabs/bingo
+   → F12 → Console busca errores
+
+❌ Mapa no carga
+   → Normal si no hay permiso de ubicación
+   → Usa ubicación simulada
+
+════════════════════════════════════════════════════════════════════════════════
+  ¡LISTO PARA DEFENDER! 🚀
+════════════════════════════════════════════════════════════════════════════════
+
+Rama: featunifrepo_nacver
+Fecha: 2026-04-30
+Preparado por: Copilot CLI
+
+Siguiente paso: Lee TESTING_AND_DEFENSE_GUIDE.md
