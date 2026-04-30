@@ -1,0 +1,134 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar mode="ios" class="main-header-toolbar">
+    <div class="header-content-wrapper">
+      <ion-buttons slot="start">
+        <ion-button class="profile-avatar-btn" routerLink="/tabs/profile">
+          <ion-avatar class="user-avatar-top">
+            <img src="assets/images/user.png" alt="Perfil" />
+          </ion-avatar>
+        </ion-button>
+      </ion-buttons>
+      <div class="brand-group">
+        <h1 class="brand-title-gradient">AffiniScore</h1>
+      </div>
+      <ion-buttons slot="end">
+        <ion-button class="btn-settings" routerLink="/chat">
+          <ion-icon name="chatbubbles-outline"></ion-icon>
+        </ion-button>
+        <ion-button class="btn-settings">
+          <ion-icon src="assets/icons/hero/outline/cog-6-tooth.svg"></ion-icon>
+        </ion-button>
+      </ion-buttons>
+    </div>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <div class="main-wrapper">
+    
+    <div class="main-section-title">
+      <h1>Registro de Acciones</h1>
+      <p>Celebra los pequeños gestos que fortalecen su unión.</p>
+    </div>
+
+    <h3 style="padding-left: 16px; font-weight: 700; color: #1e293b; margin-top: 10px;">Acciones de Servicio</h3>
+    <ion-grid class="actions-grid ion-no-padding">
+      <ion-row>
+        <ion-col size="6" *ngFor="let item of rutinas" class="ion-no-padding">
+          <ion-card class="action-card-ios" [class.is-completing]="item.isCompleting" (click)="registerAction(item)">
+            <div class="icon-wrapper">
+              <span class="emoji-icon">{{ item.subcategory | emoji }}</span>
+            </div>
+            <div class="check-overlay" *ngIf="item.isCompleting">
+              <ion-icon src="assets/icons/hero/outline/check-circle.svg"></ion-icon>
+            </div>
+            <h2 style="font-size: 1rem; font-weight: 700; color: #1A1A1A; margin-top: 8px; margin-bottom: 4px;">{{ item.name }}</h2>
+            <span class="points">+{{ item.default_points }} Points</span>
+          </ion-card>
+        </ion-col>
+        
+        <!-- Tarjeta especial "Más acciones" movida aquí -->
+        <ion-col size="6" class="ion-no-padding">
+          <ion-card class="action-card-ios more-card" (click)="goToFullCatalog()">
+            <div class="icon-wrapper more-icon-bg">
+              <ion-icon src="assets/icons/hero/outline/chevron-right.svg"></ion-icon>
+            </div>
+            <h2 style="font-size: 1rem; font-weight: 700; color: #1A1A1A; margin-top: 8px; margin-bottom: 4px;">Más acciones</h2>
+            <span class="points">Ver catálogo</span>
+          </ion-card>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+
+    <div class="bottom-action-container" style="margin-bottom: 24px; margin-top: 16px;">
+      <div class="input-header">
+        <ion-icon src="assets/icons/hero/outline/plus-circle.svg" class="red-icon"></ion-icon>
+        <span>¿Hiciste algo más?</span>
+      </div>
+      <div class="pill-input-container">
+        <ion-input 
+          placeholder="Escribe tu acción aquí..." 
+          class="custom-input"
+          aria-label="Nueva acción"
+          [(ngModel)]="newActionName"
+          (keyup.enter)="addCustomAction()">
+        </ion-input>
+        <ion-button class="btn-registrar-solid" (click)="addCustomAction()">Registrar</ion-button>
+      </div>
+    </div>
+
+    <h3 style="padding-left: 16px; font-weight: 800; color: #1e293b; margin-top: 24px; font-size: 24px;">Retos de Desconexión</h3>
+    <p style="padding-left: 16px; color: #666; font-size: 14px; margin-top: -10px; margin-bottom: 16px; line-height: 1.4; padding-right: 16px;">
+      Elijan un reto juntos, dejen el celular y ganen puntos. Construyan momentos reales, libres de notificaciones.
+    </p>
+
+    <ion-grid class="actions-grid ion-no-padding">
+      <ion-row>
+        <ion-col size="6" *ngFor="let item of retos; let i = index" class="ion-no-padding">
+          <ion-card class="reto-card-ios">
+            <img [src]="i % 2 === 0 ? 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=400' : 'https://images.unsplash.com/photo-1542361345-89e58247f2d5?q=80&w=400'" alt="Reto" class="reto-img" />
+            <div class="reto-content">
+              <h2 class="reto-title">{{ item.name }}</h2>
+              <span class="reto-points-pill">Gana +{{ item.default_points }} Puntos</span>
+              <p class="reto-desc">{{ item.description || 'Desconéctense de las pantallas por un rato y reconecten entre ustedes.' }}</p>
+              <ion-button expand="block" class="btn-aceptar-reto" (click)="registerAction(item)">
+                Aceptar Reto
+              </ion-button>
+            </div>
+          </ion-card>
+        </ion-col>
+        
+        <!-- Tarjeta especial "Más retos" -->
+        <ion-col size="6" class="ion-no-padding">
+          <ion-card class="reto-card-ios more-card" (click)="goToFullCatalog()" style="justify-content: center; align-items: center; text-align: center; border: 1.5px dashed #D0D0D0; background: rgba(255, 255, 255, 0.4); box-shadow: none; height: calc(100% - 12px);">
+            <div class="icon-wrapper more-icon-bg" style="width: 50px; height: 50px; background: #F4F4F4; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin-bottom: 12px; margin-top: auto;">
+              <ion-icon src="assets/icons/hero/outline/chevron-right.svg" style="font-size: 24px; color: #999;"></ion-icon>
+            </div>
+            <h2 style="font-size: 1.1rem; font-weight: 700; color: #999; margin: 0 0 6px 0;">Más retos</h2>
+            <span style="font-size: 11px; color: #B0B0B0; font-weight: 600; margin-bottom: auto;">Ver catálogo completo</span>
+          </ion-card>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+
+    <div class="main-section-title middle">
+      <div class="title-with-points">
+        <h1>La Tienda Real</h1>
+        <div class="total-points-pill">
+          <ion-icon src="assets/icons/hero/outline/star.svg"></ion-icon>
+          <span>{{ points }}</span>
+        </div>
+      </div>
+      <p>Canjea tus AffiniPoints por recompensas reales.</p>
+    </div>
+
+    <!-- Enlace a La Tienda Real -->
+    <ion-button expand="block" routerLink="/tienda" class="btn-go-tienda" style="--background: #1e3a8a; --border-radius: 12px; height: 50px; font-weight: bold; margin-bottom: 24px;">
+      <ion-icon name="cart-outline" slot="start"></ion-icon>
+      Entrar a la Tienda
+    </ion-button>
+
+
+
+  </div>
+</ion-content>

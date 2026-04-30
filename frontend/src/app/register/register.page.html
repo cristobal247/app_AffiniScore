@@ -1,0 +1,58 @@
+<ion-content class="custom-bg ion-padding">
+  <div class="header-custom">
+    <ion-icon name="arrow-back-outline" (click)="goBack()"></ion-icon>
+
+  </div>
+
+  <div class="page-header">
+
+    <h1>Registro de<br>Usuario</h1>
+    <p>Comienza tu viaje hacia una conexión<br>más profunda</p>
+  </div>
+
+  <div class="register-card">
+    <form (ngSubmit)="onRegister()" #registerForm="ngForm" autocomplete="off">
+
+      <div class="custom-field">
+        <label>Nombre completo (Nombre y Apellido)</label>
+        <div class="input-wrapper">
+          <input type="text" [(ngModel)]="fullName" name="fullName" placeholder="Ej. Julian Casablancas" required>
+        </div>
+      </div>
+
+      <div class="custom-field">
+        <label>Correo electrónico</label>
+        <div class="input-wrapper">
+          <input type="email" [(ngModel)]="email" name="email" placeholder="tu@ejemplo.com" required email>
+        </div>
+      </div>
+
+      <div class="custom-field">
+        <label>Contraseña</label>
+        <div class="input-wrapper">
+          <input [type]="showPassword ? 'text' : 'password'" [(ngModel)]="password" name="password"
+            placeholder="••••••••" required minlength="6">
+          <ion-icon [name]="showPassword ? 'eye-off-outline' : 'eye-outline'" class="action-icon"
+            (click)="togglePassword()"></ion-icon>
+        </div>
+      </div>
+
+      <div class="custom-field">
+        <label>Fecha de nacimiento</label>
+        <div class="input-wrapper">
+          <input type="text" inputmode="numeric" [value]="formattedDate" (input)="onDateInput($event)" placeholder="DD / MM / AAAA" required>
+          <ion-icon name="calendar-outline" class="action-icon"></ion-icon>
+        </div>
+      </div>
+
+      <button type="submit" class="submit-btn" [disabled]="registerForm.invalid || isLoading">
+        Crear Cuenta
+      </button>
+
+      <div class="login-prompt">
+        ¿Ya tienes una cuenta? <span class="login-link" (click)="goToLogin()">Inicia Sesión</span>
+      </div>
+
+    </form>
+  </div>
+</ion-content>

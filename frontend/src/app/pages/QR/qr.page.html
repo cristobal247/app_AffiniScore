@@ -1,0 +1,112 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar mode="ios">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/profile" text="Atrás" color="danger"></ion-back-button>
+    </ion-buttons>
+    <ion-title class="header-title">Vinculación</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding custom-bg">
+  <div class="header-section">
+    <h1 class="page-title">Conecta tu Relación</h1>
+    <p class="page-subtitle">Escanea el código de tu pareja o comparte el tuyo para sincronizar vuestros puntajes.</p>
+  </div>
+
+  <ion-card class="main-card">
+    <div class="tabs-container">
+      <div class="custom-segment">
+        <div class="segment-btn" [class.active]="activeTab === 'qr'" (click)="switchTab('qr')">
+          Mi Código QR
+        </div>
+        <div class="segment-btn" [class.active]="activeTab === 'scan'" (click)="switchTab('scan')">
+          Escanear
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: Mi Código QR -->
+    <div class="tab-content" *ngIf="activeTab === 'qr'">
+      <div class="qr-code-box">
+        <qrcode [qrdata]="qrData()" [width]="180" [errorCorrectionLevel]="'M'"></qrcode>
+      </div>
+      
+      <div class="short-code">{{ shortCode() }}</div>
+      
+      <p class="helper-text">MUESTRA ESTE CÓDIGO A TU PAREJA</p>
+      
+      <ion-button expand="block" class="copy-btn" (click)="copyCode()">
+        <ion-icon slot="start" name="copy-outline"></ion-icon>
+        Copiar Código
+      </ion-button>
+    </div>
+
+    <!-- TAB: Escanear -->
+    <div class="tab-content scan-tab" *ngIf="activeTab === 'scan'">
+      
+      <!-- Vista de Escáner de Cámara -->
+      <ng-container *ngIf="!isManualMode">
+        <div class="scanner-ui-wrapper">
+          <div id="qr-reader" class="qr-reader-container"></div>
+          <div class="scanner-overlay">
+            <div class="scan-frame">
+              <div class="corner top-left"></div>
+              <div class="corner top-right"></div>
+              <div class="corner bottom-left"></div>
+              <div class="corner bottom-right"></div>
+              <div class="scan-line"></div>
+            </div>
+            <div class="searching-pill">BUSCANDO CÓDIGO...</div>
+          </div>
+        </div>
+
+        <ion-button expand="block" fill="outline" class="manual-btn" (click)="toggleManualMode()">
+          Ingresar código manualmente
+        </ion-button>
+      </ng-container>
+
+      <!-- Vista de Entrada Manual -->
+      <ng-container *ngIf="isManualMode">
+        <div class="manual-entry-container">
+          <ion-label class="manual-label">CÓDIGO DE PAREJA</ion-label>
+          <ion-input 
+            class="manual-input" 
+            placeholder="E J :   A F 4 5 B 2" 
+            [(ngModel)]="manualCode"
+            maxlength="6"
+            style="text-transform: uppercase;">
+          </ion-input>
+
+          <div class="manual-buttons">
+            <ion-button fill="clear" class="back-btn" (click)="toggleManualMode()">
+              Atrás
+            </ion-button>
+            <ion-button 
+              class="link-btn" 
+              [disabled]="!manualCode || manualCode.length < 6"
+              (click)="linkManualCode()">
+              Vincular Ahora
+            </ion-button>
+          </div>
+        </div>
+      </ng-container>
+
+    </div>
+  </ion-card>
+
+  <!-- Tarjeta de Información (Sabías que...) -->
+  <ion-card class="info-card">
+    <ion-card-content class="info-content">
+      <div class="info-icon-container">
+        <ion-icon name="information-circle"></ion-icon>
+      </div>
+      <div class="info-text">
+        <h3 class="info-title">¿Sabías que...?</h3>
+        <p class="info-description">
+          Vincular vuestras cuentas desbloquea el <span class="highlight">Modo Dúo</span>, 
+          permitiendo ver estadísticas compartidas y rachas de felicidad en tiempo real.
+        </p>
+      </div>
+    </ion-card-content>
+  </ion-card>
+</ion-content>

@@ -1,0 +1,29 @@
+.app-tab-bar {
+  --background: #ffffff;
+  border-top-left-radius: 35px;
+  border-top-right-radius: 35px;
+  padding: 10px 8px;
+  box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.03);
+  outline: none !important;
+  border: none !important;
+}
+
+.app-tab-bar ion-tab-button {
+  --padding-top: 6px;
+  --padding-bottom: 6px;
+}
+
+.app-tab-bar .tab-icon {
+  width: 26px;
+  height: 26px;
+}
+
+.app-tab-bar ion-tab-button ion-icon {
+  width: 26px;
+  height: 26px;
+}
+
+.app-tab-bar ion-tab-button ion-label {
+  margin-top: 4px;
+  text-align: center;
+}

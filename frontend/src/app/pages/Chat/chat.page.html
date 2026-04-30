@@ -1,0 +1,46 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar mode="ios" class="main-header-toolbar">
+    <div class="header-content-wrapper">
+      <ion-buttons slot="start">
+        <ion-button class="profile-avatar-btn" routerLink="/tabs/profile">
+          <ion-avatar class="user-avatar-top">
+            <img src="assets/images/user.png" alt="Perfil" />
+          </ion-avatar>
+        </ion-button>
+      </ion-buttons>
+      <div class="brand-group">
+        <h1 class="brand-title-gradient">AffiniScore</h1>
+      </div>
+      <ion-buttons slot="end">
+        <!-- Puedes agregar aquí otros botones si lo deseas -->
+      </ion-buttons>
+    </div>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="chat-bg">
+  <div class="chat-container">
+    <div *ngFor="let msg of messages" class="message-wrapper" [class.mine]="isMine(msg)">
+      <div class="message-bubble">
+        <p>{{ msg.message }}</p>
+        <span class="message-time">{{ msg.created_at | date:'shortTime' }}</span>
+      </div>
+    </div>
+  </div>
+</ion-content>
+
+<ion-footer class="ion-no-border">
+  <ion-toolbar>
+    <div class="input-container">
+      <ion-input 
+        [(ngModel)]="newMessage" 
+        placeholder="Escribe un mensaje..." 
+        class="chat-input"
+        (keyup.enter)="sendMessage()"
+      ></ion-input>
+      <ion-button fill="clear" (click)="sendMessage()" class="send-btn" [disabled]="!newMessage.trim()">
+        <ion-icon slot="icon-only" name="send-outline"></ion-icon>
+      </ion-button>
+    </div>
+  </ion-toolbar>
+</ion-footer>
