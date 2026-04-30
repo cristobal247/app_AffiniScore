@@ -1,50 +1,58 @@
-<ion-header class="ion-no-border">
-  <ion-toolbar mode="ios">
-    <ion-buttons slot="start">
-      <ion-back-button defaultHref="/login" text="Volver"></ion-back-button>
-    </ion-buttons>
-    <ion-title>Nueva Cuenta</ion-title>
-  </ion-toolbar>
-</ion-header>
+<ion-content class="custom-bg ion-padding">
+  <div class="header-custom">
+    <ion-icon name="arrow-back-outline" (click)="goBack()"></ion-icon>
 
-<ion-content class="ion-padding">
-  <div class="register-wrapper">
-    <div class="header-section">
-      <h1>Únete a AffiniScore</h1>
-      <p>Comienza a fortalecer tu conexión hoy mismo.</p>
-    </div>
+  </div>
 
-    <div class="form-container">
-      <ion-item lines="none" class="custom-item">
-        <ion-label position="stacked">Email</ion-label>
-        <ion-input 
-          type="email" 
-          [(ngModel)]="email" 
-          placeholder="nombre@ejemplo.com"
-          class="custom-input">
-        </ion-input>
-      </ion-item>
+  <div class="page-header">
 
-      <ion-item lines="none" class="custom-item ion-margin-top">
-        <ion-label position="stacked">Contraseña</ion-label>
-        <ion-input 
-          type="password" 
-          [(ngModel)]="password" 
-          placeholder="Mínimo 6 caracteres"
-          class="custom-input">
-        </ion-input>
-      </ion-item>
+    <h1>Registro de<br>Usuario</h1>
+    <p>Comienza tu viaje hacia una conexión<br>más profunda</p>
+  </div>
 
-      <ion-button 
-        expand="block" 
-        (click)="onRegister()" 
-        class="btn-register ion-margin-top">
-        Crear mi cuenta
-      </ion-button>
-    </div>
+  <div class="register-card">
+    <form (ngSubmit)="onRegister()" #registerForm="ngForm" autocomplete="off">
 
-    <p class="footer-text">
-      ¿Ya tienes cuenta? <span (click)="router.navigate(['/login'])">Inicia sesión</span>
-    </p>
+      <div class="custom-field">
+        <label>Nombre completo (Nombre y Apellido)</label>
+        <div class="input-wrapper">
+          <input type="text" [(ngModel)]="fullName" name="fullName" placeholder="Ej. Julian Casablancas" required>
+        </div>
+      </div>
+
+      <div class="custom-field">
+        <label>Correo electrónico</label>
+        <div class="input-wrapper">
+          <input type="email" [(ngModel)]="email" name="email" placeholder="tu@ejemplo.com" required email>
+        </div>
+      </div>
+
+      <div class="custom-field">
+        <label>Contraseña</label>
+        <div class="input-wrapper">
+          <input [type]="showPassword ? 'text' : 'password'" [(ngModel)]="password" name="password"
+            placeholder="••••••••" required minlength="6">
+          <ion-icon [name]="showPassword ? 'eye-off-outline' : 'eye-outline'" class="action-icon"
+            (click)="togglePassword()"></ion-icon>
+        </div>
+      </div>
+
+      <div class="custom-field">
+        <label>Fecha de nacimiento</label>
+        <div class="input-wrapper">
+          <input type="text" inputmode="numeric" [value]="formattedDate" (input)="onDateInput($event)" placeholder="DD / MM / AAAA" required>
+          <ion-icon name="calendar-outline" class="action-icon"></ion-icon>
+        </div>
+      </div>
+
+      <button type="submit" class="submit-btn" [disabled]="registerForm.invalid || isLoading">
+        Crear Cuenta
+      </button>
+
+      <div class="login-prompt">
+        ¿Ya tienes una cuenta? <span class="login-link" (click)="goToLogin()">Inicia Sesión</span>
+      </div>
+
+    </form>
   </div>
 </ion-content>

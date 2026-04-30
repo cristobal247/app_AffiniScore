@@ -13,7 +13,7 @@ import { addIcons } from 'ionicons';
 import { 
   restaurantOutline, homeOutline, giftOutline, heartOutline, flashOutline, 
   settingsSharp, addCircle, starSharp, headsetOutline, mapOutline, flash,
-  chevronForwardOutline, lockClosed, personOutline, checkmarkCircle, chatbubblesOutline,
+  chevronForwardOutline, lockClosed, personOutline, checkmarkCircleOutline, chatbubblesOutline,
   cartOutline
 } from 'ionicons/icons';
 import { SupabaseService, Activity } from '../services/supabase';
@@ -52,10 +52,10 @@ export class ActionsPage implements OnInit {
     private loadingCtrl: LoadingController,
     private alertCtrl: AlertController
   ) {
-    addIcons({ 
+    addIcons({
       restaurantOutline, homeOutline, giftOutline, heartOutline, flashOutline, 
       settingsSharp, addCircle, starSharp, headsetOutline, mapOutline, flash,
-      chevronForwardOutline, lockClosed, personOutline, checkmarkCircle, chatbubblesOutline,
+      chevronForwardOutline, lockClosed, personOutline, checkmarkCircleOutline, chatbubblesOutline,
       cartOutline
     });
   }

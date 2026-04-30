@@ -20,6 +20,16 @@
   <div class="page-wrapper">
     <h2 class="page-title">Mapa de Conexión</h2>
 
+    <!-- Card de Tiempo de Calidad Activo -->
+    <ion-card *ngIf="qualityTimeActive" class="quality-time-card">
+      <ion-card-header>
+        <ion-title>🎯 Modo Tiempo de Calidad</ion-title>
+      </ion-card-header>
+      <ion-card-content>
+        <p>¡Están muy cerca! Juntos están acumulando puntos de bonificación.</p>
+      </ion-card-content>
+    </ion-card>
+
     <div class="tip-card">
       <div class="tip-icon">
         <ion-icon src="assets/icons/hero/outline/map-pin.svg"></ion-icon>
@@ -48,10 +58,42 @@
       </div>
     </div>
 
+    <!-- Controles de Geofencing -->
+    <div class="geofencing-controls">
+      <ion-button 
+        *ngIf="!isMonitoringProximity"
+        (click)="startProximityMonitoring()"
+        expand="block"
+        color="primary"
+        class="geofence-btn">
+        <ion-icon name="navigate" slot="start"></ion-icon>
+        Monitorear Proximidad
+      </ion-button>
+      
+      <ion-button 
+        *ngIf="isMonitoringProximity"
+        (click)="stopProximityMonitoring()"
+        expand="block"
+        color="danger"
+        class="geofence-btn">
+        <ion-icon name="checkmark-circle-outline" slot="start"></ion-icon>
+        Detener Monitoreo
+      </ion-button>
+
+      <ion-button 
+        *ngIf="isMonitoringProximity"
+        (click)="displayDistance()"
+        expand="block"
+        color="secondary"
+        class="distance-btn">
+        📍 Distancia: {{ distanceToPartner >= 0 ? distanceToPartner + 'm' : 'Calculando...' }}
+      </ion-button>
+    </div>
+
     <div class="stats-row">
       <div class="stat-card">
         <span class="stat-label">DISTANCIA</span>
-        <span class="stat-value">2.4 <small>km</small></span>
+        <span class="stat-value">{{ distanceToPartner >= 0 ? (distanceToPartner / 1000).toFixed(2) : '?' }} <small>km</small></span>
       </div>
       <div class="stat-card">
         <span class="stat-label">TIEMPO</span>

@@ -70,9 +70,31 @@ export class ProfilePage implements OnInit {
     const user = await this.supabaseSvc.getCurrentUser();
     this.userEmail = user?.email;
 
+    // Cargar el avatar del perfil
     const { data: profile } = await this.supabaseSvc.getUserProfile();
     if (profile && profile.avatar_url) {
       this.avatarUrl = profile.avatar_url;
+    }
+
+    // Cargar las configuraciones de privacidad desde Supabase
+    const { data: privacyData } = await this.supabaseSvc.getPrivacySettings();
+    if (privacyData) {
+      this.privacySettings = {
+        profileVisibleToPartner: privacyData.profile_visible_to_partner,
+        showStreak: privacyData.show_streak,
+        shareActivityStatus: privacyData.share_activity_status,
+      };
+    }
+
+    // Cargar las configuraciones de notificaciones desde Supabase
+    const { data: notifData } = await this.supabaseSvc.getNotificationSettings();
+    if (notifData) {
+      this.notificationSettings = {
+        pushEnabled: notifData.push_enabled,
+        dailyReminder: notifData.daily_reminder,
+        challengeInvites: notifData.challenge_invites,
+        scoreMilestones: notifData.score_milestones,
+      };
     }
   }
 
@@ -124,12 +146,55 @@ export class ProfilePage implements OnInit {
     this.router.navigateByUrl('/qr');
   }
 
-  onPrivacyChange(): void {
-    console.log('Privacy updated', this.privacySettings);
+  // Se dispara cuando el usuario cambia cualquier toggle de privacidad
+  // Actualiza los valores en tiempo real en Supabase
+  async onPrivacyChange(): Promise<void> {
+    const loading = await this.loadingCtrl.create({
+      message: 'Guardando configuración...',
+      mode: 'ios'
+    });
+    await loading.present();
+
+    const result = await this.supabaseSvc.updatePrivacySettings({
+      profile_visible_to_partner: this.privacySettings.profileVisibleToPartner,
+      show_streak: this.privacySettings.showStreak,
+      share_activity_status: this.privacySettings.shareActivityStatus,
+    });
+
+    await loading.dismiss();
+
+    if (result.error) {
+      this.showToast('Error al guardar la configuración de privacidad.', 'danger');
+      console.error('Privacy settings error:', result.error);
+    } else {
+      this.showToast('Configuración de privacidad actualizada.', 'success');
+    }
   }
 
-  onNotificationChange(): void {
-    console.log('Notifications updated', this.notificationSettings);
+  // Se dispara cuando el usuario cambia cualquier toggle de notificaciones
+  // Actualiza los valores en tiempo real en Supabase
+  async onNotificationChange(): Promise<void> {
+    const loading = await this.loadingCtrl.create({
+      message: 'Guardando configuración...',
+      mode: 'ios'
+    });
+    await loading.present();
+
+    const result = await this.supabaseSvc.updateNotificationSettings({
+      push_enabled: this.notificationSettings.pushEnabled,
+      daily_reminder: this.notificationSettings.dailyReminder,
+      challenge_invites: this.notificationSettings.challengeInvites,
+      score_milestones: this.notificationSettings.scoreMilestones,
+    });
+
+    await loading.dismiss();
+
+    if (result.error) {
+      this.showToast('Error al guardar la configuración de notificaciones.', 'danger');
+      console.error('Notification settings error:', result.error);
+    } else {
+      this.showToast('Configuración de notificaciones actualizada.', 'success');
+    }
   }
 
   enablePushNotifications(): void {

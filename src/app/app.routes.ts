@@ -35,6 +35,14 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/profile/profile.page').then(m => m.ProfilePage)
       },
       {
+        path: 'memories',
+        loadComponent: () => import('./pages/profile/memories.page').then(m => m.MemoriesPage)
+      },
+      {
+        path: 'bingo',
+        loadComponent: () => import('./pages/profile/bingo.page').then(m => m.BingoPage)
+      },
+      {
         path: 'chat',
         loadComponent: () => import('./pages/Chat/chat.page').then(m => m.ChatPage)
       },

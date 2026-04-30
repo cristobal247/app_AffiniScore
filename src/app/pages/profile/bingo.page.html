@@ -1,0 +1,95 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Bingo de Conexión</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <!-- Pantalla de carga -->
+  <div *ngIf="isLoading" class="loading-container">
+    <ion-card>
+      <ion-card-header>
+        <ion-title>Cargando...</ion-title>
+      </ion-card-header>
+    </ion-card>
+  </div>
+
+  <!-- Contenido principal -->
+  <div *ngIf="!isLoading && bingoCard" class="bingo-container">
+    <!-- Header con info -->
+    <ion-card class="info-card">
+      <ion-card-header>
+        <ion-title>{{ bingoCard.title }}</ion-title>
+      </ion-card-header>
+      <ion-card-content>
+        <p><strong>Dificultad:</strong> {{ bingoCard.difficulty }}</p>
+        <p><strong>Puntos:</strong> {{ getTotalPoints() }} pts</p>
+        <p><strong>Completadas:</strong> {{ completedCellIds.size }}/9</p>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Mensaje de victoria -->
+    <ion-card *ngIf="hasWon" class="victory-card">
+      <ion-card-content>
+        <h2>🎉 ¡¡¡GANARON!!! 🎉</h2>
+        <p>Completaron una línea entera. ¡Ese es el espíritu!</p>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Grilla de Bingo 3x3 -->
+    <div class="bingo-grid">
+      <div
+        *ngFor="let cell of bingoCard.cells; let i = index"
+        class="bingo-cell"
+        [class.completed]="isCellCompleted(cell)"
+        (click)="toggleCell(cell)"
+      >
+        <!-- Icono de completado -->
+        <ion-icon
+          *ngIf="isCellCompleted(cell)"
+          name="checkmark-circle"
+          class="check-icon"
+        ></ion-icon>
+
+        <!-- Contenido de la celda -->
+        <div class="cell-content">
+          <h3>{{ cell.title }}</h3>
+          <p *ngIf="cell.description">{{ cell.description }}</p>
+          <span class="points">+{{ cell.points }} pts</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Instrucciones -->
+    <ion-card class="instructions-card">
+      <ion-card-header>
+        <ion-title>Cómo Jugar</ion-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ol>
+          <li>Toca una celda para marcarla como completada</li>
+          <li>Completa una línea entera (horizontal, vertical o diagonal)</li>
+          <li>¡Gana puntos y disfruta de tiempo de calidad juntos!</li>
+        </ol>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <!-- Estado de error -->
+  <div *ngIf="!isLoading && !bingoCard" class="error-container">
+    <ion-card>
+      <ion-card-header>
+        <ion-title>Error</ion-title>
+      </ion-card-header>
+      <ion-card-content>
+        <p>No se pudo cargar el bingo. Intenta de nuevo.</p>
+        <ion-button (click)="loadBingo()" expand="block">
+          Reintentar
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+  </div>
+</ion-content>
