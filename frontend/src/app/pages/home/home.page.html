@@ -48,18 +48,18 @@
       </svg>
       
       <div class="score-card-content">
-        <span class="score-subtitle">AffiniScore Actual</span>
+        <span class="score-subtitle">Progreso Semanal</span>
         
         <div class="score-row">
           <h2 class="giant-percentage">{{ porcentajeAfinidad }}%</h2>
           <div class="trend-pill">
             <ion-icon name="trending-up-outline"></ion-icon>
-            <span>+5% este mes</span>
+            <span>Meta: {{ metaSemanal }} pts</span>
           </div>
         </div>
 
         <p class="score-description">
-          Tu conexión sigue floreciendo. Has acumulado <strong class="red-text">{{ points }} AffiniPoints</strong> esta semana.
+          Tu conexión sigue floreciendo. Has acumulado <strong class="red-text">{{ puntosSemanales }} AffiniPoints</strong> esta semana.
         </p>
 
         <ion-button class="boost-btn" (click)="goToActions()">

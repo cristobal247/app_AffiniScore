@@ -113,7 +113,7 @@ export class ActionsPage implements OnInit {
     if (error) {
       const alert = await this.alertCtrl.create({
         header: 'Error',
-        message: 'No se pudo registrar',
+        message: 'No se pudo registrar: ' + (typeof error === 'string' ? error : (error?.message || JSON.stringify(error))),
         buttons: ['OK']
       });
       await alert.present();

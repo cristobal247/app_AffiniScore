@@ -27,7 +27,8 @@ import { NavController } from '@ionic/angular/standalone';
 })
 export class HomePage implements OnInit {
   points: number = 0;
-  meta: number = 2000; // Meta para el cálculo del círculo
+  puntosSemanales: number = 0;
+  metaSemanal: number = 500;
   nivelAfinidad: number = 1;
   porcentajeAfinidad: number = 0;
 
@@ -51,9 +52,19 @@ export class HomePage implements OnInit {
   async cargarDatosAfinidad() {
     try {
       const { data, error } = await this.supabaseSvc.getUserProfile();
+      const weeklyRes = await this.supabaseSvc.getWeeklyPoints();
+      
+      this.puntosSemanales = weeklyRes.data || 0;
+
       if (data) {
         this.points = data.total_points || 0;
-        this.porcentajeAfinidad = Math.round((this.points / this.meta) * 100);
+        
+        // Cada 1000 puntos se sube de nivel
+        const puntosPorNivel = 1000;
+        this.nivelAfinidad = Math.floor(this.points / puntosPorNivel) + 1;
+        
+        // Progreso hacia la meta SEMANAL
+        this.porcentajeAfinidad = Math.min(100, Math.round((this.puntosSemanales / this.metaSemanal) * 100));
       }
     } catch (error) {
       console.error('Error al cargar puntos:', error);

@@ -174,6 +174,31 @@ export class SupabaseService {
       .single();
   }
 
+  // Obtener puntos obtenidos en la semana actual
+  async getWeeklyPoints() {
+    const user = await this.getCurrentUser();
+    if (!user) return { data: 0, error: 'Usuario no autenticado' };
+
+    const startOfWeek = new Date();
+    // Lunes como inicio de semana
+    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay() + (startOfWeek.getDay() === 0 ? -6 : 1));
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const { data, error } = await this.supabase
+      .from('user_actions_log')
+      .select('points_earned')
+      .eq('user_id', user.id)
+      .gte('created_at', startOfWeek.toISOString());
+
+    if (error) {
+      console.error('Error fetching weekly points:', error);
+      return { data: 0, error };
+    }
+
+    const weeklyTotal = data.reduce((sum: number, log: any) => sum + (log.points_earned || 0), 0);
+    return { data: weeklyTotal, error: null };
+  }
+
   // Actualizar datos generales del perfil
   async updateProfile(userId: string, updates: any) {
     return await this.supabase
