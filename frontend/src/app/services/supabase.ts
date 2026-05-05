@@ -199,6 +199,34 @@ export class SupabaseService {
     return { data: weeklyTotal, error: null };
   }
 
+  // Obtener historial del usuario (últimos 20 registros)
+  async getUserHistory() {
+    const user = await this.getCurrentUser();
+    if (!user) return { data: [], error: 'Usuario no autenticado' };
+
+    const { data: logs, error: logsError } = await this.supabase
+      .from('user_actions_log')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    if (logsError) return { data: [], error: logsError };
+
+    const { data: catalog } = await this.getFullCatalog();
+    
+    const history = (logs || []).map(log => {
+      const act = catalog?.find(c => c.id === log.action_id);
+      return {
+        ...log,
+        action_name: act ? act.name : 'Acción registrada',
+        date: new Date(log.created_at).toLocaleDateString()
+      };
+    });
+
+    return { data: history, error: null };
+  }
+
   // Actualizar datos generales del perfil
   async updateProfile(userId: string, updates: any) {
     return await this.supabase

@@ -8,8 +8,10 @@ import {
   IonAvatar, IonButtons
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { heart, flash, settingsSharp } from 'ionicons/icons';
+import { heart, flash, settingsSharp, documentTextOutline, trendingUpOutline } from 'ionicons/icons';
 import { SupabaseService } from '../../services/supabase'; // Ajusta la ruta si es necesario
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 import { NavController } from '@ionic/angular/standalone';
 
@@ -37,7 +39,7 @@ export class HomePage implements OnInit {
     private router: Router,
     private navCtrl: NavController
   ) {
-    addIcons({ heart, flash, settingsSharp });
+    addIcons({ heart, flash, settingsSharp, documentTextOutline, trendingUpOutline });
   }
 
   async ngOnInit() {
@@ -73,5 +75,46 @@ export class HomePage implements OnInit {
 
   goToActions() {
     this.navCtrl.navigateForward('/tabs/actions', { animated: true, animationDirection: 'forward' });
+  }
+
+  async exportPDF() {
+    try {
+      const { data: history, error } = await this.supabaseSvc.getUserHistory();
+      if (error) {
+        console.error('Error fetching history for PDF:', error);
+        return;
+      }
+
+      // Inicializar jsPDF
+      const doc = new jsPDF();
+
+      // Título y Cabeceras
+      doc.setFontSize(18);
+      doc.text('Histórico de AffiniScore', 14, 22);
+
+      doc.setFontSize(12);
+      doc.text(`Nivel de Afinidad: ${this.nivelAfinidad}`, 14, 32);
+      doc.text(`Puntos Totales: ${this.points}`, 14, 40);
+
+      // Tabla de Historial
+      const tableData = (history || []).map((log: any) => [
+        log.date,
+        log.action_name,
+        `+${log.points_earned}`
+      ]);
+
+      autoTable(doc, {
+        startY: 50,
+        head: [['Fecha', 'Acción', 'Puntos']],
+        body: tableData,
+        theme: 'striped',
+        headStyles: { fillColor: [189, 52, 58] } // Color $red-brand
+      });
+
+      // Guardar PDF
+      doc.save('Reporte-AffiniScore.pdf');
+    } catch (err) {
+      console.error('Error generating PDF:', err);
+    }
   }
 }

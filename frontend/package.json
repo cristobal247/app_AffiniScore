@@ -37,6 +37,8 @@
     "heroicons": "^2.2.0",
     "html5-qrcode": "^2.3.8",
     "ionicons": "^7.4.0",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.7",
     "leaflet": "^1.9.4",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",

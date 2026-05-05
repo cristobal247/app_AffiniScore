@@ -50,9 +50,33 @@
       <div class="score-card-content">
         <span class="score-subtitle">Progreso Semanal</span>
         
-        <div class="score-row">
-          <h2 class="giant-percentage">{{ porcentajeAfinidad }}%</h2>
-          <div class="trend-pill">
+        <div class="score-row" style="display: flex; flex-direction: column; align-items: flex-start; gap: 10px;">
+          
+          <!-- Gauge Semi-circular SVG -->
+          <div class="gauge-wrapper" style="position: relative; width: 140px; height: 75px; margin-top: 10px;">
+            <svg viewBox="0 0 100 55" class="gauge-svg" style="width: 100%; height: 100%; overflow: visible;">
+              <!-- Background Arc -->
+              <path class="gauge-bg" d="M 10,50 A 40,40 0 0,1 90,50" fill="none" stroke="#fbecec" stroke-width="12" stroke-linecap="round"></path>
+              <!-- Progress Arc -->
+              <path class="gauge-progress" d="M 10,50 A 40,40 0 0,1 90,50" fill="none" stroke="url(#gauge-gradient)" stroke-width="12" stroke-linecap="round"
+                [style.stroke-dasharray]="126"
+                [style.stroke-dashoffset]="126 - (porcentajeAfinidad * 126 / 100)"
+                style="transition: stroke-dashoffset 1s ease-out;">
+              </path>
+              <!-- Gradiente para el gauge -->
+              <defs>
+                <linearGradient id="gauge-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#df5b61" />
+                  <stop offset="100%" stop-color="#bd343a" />
+                </linearGradient>
+              </defs>
+            </svg>
+            <div class="gauge-percentage" style="position: absolute; bottom: -5px; left: 0; right: 0; text-align: center; font-size: 26px; font-weight: 800; color: #bd343a;">
+              {{ porcentajeAfinidad }}%
+            </div>
+          </div>
+          
+          <div class="trend-pill" style="margin-top: 8px;">
             <ion-icon name="trending-up-outline"></ion-icon>
             <span>Meta: {{ metaSemanal }} pts</span>
           </div>
@@ -62,9 +86,16 @@
           Tu conexión sigue floreciendo. Has acumulado <strong class="red-text">{{ puntosSemanales }} AffiniPoints</strong> esta semana.
         </p>
 
-        <ion-button class="boost-btn" (click)="goToActions()">
-          Impulsar Conexión
-        </ion-button>
+        <div style="display: flex; gap: 10px;">
+          <ion-button class="boost-btn" (click)="goToActions()">
+            Impulsar Conexión
+          </ion-button>
+          
+          <ion-button class="pdf-btn" (click)="exportPDF()" fill="outline" style="--border-color: #bd343a; --color: #bd343a; --border-radius: 24px; font-weight: 700; height: 48px;">
+            <ion-icon name="document-text-outline" slot="start"></ion-icon>
+            PDF Histórico
+          </ion-button>
+        </div>
       </div>
     </ion-card>
 
