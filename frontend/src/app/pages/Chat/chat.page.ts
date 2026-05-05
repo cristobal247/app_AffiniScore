@@ -8,7 +8,7 @@ import {
 } from '@ionic/angular/standalone';
 import { SupabaseService, ChatMessage } from '../../services/supabase';
 import { addIcons } from 'ionicons';
-import { sendOutline } from 'ionicons/icons';
+import { sendOutline, arrowBackOutline, videocam, call, ellipsisVertical, happyOutline, cameraOutline, send } from 'ionicons/icons';
 
 @Component({
   selector: 'app-chat',
@@ -31,7 +31,7 @@ export class ChatPage implements OnInit, OnDestroy {
   private subscription: any;
 
   constructor(private supabaseSvc: SupabaseService) {
-    addIcons({ sendOutline });
+    addIcons({ sendOutline, arrowBackOutline, videocam, call, ellipsisVertical, happyOutline, cameraOutline, send });
   }
 
   async ngOnInit() {

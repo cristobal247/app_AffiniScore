@@ -153,6 +153,11 @@
     </div>
 
     <div class="action-section">
+      <ion-button expand="block" fill="outline" color="danger" (click)="exportPDF()" class="pdf-btn" style="margin-bottom: 10px; --border-width: 2px;">
+        <ion-icon slot="start" name="document-text-outline"></ion-icon>
+        Generar Reporte Semanal (PDF)
+      </ion-button>
+
       <ion-button expand="block" fill="clear" color="danger" (click)="logout()" class="logout-btn">
         <ion-icon slot="start" src="assets/icons/hero/outline/arrow-right-on-rectangle.svg"></ion-icon>
         Cerrar Sesión

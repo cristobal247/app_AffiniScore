@@ -40,7 +40,8 @@ export const routes: Routes = [
       },
       {
         path: 'retos',
-        loadComponent: () => import('./pages/retos/retos.page').then(m => m.RetosPage)
+        redirectTo: 'actions',
+        pathMatch: 'full'
       },
       {
         path: '',
@@ -91,7 +92,7 @@ export const routes: Routes = [
   },
   {
     path: 'retos',
-    redirectTo: 'tabs/retos',
+    redirectTo: 'tabs/actions',
     pathMatch: 'full'
   },
   {

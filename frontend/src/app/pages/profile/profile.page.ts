@@ -9,8 +9,10 @@ import {
   ToastController
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { logOutOutline, personCircleOutline, chevronForwardOutline, heartOutline, qrCodeOutline, shieldCheckmarkOutline, notificationsOutline, checkmarkCircleOutline, phonePortraitOutline, cameraOutline } from 'ionicons/icons';
+import { logOutOutline, personCircleOutline, chevronForwardOutline, heartOutline, qrCodeOutline, shieldCheckmarkOutline, notificationsOutline, checkmarkCircleOutline, phonePortraitOutline, cameraOutline, documentTextOutline } from 'ionicons/icons';
 import { SupabaseService } from '../../services/supabase';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export interface PrivacySettings {
   profileVisibleToPartner: boolean;
@@ -63,7 +65,7 @@ export class ProfilePage implements OnInit {
     private loadingCtrl: LoadingController,
     private toastCtrl: ToastController
   ) {
-    addIcons({ logOutOutline, personCircleOutline, chevronForwardOutline, heartOutline, qrCodeOutline, shieldCheckmarkOutline, notificationsOutline, checkmarkCircleOutline, phonePortraitOutline, cameraOutline });
+    addIcons({ logOutOutline, personCircleOutline, chevronForwardOutline, heartOutline, qrCodeOutline, shieldCheckmarkOutline, notificationsOutline, checkmarkCircleOutline, phonePortraitOutline, cameraOutline, documentTextOutline });
   }
 
   async ngOnInit() {
@@ -152,5 +154,86 @@ export class ProfilePage implements OnInit {
     
     await loading.dismiss();
     this.router.navigateByUrl('/login', { replaceUrl: true });
+  }
+
+  async exportPDF() {
+    try {
+      const { data: profile } = await this.supabaseSvc.getUserProfile();
+      const points = profile?.total_points || 0;
+      const nivelAfinidad = Math.floor(points / 1000) + 1;
+
+      const { data: history, error } = await this.supabaseSvc.getWeeklyHistory();
+      if (error) {
+        console.error('Error fetching weekly history for PDF:', error);
+        return;
+      }
+
+      // Agrupar por día de la semana
+      const daysOfWeek = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+      const groupedByDay: { [key: string]: number } = {};
+      
+      let weeklyTotal = 0;
+
+      (history || []).forEach((log: any) => {
+        const date = new Date(log.date);
+        const dayName = daysOfWeek[date.getDay()];
+        const pts = log.points_earned || 0;
+        groupedByDay[dayName] = (groupedByDay[dayName] || 0) + pts;
+        weeklyTotal += pts;
+      });
+
+      // Inicializar jsPDF
+      const doc = new jsPDF();
+
+      // Título y Cabeceras
+      doc.setFontSize(18);
+      doc.text('Reporte Semanal de AffiniScore', 14, 22);
+
+      doc.setFontSize(12);
+      doc.text(`Nivel de Afinidad: ${nivelAfinidad}`, 14, 32);
+      doc.text(`Puntos Totales: ${points}`, 14, 40);
+      doc.text(`Puntos Recolectados esta Semana: ${weeklyTotal}`, 14, 48);
+
+      // Tabla de Resumen Semanal
+      const tableData = Object.keys(groupedByDay).map(day => [
+        day,
+        `+${groupedByDay[day]} pts`
+      ]);
+
+      autoTable(doc, {
+        startY: 55,
+        head: [['Día de la Semana', 'Puntos Recolectados']],
+        body: tableData,
+        theme: 'striped',
+        headStyles: { fillColor: [189, 52, 58] } // Color $red-brand
+      });
+
+      // Detalles de acciones de la semana
+      doc.setFontSize(14);
+      const finalY = (doc as any).lastAutoTable.finalY || 55;
+      doc.text('Detalle de Acciones', 14, finalY + 10);
+
+      const detailsData = (history || []).map((log: any) => {
+        const d = new Date(log.date);
+        return [
+          `${daysOfWeek[d.getDay()]} ${d.toLocaleDateString()}`,
+          log.action_name,
+          `+${log.points_earned}`
+        ];
+      });
+
+      autoTable(doc, {
+        startY: finalY + 15,
+        head: [['Fecha', 'Acción', 'Puntos']],
+        body: detailsData,
+        theme: 'plain',
+        headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0] }
+      });
+
+      // Guardar PDF
+      doc.save('Reporte-Semanal-AffiniScore.pdf');
+    } catch (err) {
+      console.error('Error generating PDF:', err);
+    }
   }
 }

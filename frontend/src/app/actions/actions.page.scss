@@ -69,16 +69,17 @@
   .input-header { display: flex; align-items: center; margin-bottom: 15px; .red-icon { font-size: 24px; color: var(--affini-red); } span { font-weight: 700; font-size: 17px; margin-left: 10px; color: #1A1A1A; } }
   
   .pill-input-container {
-    background: white; border-radius: 50px; display: flex; align-items: center; padding: 5px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    background: #E8E8E8; border-radius: 50px; display: flex; align-items: center; padding: 5px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);
     
     // Forzar color de texto y placeholder
     .custom-input {
       --padding-start: 18px;
-      --color: #333333;           // Color del texto al escribir (Oscuro)
-      --placeholder-color: #999;  // Color del texto de guía
+      --color: #000000 !important;
+      color: #000000 !important;
+      --placeholder-color: #555555;
       --placeholder-opacity: 1;
       font-size: 15px;
-      font-weight: 400;
+      font-weight: 600;
     }
 
     .btn-registrar-solid { 
