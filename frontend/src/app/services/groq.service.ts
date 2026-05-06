@@ -45,7 +45,7 @@ Restricciones de Respuesta:
       const response = await fetch(this.apiUrl, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${environment.groqApiKey}`,
+          'Authorization': `Bearer ${environment.apiKeyGroq}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
