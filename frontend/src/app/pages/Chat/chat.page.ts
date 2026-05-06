@@ -7,8 +7,9 @@ import {
   IonBackButton, IonFooter, IonInput, IonButton, IonIcon, IonAvatar
 } from '@ionic/angular/standalone';
 import { SupabaseService, ChatMessage } from '../../services/supabase';
+import { GroqService } from '../../services/groq.service';
 import { addIcons } from 'ionicons';
-import { sendOutline, arrowBackOutline, videocam, call, ellipsisVertical, happyOutline, cameraOutline, send } from 'ionicons/icons';
+import { sendOutline, arrowBackOutline, videocam, call, ellipsisVertical, happyOutline, cameraOutline, send, sparkles, ellipsisHorizontal } from 'ionicons/icons';
 
 @Component({
   selector: 'app-chat',
@@ -27,45 +28,50 @@ export class ChatPage implements OnInit, OnDestroy {
   messages: ChatMessage[] = [];
   newMessage: string = '';
   currentUserId: string = '';
+  currentUserName: string = '';
   roomId: string = 'default-room-id'; // TODO: Obtener desde la ruta o el estado
+  isLoading: boolean = false;
   private subscription: any;
 
-  constructor(private supabaseSvc: SupabaseService) {
-    addIcons({ sendOutline, arrowBackOutline, videocam, call, ellipsisVertical, happyOutline, cameraOutline, send });
+  constructor(
+    private supabaseSvc: SupabaseService,
+    private groqSvc: GroqService
+  ) {
+    addIcons({ sendOutline, arrowBackOutline, videocam, call, ellipsisVertical, happyOutline, cameraOutline, send, sparkles, ellipsisHorizontal });
   }
 
   async ngOnInit() {
     const user = await this.supabaseSvc.getCurrentUser();
     if (user) {
       this.currentUserId = user.id;
+      const { data: profile } = await this.supabaseSvc.getUserProfile();
+      if (profile?.full_name) {
+        this.currentUserName = profile.full_name;
+      }
     }
 
-    await this.loadMessages();
+    // No cargaremos mensajes de Supabase por ahora, ya que es un chat efímero con la IA.
+    // Si quisieras guardarlos, aquí podrías cargar el historial desde la BD.
     
-    // Suscribirse a nuevos mensajes
-    this.subscription = this.supabaseSvc.subscribeToRoomMessages(this.roomId, (newMsg: ChatMessage) => {
-      // Prevenir duplicados si ya lo agregamos por el Optimistic UI
-      const exists = this.messages.some(m => m.message === newMsg.message && m.sender_id === newMsg.sender_id);
-      if (!exists) {
-        this.messages.push(newMsg);
-        this.scrollToBottom();
-      }
-    });
+    // Opcionalmente, agregar un mensaje de bienvenida de la IA si está vacío
+    if (this.messages.length === 0) {
+      this.messages.push({
+        id: 'welcome',
+        room_id: this.roomId,
+        sender_id: 'groq-bot',
+        sender_type: 'AI',
+        message: '¡Hola! Soy AffiniCoach. ¿En qué puedo ayudarte a ti y a tu pareja hoy?',
+        created_at: new Date().toISOString()
+      });
+    }
   }
 
   ngOnDestroy() {
-    // Es importante desuscribirse para no dejar canales abiertos
-    if (this.subscription) {
-      this.subscription.unsubscribe();
-    }
+    // Limpiar suscripciones si las hubiera
   }
 
   async loadMessages() {
-    const { data, error } = await this.supabaseSvc.getMessagesByRoom(this.roomId);
-    if (data) {
-      this.messages = data;
-      this.scrollToBottom();
-    }
+    // Sin acción por ahora
   }
 
   async sendMessage() {
@@ -86,9 +92,23 @@ export class ChatPage implements OnInit, OnDestroy {
     this.scrollToBottom();
     
     this.newMessage = '';
+    this.isLoading = true;
     
-    // Enviamos a Supabase
-    await this.supabaseSvc.sendMessage(this.roomId, trimmed);
+    // Enviamos a Groq con el nombre del usuario
+    const botResponseText = await this.groqSvc.sendMessage(trimmed, this.currentUserName);
+    
+    const botMsg: ChatMessage = {
+      id: Math.random().toString(),
+      room_id: this.roomId,
+      sender_id: 'groq-bot',
+      sender_type: 'AI',
+      message: botResponseText,
+      created_at: new Date().toISOString()
+    };
+    
+    this.messages.push(botMsg);
+    this.isLoading = false;
+    this.scrollToBottom();
   }
 
   scrollToBottom() {

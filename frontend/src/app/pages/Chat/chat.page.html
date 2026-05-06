@@ -3,13 +3,14 @@
     <div class="header-content-wrapper" style="display: flex; align-items: center; padding: 0 8px; width: 100%;">
       <ion-buttons slot="start">
         <ion-back-button defaultHref="/tabs/actions" text="" icon="arrow-back-outline"></ion-back-button>
-        <div class="chat-avatar" style="width: 40px; height: 40px; border-radius: 50%; overflow: hidden; margin-left: -5px; margin-right: 12px;">
-          <img src="assets/images/user.png" alt="Perfil" style="width: 100%; height: 100%; object-fit: cover;"/>
+        <div class="chat-avatar" style="width: 40px; height: 40px; border-radius: 50%; overflow: hidden; margin-left: -5px; margin-right: 12px; background: white; display: flex; align-items: center; justify-content: center;">
+          <ion-icon name="sparkles" style="font-size: 24px; color: #B0232A;"></ion-icon>
         </div>
       </ion-buttons>
       <div class="brand-group" style="display: flex; flex-direction: column; flex: 1; text-align: left;">
-        <span style="font-weight: 600; font-size: 17px; color: white;">Mi Pareja</span>
-        <span style="font-size: 13px; color: rgba(255,255,255,0.85);">en línea</span>
+        <span style="font-weight: 600; font-size: 17px; color: white;">AffiniCoach IA</span>
+        <span *ngIf="!isLoading" style="font-size: 13px; color: rgba(255,255,255,0.85);">en línea</span>
+        <span *ngIf="isLoading" style="font-size: 13px; color: rgba(255,255,255,0.85);">escribiendo...</span>
       </div>
       <ion-buttons slot="end">
         <ion-button>
@@ -26,6 +27,13 @@
       <div class="message-bubble">
         <p>{{ msg.message }}</p>
         <span class="message-time">{{ msg.created_at | date:'shortTime' }}</span>
+      </div>
+    </div>
+    
+    <!-- Typing Indicator -->
+    <div *ngIf="isLoading" class="message-wrapper">
+      <div class="message-bubble" style="background: #ffffff; color: #111b21; border-radius: 8px 8px 8px 0px; box-shadow: 0 1px 0.5px rgba(11, 20, 26, .13); border: none;">
+        <p style="padding-right: 10px;">Escribiendo <ion-icon name="ellipsis-horizontal"></ion-icon></p>
       </div>
     </div>
   </div>
