@@ -88,28 +88,65 @@ export class ProfilePage implements OnInit {
 
     this.isUploading = true;
     const loading = await this.loadingCtrl.create({
-      message: 'Subiendo imagen...',
+      message: 'Procesando imagen...',
       mode: 'ios'
     });
     await loading.present();
 
-    const uploadRes = await this.supabaseSvc.uploadAvatar(file);
-    
-    if (uploadRes.error) {
-      this.showToast('Error al subir la imagen: ' + uploadRes.error, 'danger');
-    } else if (uploadRes.publicUrl) {
-      const updateRes = await this.supabaseSvc.updateAvatarUrl(uploadRes.publicUrl);
-      if (updateRes.error) {
-        this.showToast('Error al actualizar el perfil.', 'danger');
-      } else {
-        this.avatarUrl = uploadRes.publicUrl;
-        this.showToast('Foto de perfil actualizada.', 'success');
-      }
-    }
+    try {
+      const reader = new FileReader();
+      reader.onload = (e: any) => {
+        const img = new Image();
+        img.onload = async () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 250;
+          const MAX_HEIGHT = 250;
+          let width = img.width;
+          let height = img.height;
 
-    this.isUploading = false;
-    await loading.dismiss();
-    event.target.value = null; // Reset input
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+            
+            const updateRes = await this.supabaseSvc.updateAvatarUrl(dataUrl);
+            
+            if (updateRes.error) {
+              console.error('Supabase Error:', updateRes.error);
+              const errMsg = typeof updateRes.error === 'string' ? updateRes.error : updateRes.error.message;
+              this.showToast('Error: ' + errMsg, 'danger');
+            } else {
+              this.avatarUrl = dataUrl;
+              this.showToast('Foto de perfil actualizada exitosamente.', 'success');
+            }
+          } else {
+            this.showToast('Error al procesar la imagen.', 'danger');
+          }
+          this.isUploading = false;
+          await loading.dismiss();
+          event.target.value = null;
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      this.showToast('Ocurrió un error inesperado.', 'danger');
+      this.isUploading = false;
+      await loading.dismiss();
+    }
   }
 
   async showToast(message: string, color: string) {

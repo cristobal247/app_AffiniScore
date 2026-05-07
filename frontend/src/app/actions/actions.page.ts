@@ -7,16 +7,17 @@ import {
   IonContent, IonHeader, IonToolbar, IonGrid, IonRow, IonCol, 
   IonIcon, IonLabel, IonButtons, IonButton, 
   IonAvatar, IonInput, IonCard, IonCardTitle,
-  LoadingController, AlertController 
+  LoadingController, AlertController, IonSpinner, IonModal
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { 
   restaurantOutline, homeOutline, giftOutline, heartOutline, flashOutline, 
   settingsSharp, addCircle, starSharp, headsetOutline, mapOutline, flash,
   chevronForwardOutline, lockClosed, personOutline, checkmarkCircle, chatbubblesOutline,
-  cartOutline
+  cartOutline, timeOutline, phonePortraitOutline, closeCircleOutline
 } from 'ionicons/icons';
 import { SupabaseService, Activity, DisconnectChallenge } from '../services/supabase';
+import { GroqService } from '../services/groq.service';
 import { EmojiPipe } from '../pipes/emoji.pipe';
 
 @Component({
@@ -28,6 +29,7 @@ import { EmojiPipe } from '../pipes/emoji.pipe';
     IonContent, IonHeader, IonToolbar, IonGrid, IonRow, IonCol, 
     IonIcon, IonLabel, IonButtons, IonButton, 
     IonAvatar, IonInput, RouterModule, IonCard, IonCardTitle,
+    IonSpinner, IonModal,
     CommonModule, FormsModule, EmojiPipe
   ]
 })
@@ -56,6 +58,7 @@ export class ActionsPage implements OnInit {
 
   constructor(
     private supabaseSvc: SupabaseService,
+    private groqSvc: GroqService,
     private navCtrl: NavController,
     private loadingCtrl: LoadingController,
     private alertCtrl: AlertController
@@ -64,7 +67,7 @@ export class ActionsPage implements OnInit {
       restaurantOutline, homeOutline, giftOutline, heartOutline, flashOutline, 
       settingsSharp, addCircle, starSharp, headsetOutline, mapOutline, flash,
       chevronForwardOutline, lockClosed, personOutline, checkmarkCircle, chatbubblesOutline,
-      cartOutline
+      cartOutline, timeOutline, phonePortraitOutline, closeCircleOutline
     });
   }
 
@@ -213,5 +216,83 @@ export class ActionsPage implements OnInit {
 
   getChallengeImage(index: number): string {
     return this.challengeImages[index % this.challengeImages.length];
+  }
+
+  // --- NUEVA LÓGICA DE RETOS (IA Y MODO ENFOQUE) --- //
+  
+  isGeneratingAi = false;
+  activeChallenge: any = null;
+  focusTimeLeft = 900; // 15 minutos
+  focusInterval: any;
+
+  async generateAiChallenge() {
+    this.isGeneratingAi = true;
+    try {
+      const prompt = "Genera un reto de desconexión para parejas único, romántico y divertido. Debe requerir no usar el celular. Responde SOLO con el formato JSON: {\"title\": \"Título\", \"description\": \"Descripción corta\", \"points\": 150}. Sin markdown extra ni saludos.";
+      const response = await this.groqSvc.sendMessage(prompt, 'Sistema de Retos');
+      
+      const match = response.match(/\{[\s\S]*\}/);
+      if(match) {
+        const retoData = JSON.parse(match[0]);
+        const newReto: any = {
+          id: 'ai_' + new Date().getTime(),
+          title: retoData.title || 'Reto Sorpresa',
+          description: retoData.description || 'Disfruten un momento sin pantallas.',
+          points: retoData.points || 150,
+          difficulty: 'Medio',
+          category: 'IA',
+          myAccepted: false,
+          partnerAccepted: false,
+          status: 'disponible',
+          image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDED7_vj5Bo9tZfdjGKmrrdmjn99oTlgDpHJtU83qm2tYs-Qj0F6U11B-3HzNyWP8--ijruBiWu7cX0q_WPETd6HXjp46NwhV-dJnaYS_8FE9qkAEdqGwUA8zLW0hXvSQtgyvHddxlleUvbmA2ptfYjarYED3qm-Uk98HIg0nixgtZ1qklCjqlCd07txC305J5ppZZvKj8Y3VQpDT_9dkL_BPkGufQzsU51oZUrFzX1pluX5FN7ekU4fog9Eu4BLNgjhGx8dghhIoQ'
+        };
+        this.disconnectChallenges.unshift(newReto);
+      }
+    } catch(err) {
+      console.error('Error generando IA:', err);
+    }
+    this.isGeneratingAi = false;
+  }
+
+  startFocusMode(item: DisconnectChallenge) {
+    this.activeChallenge = item;
+    this.focusTimeLeft = 900;
+    this.focusInterval = setInterval(() => {
+      this.focusTimeLeft--;
+      if (this.focusTimeLeft <= 0) {
+        this.finishFocusEarly();
+      }
+    }, 1000);
+  }
+
+  abandonFocus() {
+    clearInterval(this.focusInterval);
+    this.activeChallenge = null;
+  }
+
+  async finishFocusEarly() {
+    clearInterval(this.focusInterval);
+    const pts = this.activeChallenge?.points || 0;
+    this.activeChallenge = null;
+
+    // Para la demo, guardamos el punto como accion
+    await this.supabaseSvc.saveActionPoint('cat_dc_focus_mode', pts);
+    
+    const alert = await this.alertCtrl.create({
+      header: '¡Reto Completado!',
+      message: `¡Lo lograron! Han ganado +${pts} AffiniPoints.`,
+      buttons: ['Genial'],
+      mode: 'ios'
+    });
+    await alert.present();
+
+    this.points += pts;
+    this.calcularNivel();
+  }
+
+  formatTime(seconds: number): string {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   }
 }

@@ -36,7 +36,15 @@ export const routes: Routes = [
       },
       {
         path: 'chat',
+        loadComponent: () => import('./pages/chat-list/chat-list.page').then(m => m.ChatListPage)
+      },
+      {
+        path: 'chat-ai',
         loadComponent: () => import('./pages/Chat/chat.page').then(m => m.ChatPage)
+      },
+      {
+        path: 'chat-partner',
+        loadComponent: () => import('./pages/partner-chat/partner-chat.page').then(m => m.PartnerChatPage)
       },
       {
         path: 'retos',

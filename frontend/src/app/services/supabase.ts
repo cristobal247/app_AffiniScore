@@ -42,6 +42,7 @@ export interface DisconnectChallenge {
   myAccepted: boolean;
   partnerAccepted: boolean;
   status: 'disponible' | 'pendiente' | 'aceptado';
+  image?: string;
 }
 
 @Injectable({
@@ -300,7 +301,7 @@ export class SupabaseService {
 
     return await this.supabase
       .from('user_profiles')
-      .update({ avatar_url: url, updated_at: new Date() })
+      .update({ avatar_url: url, updated_at: new Date().toISOString() })
       .eq('id', user.id);
   }
 
