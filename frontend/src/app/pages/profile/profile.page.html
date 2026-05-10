@@ -23,7 +23,7 @@
       <input type="file" #fileInput accept="image/*" style="display: none;" (change)="onFileSelected($event)">
       
       <h2>{{ userEmail }}</h2>
-      <p>Miembro</p>
+      <p>Miembro de AffiniScore</p>
     </div>
 
     <!-- BOTÓN PARA IR A VINCULACIÓN QR -->
@@ -90,7 +90,7 @@
       <ion-item class="menu-item">
         <ion-label>
           <h3>Notificaciones activas</h3>
-          <p>Habilita avisos en este dispositivo.</p>
+          <p>Habilita avisos de AffiniScore en este dispositivo.</p>
         </ion-label>
         <ion-toggle
           slot="end"
@@ -153,8 +153,13 @@
     </div>
 
     <div class="action-section">
-      <ion-button expand="block" (click)="logout()" class="logout-btn">
-        <ion-icon slot="start" name="log-out-outline"></ion-icon>
+      <ion-button expand="block" fill="outline" color="danger" (click)="exportPDF()" class="pdf-btn" style="margin-bottom: 10px; --border-width: 2px;">
+        <ion-icon slot="start" name="document-text-outline"></ion-icon>
+        Generar Reporte Semanal (PDF)
+      </ion-button>
+
+      <ion-button expand="block" fill="clear" color="danger" (click)="logout()" class="logout-btn">
+        <ion-icon slot="start" src="assets/icons/hero/outline/arrow-right-on-rectangle.svg"></ion-icon>
         Cerrar Sesión
       </ion-button>
     </div>

@@ -1,0 +1,99 @@
+import { Injectable } from '@angular/core';
+import { environment } from '../../environments/environment';
+
+export interface ChatMessage {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+}
+
+@Injectable({
+  providedIn: 'root'
+})
+export class GroqService {
+  private apiUrl = 'https://api.groq.com/openai/v1/chat/completions';
+  
+  // Mantenemos el historial de la conversación
+  private conversationHistory: ChatMessage[] = [
+    { 
+      role: 'system', 
+      content: `Rol del Sistema:
+Eres "AffiniCoach", experto en terapia de parejas en la app AffiniScore. Tu objetivo es fortalecer el vínculo afectivo de los usuarios. Tu tono es cálido, maduro y profesional. Eres directo pero empático.
+
+Instrucciones:
+- Usa siempre el nombre del usuario (si está disponible) para mayor cercanía.
+- Brinda un consejo constructivo y valida emocionalmente la acción o el problema.
+- Da una respuesta perfectamente balanceada: ni muy corta, ni muy larga. Exactamente el punto medio.
+
+Restricciones:
+- Escribe exactamente 2 o 3 párrafos cortos (no más de 2 oraciones por párrafo).
+- Tu respuesta total debe tener entre 60 y 90 palabras. Ni mucha información abrumadora, ni muy poca.
+- NUNCA uses listas, guiones ni viñetas. Redacta de forma natural.
+- Evita introducciones largas y ve al punto central.`
+    }
+  ];
+
+  constructor() {}
+
+  async sendMessage(message: string, userName?: string): Promise<string> {
+    // Añadimos metadatos si tenemos el nombre del usuario
+    const finalMessage = userName ? `[Contexto del Sistema: El usuario que te habla se llama ${userName}]\n\n${message}` : message;
+    
+    // Añadimos el mensaje del usuario al historial
+    this.conversationHistory.push({ role: 'user', content: finalMessage });
+
+    try {
+      const response = await fetch(this.apiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${environment.apiKeyGroq}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: this.conversationHistory,
+          temperature: 0.7,
+          max_tokens: 350,
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error de red: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const botResponse = data.choices[0]?.message?.content || 'Lo siento, no pude procesar tu solicitud.';
+      
+      // Añadimos la respuesta de la IA al historial
+      this.conversationHistory.push({ role: 'assistant', content: botResponse });
+      
+      return botResponse;
+    } catch (error) {
+      console.error('Error al comunicarse con Groq API:', error);
+      // Si hay error, quitamos el último mensaje del usuario para no corromper el historial
+      this.conversationHistory.pop();
+      return 'Disculpa, tuve un problema al conectarme. ¿Podrías intentar de nuevo?';
+    }
+  }
+  
+  // Método opcional para resetear la conversación
+  resetConversation() {
+    this.conversationHistory = [
+      { 
+        role: 'system', 
+        content: `Rol del Sistema:
+Eres "AffiniCoach", experto en terapia de parejas en la app AffiniScore. Tu objetivo es fortalecer el vínculo afectivo de los usuarios. Tu tono es cálido, maduro y profesional. Eres directo pero empático.
+
+Instrucciones:
+- Usa siempre el nombre del usuario (si está disponible) para mayor cercanía.
+- Brinda un consejo constructivo y valida emocionalmente la acción o el problema.
+- Da una respuesta perfectamente balanceada: ni muy corta, ni muy larga. Exactamente el punto medio.
+
+Restricciones:
+- Escribe exactamente 2 o 3 párrafos cortos (no más de 2 oraciones por párrafo).
+- Tu respuesta total debe tener entre 60 y 90 palabras. Ni mucha información abrumadora, ni muy poca.
+- NUNCA uses listas, guiones ni viñetas. Redacta de forma natural.
+- Evita introducciones largas y ve al punto central.`
+      }
+    ];
+  }
+}

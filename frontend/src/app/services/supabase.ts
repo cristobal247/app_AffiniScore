@@ -2,8 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { environment } from 'src/environments/environment';
-import { firstValueFrom } from 'rxjs';
-import imageCompression from 'browser-image-compression';
+import { firstValueFrom, BehaviorSubject } from 'rxjs';
 
 export interface ChatRoom {
   id: string;
@@ -43,6 +42,7 @@ export interface DisconnectChallenge {
   myAccepted: boolean;
   partnerAccepted: boolean;
   status: 'disponible' | 'pendiente' | 'aceptado';
+  image?: string;
 }
 
 @Injectable({
@@ -51,6 +51,7 @@ export interface DisconnectChallenge {
 export class SupabaseService {
   private supabase: SupabaseClient;
   private apiUrl: string;
+  public pointsUpdated = new BehaviorSubject<void>(undefined);
 
   constructor(private http: HttpClient) {
     this.supabase = createClient(
@@ -77,7 +78,7 @@ export class SupabaseService {
       });
 
       const response = await firstValueFrom(
-        this.http.post<any>(`${this.apiUrl}/api/v1/partnerships/invite`, { user1_id }, { headers })
+        this.http.post<any>(`${this.apiUrl}/api/v1/partnerships/invite`, null, { headers, params: { user1_id } })
       );
       
       return { token: response.token || response.invite_token };
@@ -175,6 +176,92 @@ export class SupabaseService {
       .single();
   }
 
+  // Obtener puntos obtenidos en la semana actual
+  async getWeeklyPoints() {
+    const user = await this.getCurrentUser();
+    if (!user) return { data: 0, error: 'Usuario no autenticado' };
+
+    const startOfWeek = new Date();
+    // Lunes como inicio de semana
+    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay() + (startOfWeek.getDay() === 0 ? -6 : 1));
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const { data, error } = await this.supabase
+      .from('user_actions_log')
+      .select('points_earned')
+      .eq('user_id', user.id)
+      .gte('created_at', startOfWeek.toISOString());
+
+    if (error) {
+      console.error('Error fetching weekly points:', error);
+      return { data: 0, error };
+    }
+
+    const weeklyTotal = data.reduce((sum: number, log: any) => sum + (log.points_earned || 0), 0);
+    return { data: weeklyTotal, error: null };
+  }
+
+  // Obtener historial de puntos detallado de la semana actual
+  async getWeeklyHistory() {
+    const user = await this.getCurrentUser();
+    if (!user) return { data: [], error: 'Usuario no autenticado' };
+
+    const startOfWeek = new Date();
+    // Lunes como inicio de semana
+    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay() + (startOfWeek.getDay() === 0 ? -6 : 1));
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const { data: logs, error: logsError } = await this.supabase
+      .from('user_actions_log')
+      .select('*')
+      .eq('user_id', user.id)
+      .gte('created_at', startOfWeek.toISOString())
+      .order('created_at', { ascending: true });
+
+    if (logsError) return { data: [], error: logsError };
+
+    const { data: catalog } = await this.getFullCatalog();
+    
+    const history = (logs || []).map(log => {
+      const act = catalog?.find(c => c.id === log.action_id);
+      return {
+        ...log,
+        action_name: act ? act.name : 'Acción registrada',
+        date: new Date(log.created_at)
+      };
+    });
+
+    return { data: history, error: null };
+  }
+
+  // Obtener historial del usuario (últimos 20 registros)
+  async getUserHistory() {
+    const user = await this.getCurrentUser();
+    if (!user) return { data: [], error: 'Usuario no autenticado' };
+
+    const { data: logs, error: logsError } = await this.supabase
+      .from('user_actions_log')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    if (logsError) return { data: [], error: logsError };
+
+    const { data: catalog } = await this.getFullCatalog();
+    
+    const history = (logs || []).map(log => {
+      const act = catalog?.find(c => c.id === log.action_id);
+      return {
+        ...log,
+        action_name: act ? act.name : 'Acción registrada',
+        date: new Date(log.created_at).toLocaleDateString()
+      };
+    });
+
+    return { data: history, error: null };
+  }
+
   // Actualizar datos generales del perfil
   async updateProfile(userId: string, updates: any) {
     return await this.supabase
@@ -183,44 +270,28 @@ export class SupabaseService {
       .eq('id', userId);
   }
 
-  // Subir imagen de avatar al Storage con compresión
+  // Subir imagen de avatar al Storage
   async uploadAvatar(file: File) {
     const user = await this.getCurrentUser();
     if (!user) return { error: 'Usuario no autenticado' };
 
-    try {
-      const options = {
-        maxSizeMB: 0.5,
-        maxWidthOrHeight: 800,
-        useWebWorker: true,
-      };
-      
-      const compressedFile = await imageCompression(file, options);
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${user.id}_${new Date().getTime()}.${fileExt}`;
+    const filePath = `public/${fileName}`;
 
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}_${new Date().getTime()}.${fileExt}`;
-      const filePath = `public/${fileName}`;
+    const { error: uploadError } = await this.supabase.storage
+      .from('avatars')
+      .upload(filePath, file);
 
-      const { error: uploadError } = await this.supabase.storage
-        .from('avatar')
-        .upload(filePath, compressedFile, {
-          cacheControl: '3600',
-          upsert: true
-        });
-
-      if (uploadError) {
-        return { error: uploadError.message };
-      }
-
-      const { data: { publicUrl } } = this.supabase.storage
-        .from('avatar')
-        .getPublicUrl(filePath);
-
-      return { publicUrl };
-    } catch (err: any) {
-      console.error('Error comprimiendo o subiendo la imagen:', err);
-      return { error: err.message || 'Error al procesar la imagen' };
+    if (uploadError) {
+      return { error: uploadError.message };
     }
+
+    const { data: { publicUrl } } = this.supabase.storage
+      .from('avatars')
+      .getPublicUrl(filePath);
+
+    return { publicUrl };
   }
 
   // Actualizar la URL del avatar en el perfil
@@ -230,7 +301,7 @@ export class SupabaseService {
 
     return await this.supabase
       .from('user_profiles')
-      .update({ avatar_url: url, updated_at: new Date() })
+      .update({ avatar_url: url, updated_at: new Date().toISOString() })
       .eq('id', user.id);
   }
 
@@ -279,10 +350,15 @@ export class SupabaseService {
     const { data: profile } = await this.getUserProfile();
     const newTotal = (profile?.total_points || 0) + points;
 
-    return await this.supabase
+    const result = await this.supabase
       .from('user_profiles')
       .update({ total_points: newTotal, updated_at: new Date() })
       .eq('id', user.id);
+      
+    // Notificamos a la app que los puntos han cambiado
+    this.pointsUpdated.next();
+    
+    return result;
   }
 
   // Restar puntos al canjear una recompensa
@@ -300,10 +376,15 @@ export class SupabaseService {
     const newTotal = currentPoints - cost;
 
     // Actualizamos el perfil
-    return await this.supabase
+    const result = await this.supabase
       .from('user_profiles')
       .update({ total_points: newTotal, updated_at: new Date() })
       .eq('id', user.id);
+      
+    // Notificamos a la app
+    this.pointsUpdated.next();
+    
+    return result;
   }
 
   // Crear una nueva acción en el catálogo

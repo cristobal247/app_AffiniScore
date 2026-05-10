@@ -6,7 +6,7 @@ import {
 } from '@ionic/angular/standalone';
 import { SupabaseService } from '../services/supabase';
 import { addIcons } from 'ionicons';
-import { star, filmOutline, footballOutline, wineOutline } from 'ionicons/icons';
+import { star, filmOutline, footballOutline, wineOutline, restaurantOutline, airplaneOutline, bedOutline, gameControllerOutline } from 'ionicons/icons';
 
 interface Reward {
   id: string;
@@ -33,13 +33,17 @@ export class TiendaPage implements OnInit {
     { id: '1', title: 'Partido de Fútbol con Amigos', points: 500, icon: 'football-outline', status: 'idle' },
     { id: '2', title: 'Salida de viernes con amigas/os', points: 600, icon: 'wine-outline', status: 'idle' },
     { id: '3', title: 'Domingo de Maratón de Películas', points: 300, icon: 'film-outline', status: 'idle' },
+    { id: '4', title: 'Cena en Restaurante Favorito', points: 800, icon: 'restaurant-outline', status: 'idle' },
+    { id: '5', title: 'Viaje de Fin de Semana', points: 2000, icon: 'airplane-outline', status: 'idle' },
+    { id: '6', title: 'Día de Spa y Relajación', points: 1000, icon: 'bed-outline', status: 'idle' },
+    { id: '7', title: 'Tarde de Videojuegos', points: 400, icon: 'game-controller-outline', status: 'idle' },
   ];
 
   constructor(
     private supabaseSvc: SupabaseService,
     private toastCtrl: ToastController
   ) {
-    addIcons({ star, filmOutline, footballOutline, wineOutline });
+    addIcons({ star, filmOutline, footballOutline, wineOutline, restaurantOutline, airplaneOutline, bedOutline, gameControllerOutline });
   }
 
   ngOnInit() {

@@ -1,0 +1,26 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/dashboard"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Chats</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content color="light">
+  <ion-list lines="full">
+    <ion-item *ngFor="let chat of chats" [routerLink]="chat.route" detail="false" class="chat-item">
+      <ion-avatar slot="start">
+        <ion-icon *ngIf="chat.isAI" name="hardware-chip" color="tertiary" style="font-size: 40px; background: #e0f7fa; border-radius: 50%; padding: 5px;"></ion-icon>
+        <ion-icon *ngIf="!chat.isAI" name="heart" color="danger" style="font-size: 40px; background: #ffebee; border-radius: 50%; padding: 5px;"></ion-icon>
+      </ion-avatar>
+      <ion-label>
+        <h2>{{ chat.name }}</h2>
+        <p>{{ chat.lastMessage }}</p>
+      </ion-label>
+      <div slot="end" class="chat-meta">
+        <span class="time">{{ chat.time }}</span>
+      </div>
+    </ion-item>
+  </ion-list>
+</ion-content>

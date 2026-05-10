@@ -77,23 +77,45 @@ export class MapaPage implements AfterViewInit {
     }, 500);
 
     try {
-      // Pedimos ubicación real usando Capacitor
+      // 1. Solicitar permisos primero (Crucial para web y móvil)
+      const permissions = await Geolocation.checkPermissions();
+      if (permissions.location !== 'granted') {
+        const requestStatus = await Geolocation.requestPermissions();
+        if (requestStatus.location !== 'granted') {
+          throw new Error('Permisos de ubicación denegados por el usuario.');
+        }
+      }
+
+      // 2. Pedimos ubicación real forzando alta precisión
       const coordinates = await Geolocation.getCurrentPosition({
         enableHighAccuracy: true,
-        timeout: 10000
+        timeout: 20000, // Aumentamos el timeout a 20s para que no falle antes de encontrar el GPS
+        maximumAge: 0   // Forzamos a no usar caché antigua
       });
       
       lat = coordinates.coords.latitude;
       lng = coordinates.coords.longitude;
 
       // Volamos a la ubicación real y actualizamos marcador
-      this.map.flyTo([lat, lng], 15, { animate: true, duration: 1.5 });
+      this.map.flyTo([lat, lng], 16, { animate: true, duration: 1.5 });
       userMarker.setLatLng([lat, lng]);
       userMarker.bindPopup('¡Estás aquí!').openPopup();
+
+      // Opcional: Rastrear en tiempo real si el usuario se mueve
+      await Geolocation.watchPosition({
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }, (position, err) => {
+        if (position) {
+          userMarker.setLatLng([position.coords.latitude, position.coords.longitude]);
+        }
+      });
 
     } catch (error) {
       console.warn('Error obteniendo ubicación, se usará la predeterminada:', error);
       // Ya estamos en la ubicación por defecto, no hay que hacer nada más
+      this.showToast('No se pudo obtener la ubicación precisa', 'warning');
     }
   }
 
@@ -146,7 +168,8 @@ export class MapaPage implements AfterViewInit {
         // 1. Obtener coordenadas actuales
         const coordinates = await Geolocation.getCurrentPosition({
           enableHighAccuracy: true,
-          timeout: 10000
+          timeout: 20000,
+          maximumAge: 0
         });
         const lat = coordinates.coords.latitude;
         const lng = coordinates.coords.longitude;

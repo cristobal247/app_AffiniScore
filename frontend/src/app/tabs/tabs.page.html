@@ -2,13 +2,14 @@
   <ion-router-outlet [animated]="true"></ion-router-outlet>
 </ion-content>
 
-<ion-footer class="ion-no-border transparent-footer">
+<ion-footer class="ion-no-border">
   <ion-tab-bar mode="ios" class="app-tab-bar">
     <ion-tab-button (click)="navigate('/tabs/dashboard')" [class.tab-selected]="isActive('/tabs/dashboard')">
       <span class="tab-icon">
         <ion-icon class="icon-outline" src="assets/icons/hero/outline/home.svg"></ion-icon>
         <ion-icon class="icon-solid" src="assets/icons/hero/solid/home.svg"></ion-icon>
       </span>
+      <ion-label>INICIO</ion-label>
     </ion-tab-button>
 
     <ion-tab-button (click)="navigate('/tabs/actions')" [class.tab-selected]="isActive('/tabs/actions')">
@@ -16,14 +17,15 @@
         <ion-icon class="icon-outline" src="assets/icons/hero/outline/bolt.svg"></ion-icon>
         <ion-icon class="icon-solid" src="assets/icons/hero/solid/bolt.svg"></ion-icon>
       </span>
+      <ion-label>ACCIONES</ion-label>
     </ion-tab-button>
-
 
     <ion-tab-button (click)="navigate('/tabs/mapa')" [class.tab-selected]="isActive('/tabs/mapa')">
       <span class="tab-icon">
-        <ion-icon class="icon-outline" name="location-outline"></ion-icon>
-        <ion-icon class="icon-solid" name="location"></ion-icon>
+        <ion-icon class="icon-outline" src="assets/icons/hero/outline/map.svg"></ion-icon>
+        <ion-icon class="icon-solid" src="assets/icons/hero/solid/map.svg"></ion-icon>
       </span>
+      <ion-label>MAPA</ion-label>
     </ion-tab-button>
 
   </ion-tab-bar>

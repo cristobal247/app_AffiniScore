@@ -1,0 +1,35 @@
+ion-toolbar {
+  --background: #f82649;
+  --color: white;
+}
+
+.chat-item {
+  --padding-start: 15px;
+  --inner-padding-end: 15px;
+  --padding-top: 10px;
+  --padding-bottom: 10px;
+
+  ion-label {
+    h2 {
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 5px;
+    }
+    p {
+      color: #666;
+      font-size: 0.9rem;
+    }
+  }
+
+  .chat-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+
+    .time {
+      font-size: 0.8rem;
+      color: #999;
+    }
+  }
+}

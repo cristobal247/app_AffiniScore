@@ -1,33 +1,30 @@
 ion-header {
-  ion-toolbar {
-    --background: #ffffff;
+  ion-toolbar.whatsapp-header-toolbar {
+    --background: #B0232A;
+    --color: #ffffff;
     --border-style: none;
-  }
-  
-  .chat-avatar {
-    width: 35px;
-    height: 35px;
-    margin-right: 16px;
+    --min-height: 60px;
   }
   
   ion-back-button {
-    --color: #B0232A;
+    --color: #ffffff;
   }
 }
 
 .chat-bg {
-  --background: #F8F8F8;
+  --background: #F8F8F8 url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png') repeat;
+  --background-size: 400px;
 }
 
 .chat-container {
-  padding: 16px;
+  padding: 16px 12px;
   display: flex;
   flex-direction: column;
 }
 
 .message-wrapper {
   display: flex;
-  margin-bottom: 16px;
+  margin-bottom: 8px;
   width: 100%;
   
   &.mine {
@@ -35,8 +32,9 @@ ion-header {
     
     .message-bubble {
       background: #B0232A;
-      color: white;
-      border-bottom-right-radius: 4px;
+      color: #ffffff;
+      border-radius: 8px 8px 0px 8px;
+      box-shadow: 0 1px 2px rgba(176, 35, 42, 0.2);
       
       .message-time {
         color: rgba(255, 255, 255, 0.7);
@@ -48,66 +46,40 @@ ion-header {
     justify-content: flex-start;
     
     .message-bubble {
-      background: white;
-      color: #1a1a1a;
-      border-bottom-left-radius: 4px;
-      border: 1px solid #E5E5EA;
+      background: #ffffff;
+      color: #111b21;
+      border-radius: 8px 8px 8px 0px;
+      box-shadow: 0 1px 0.5px rgba(11, 20, 26, .13);
+      border: none;
       
       .message-time {
-        color: #8E8E93;
+        color: #667781;
       }
     }
   }
 }
 
 .message-bubble {
-  max-width: 75%;
-  padding: 12px 16px;
-  border-radius: 18px;
+  max-width: 80%;
+  padding: 6px 7px 8px 9px;
   position: relative;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+  display: flex;
+  flex-direction: column;
   
   p {
     margin: 0;
     font-size: 15px;
-    line-height: 1.4;
+    line-height: 1.3;
+    padding-right: 40px; /* Space for timestamp */
   }
   
   .message-time {
-    display: block;
+    display: inline-block;
     font-size: 11px;
     text-align: right;
-    margin-top: 4px;
-  }
-}
-
-ion-footer {
-  ion-toolbar {
-    --background: white;
-    padding: 8px;
-    --border-width: 1px 0 0 0;
-    --border-color: #E5E5EA;
-  }
-  
-  .input-container {
-    display: flex;
-    align-items: center;
-    background: #F2F2F7;
-    border-radius: 24px;
-    padding: 0 8px 0 16px;
-    
-    .chat-input {
-      --background: transparent;
-      --padding-start: 0;
-      font-size: 15px;
-    }
-    
-    .send-btn {
-      --color: #B0232A;
-      margin: 0;
-      height: 40px;
-      width: 40px;
-      --border-radius: 50%;
-    }
+    margin-top: 2px;
+    position: absolute;
+    bottom: 4px;
+    right: 7px;
   }
 }

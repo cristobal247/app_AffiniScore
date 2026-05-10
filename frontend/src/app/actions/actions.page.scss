@@ -69,16 +69,17 @@
   .input-header { display: flex; align-items: center; margin-bottom: 15px; .red-icon { font-size: 24px; color: var(--affini-red); } span { font-weight: 700; font-size: 17px; margin-left: 10px; color: #1A1A1A; } }
   
   .pill-input-container {
-    background: white; border-radius: 50px; display: flex; align-items: center; padding: 5px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    background: #E8E8E8; border-radius: 50px; display: flex; align-items: center; padding: 5px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);
     
     // Forzar color de texto y placeholder
     .custom-input {
       --padding-start: 18px;
-      --color: #333333;           // Color del texto al escribir (Oscuro)
-      --placeholder-color: #999;  // Color del texto de guía
+      --color: #000000 !important;
+      color: #000000 !important;
+      --placeholder-color: #555555;
       --placeholder-opacity: 1;
       font-size: 15px;
-      font-weight: 400;
+      font-weight: 600;
     }
 
     .btn-registrar-solid { 
@@ -116,4 +117,181 @@ ion-content {
     height: 36px;
     text-transform: none;
   }
+}
+
+/* ================================
+   Nuevos Estilos: Carrusel y Modal
+   ================================ */
+
+.horizontal-scroll-container {
+  display: flex;
+  overflow-x: auto;
+  gap: 12px;
+  padding: 0 16px 20px 16px;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  .reto-card-ios {
+    flex: 0 0 75%;
+    max-width: 280px;
+    margin: 0;
+    scroll-snap-align: center;
+  }
+}
+
+.ai-card {
+  position: relative;
+  background: linear-gradient(135deg, #4A00E0, #8E2DE2);
+  overflow: hidden;
+
+  .ai-card-bg {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: radial-gradient(circle at top right, rgba(255,255,255,0.2), transparent);
+  }
+
+  .ai-card-content {
+    position: relative;
+    z-index: 2;
+    padding: 20px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .ai-sparkles {
+    font-size: 32px;
+    color: #FFD700;
+    margin-bottom: 12px;
+  }
+
+  .ai-badge {
+    background: rgba(255,255,255,0.2);
+    padding: 8px 16px;
+    border-radius: 20px;
+    color: white;
+    font-weight: 700;
+    font-size: 12px;
+    border: 1px solid rgba(255,255,255,0.4);
+  }
+}
+
+/* Modo Enfoque (Temporizador) */
+.focus-modal {
+  --background: #111b21;
+}
+
+.focus-mode-bg {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, #1A1A2E 0%, #16213E 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  text-align: center;
+}
+
+.focus-container {
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.focus-header {
+  width: 80px;
+  height: 80px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.focus-icon {
+  font-size: 40px;
+  color: #EA5556;
+}
+
+.focus-title {
+  font-size: 24px;
+  font-weight: 800;
+  margin: 0 0 8px 0;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #EA5556;
+}
+
+.focus-challenge-title {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 0 12px 0;
+}
+
+.focus-subtitle {
+  font-size: 16px;
+  color: rgba(255,255,255,0.7);
+  margin-bottom: 40px;
+  line-height: 1.5;
+  max-width: 280px;
+}
+
+.timer-circle {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  border: 4px solid rgba(234, 85, 86, 0.3);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 20px;
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -4px; left: -4px; right: -4px; bottom: -4px;
+    border-radius: 50%;
+    border: 4px solid transparent;
+    border-top-color: #EA5556;
+    animation: spin 60s linear infinite;
+  }
+}
+
+.timer-text {
+  font-size: 48px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.focus-actions {
+  margin-top: 40px;
+  width: 100%;
+}
+
+.btn-abandon {
+  color: rgba(255,255,255,0.5);
+  font-weight: 600;
+  --padding-start: 20px;
+  --padding-end: 20px;
+}
+
+@keyframes spin {
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.bounce-animation {
+  animation: bounce 2s ease-in-out infinite;
 }

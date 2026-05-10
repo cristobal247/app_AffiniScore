@@ -1,17 +1,23 @@
 import { Component, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { 
-  IonContent, IonHeader, IonTitle, IonToolbar, IonButton, 
+import {
+  IonContent, IonHeader, IonTitle, IonToolbar, IonButton,
   IonIcon, IonButtons, IonBackButton, IonModal, IonCard, IonCardContent,
-  IonLabel, IonInput,
+  IonLabel, IonInput, IonSpinner,
   ToastController, LoadingController, NavController
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { heartOutline, qrCodeOutline, scanOutline, cameraOutline, copyOutline, informationCircle } from 'ionicons/icons';
+import {
+  heartOutline, qrCodeOutline, scanOutline, cameraOutline,
+  copyOutline, informationCircle, cameraReverseOutline, videocamOffOutline
+} from 'ionicons/icons';
 import { SupabaseService } from '../../services/supabase';
 import { QRCodeComponent } from 'angularx-qrcode';
-import { Html5QrcodeScanner } from 'html5-qrcode';
+
+// Importación flexible para evitar errores de tipos
+import * as Html5QrcodeLib from 'html5-qrcode';
+const Html5Qrcode = (Html5QrcodeLib as any).Html5Qrcode;
 
 @Component({
   selector: 'app-qr',
@@ -19,23 +25,29 @@ import { Html5QrcodeScanner } from 'html5-qrcode';
   styleUrls: ['./qr.page.scss'],
   standalone: true,
   imports: [
-    IonContent, IonHeader, IonTitle, IonToolbar, IonButton, 
+    IonContent, IonHeader, IonTitle, IonToolbar, IonButton,
     IonIcon, IonButtons, IonBackButton, IonModal, IonCard, IonCardContent,
-    IonLabel, IonInput,
+    IonLabel, IonInput, IonSpinner,
     CommonModule, FormsModule, QRCodeComponent
   ]
 })
 export class QrPage implements OnInit, OnDestroy {
   activeTab: 'qr' | 'scan' = 'qr';
   isManualMode: boolean = false;
-  
-  // Usamos signals o propiedades reactivas
+
   qrData = signal<string>('cargando...');
   shortCode = signal<string>('...');
-  
+
   manualCode: string = '';
-  private html5QrcodeScanner: any | null = null;
+  // CORRECCIÓN TS2709: Se usa any para evitar conflictos de namespace
+  private html5Qrcode: any = null;
   private currentUserId: string | null = null;
+
+  isCameraReady = false;
+  cameraError: string | null = null;
+  hasMultipleCameras = false;
+  private cameras: any[] = [];
+  private currentCameraIndex = 0;
 
   constructor(
     private supabaseSvc: SupabaseService,
@@ -43,7 +55,10 @@ export class QrPage implements OnInit, OnDestroy {
     private loadingCtrl: LoadingController,
     private navCtrl: NavController
   ) {
-    addIcons({ heartOutline, qrCodeOutline, scanOutline, cameraOutline, copyOutline, informationCircle });
+    addIcons({
+      heartOutline, qrCodeOutline, scanOutline, cameraOutline,
+      copyOutline, informationCircle, cameraReverseOutline, videocamOffOutline
+    });
   }
 
   async ngOnInit() {
@@ -59,20 +74,11 @@ export class QrPage implements OnInit, OnDestroy {
     if (response.token) {
       const token = response.token;
       this.qrData.set(`affiniscore_link_${token}`);
-      // Formatear el token corto (ej. A F 4 5 B 2)
       this.shortCode.set(token.split('').join(' '));
     } else {
-      // Fallback
       this.qrData.set(`affiniscore_link_${userId}`);
       const short = userId.substring(0, 6).toUpperCase();
       this.shortCode.set(short.split('').join(' '));
-      
-      const toast = await this.toastCtrl.create({
-        message: response.error || 'Error obteniendo código real. Usando código local.',
-        duration: 3000,
-        color: 'warning'
-      });
-      toast.present();
     }
   }
 
@@ -80,20 +86,20 @@ export class QrPage implements OnInit, OnDestroy {
     this.stopScanner();
   }
 
-  switchTab(tab: 'qr' | 'scan') {
+  async switchTab(tab: 'qr' | 'scan') {
     this.activeTab = tab;
     this.isManualMode = false;
     if (tab === 'scan') {
       setTimeout(() => this.startScanner(), 300);
     } else {
-      this.stopScanner();
+      await this.stopScanner();
     }
   }
 
-  toggleManualMode() {
+  async toggleManualMode() {
     this.isManualMode = !this.isManualMode;
     if (this.isManualMode) {
-      this.stopScanner();
+      await this.stopScanner();
     } else {
       setTimeout(() => this.startScanner(), 300);
     }
@@ -101,15 +107,15 @@ export class QrPage implements OnInit, OnDestroy {
 
   async linkManualCode() {
     if (!this.manualCode || this.manualCode.length < 6) return;
-    await this.processJoin(this.manualCode);
+    await this.processJoin(this.manualCode.toUpperCase().trim());
   }
 
   async processJoin(token: string) {
     if (!this.currentUserId) return;
 
     const loading = await this.loadingCtrl.create({
-      message: 'Vinculando cuentas...',
-      spinner: 'circles'
+      message: 'Vinculando pareja...',
+      spinner: 'crescent'
     });
     await loading.present();
 
@@ -117,20 +123,11 @@ export class QrPage implements OnInit, OnDestroy {
     await loading.dismiss();
 
     if (response.success) {
-      const toast = await this.toastCtrl.create({
-        message: '¡Vinculación de pareja exitosa!',
-        duration: 3000,
-        color: 'success',
-        position: 'top'
-      });
-      toast.present();
-      
-      // Detener escáner si está activo y volver al perfil
-      this.stopScanner();
+      await this.stopScanner();
       this.navCtrl.navigateRoot('/tabs/profile', { animationDirection: 'back' });
     } else {
       const toast = await this.toastCtrl.create({
-        message: response.error || 'Código inválido o caducado.',
+        message: response.error || 'Código inválido.',
         duration: 3000,
         color: 'danger',
         position: 'top'
@@ -141,40 +138,77 @@ export class QrPage implements OnInit, OnDestroy {
 
   async copyCode() {
     const rawCode = this.shortCode().replace(/\s/g, '');
-    navigator.clipboard.writeText(rawCode);
-    const toast = await this.toastCtrl.create({
-      message: 'Código copiado al portapapeles',
-      duration: 2000,
-      position: 'top',
-      color: 'dark'
-    });
-    toast.present();
+    await navigator.clipboard.writeText(rawCode);
   }
 
-  private startScanner() {
-    if (this.html5QrcodeScanner) return;
-    this.html5QrcodeScanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: {width: 250, height: 250} }, false);
-    
-    this.html5QrcodeScanner.render(async (decodedText: string) => {
-      // Si escanea algo tipo "affiniscore_link_TOKEN" extraemos el token
-      let tokenToJoin = decodedText;
-      if (decodedText.startsWith('affiniscore_link_')) {
-        tokenToJoin = decodedText.replace('affiniscore_link_', '');
+  private async startScanner() {
+    if (this.html5Qrcode) return;
+    this.isCameraReady = false;
+    this.cameraError = null;
+
+    try {
+      const devices = await Html5Qrcode.getCameras();
+      if (devices && devices.length > 0) {
+        this.cameras = devices;
+        this.hasMultipleCameras = devices.length > 1;
+        this.currentCameraIndex = devices.length > 1 ? 1 : 0;
+        await this.initCamera(this.cameras[this.currentCameraIndex].id);
+      } else {
+        this.cameraError = "No se encontraron cámaras.";
       }
-      
-      this.stopScanner();
-      await this.processJoin(tokenToJoin);
-    }, undefined);
+    } catch (err) {
+      this.cameraError = "Permiso de cámara denegado.";
+    }
   }
 
-  private stopScanner() {
-    if (this.html5QrcodeScanner) {
+  private async initCamera(cameraId: string) {
+    try {
+      this.html5Qrcode = new Html5Qrcode("qr-reader");
+      const config: any = {
+        fps: 10,
+        qrbox: { width: 250, height: 250 },
+        aspectRatio: 1.0
+      };
+
+      await this.html5Qrcode.start(
+        cameraId,
+        config,
+        async (decodedText: string) => {
+          const token = decodedText.includes('affiniscore_link_')
+            ? decodedText.replace('affiniscore_link_', '')
+            : decodedText;
+          await this.stopScanner();
+          await this.processJoin(token);
+        },
+        () => { }
+      );
+      this.isCameraReady = true;
+    } catch (err) {
+      this.cameraError = "Error al iniciar el lente.";
+    }
+  }
+
+  async flipCamera() {
+    if (!this.hasMultipleCameras) return;
+    await this.stopScanner();
+    this.currentCameraIndex = (this.currentCameraIndex + 1) % this.cameras.length;
+    setTimeout(() => this.initCamera(this.cameras[this.currentCameraIndex].id), 400);
+  }
+
+  retryCamera() {
+    this.startScanner();
+  }
+
+  private async stopScanner() {
+    this.isCameraReady = false;
+    if (this.html5Qrcode) {
       try {
-        this.html5QrcodeScanner.clear();
+        await this.html5Qrcode.stop();
+        this.html5Qrcode.clear();
       } catch (e) {
-        console.error('Error al limpiar el escáner', e);
+        console.warn('Escáner ya detenido.');
       }
-      this.html5QrcodeScanner = null;
+      this.html5Qrcode = null;
     }
   }
 }
