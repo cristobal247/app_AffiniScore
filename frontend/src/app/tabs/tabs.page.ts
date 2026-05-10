@@ -10,6 +10,8 @@ import {
   IonLabel,
   NavController
 } from '@ionic/angular/standalone';
+import { addIcons } from 'ionicons';
+import { locationOutline, location } from 'ionicons/icons';
 
 @Component({
   selector: 'app-tabs',
@@ -19,7 +21,9 @@ import {
   imports: [IonRouterOutlet, IonContent, IonFooter, IonTabBar, IonTabButton, IonIcon, IonLabel]
 })
 export class TabsPage {
-  constructor(private navCtrl: NavController, private router: Router) {}
+  constructor(private navCtrl: NavController, private router: Router) {
+    addIcons({ locationOutline, location });
+  }
 
   navigate(path: string) {
     if (this.router.url !== path) {

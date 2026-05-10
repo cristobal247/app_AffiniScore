@@ -14,13 +14,14 @@ import {
   IonLabel, 
   IonInput, 
   IonButton,
+  IonCheckbox,
   AlertController,
   LoadingController 
 } from '@ionic/angular/standalone';
 
 // Iconos y Servicio
 import { addIcons } from 'ionicons';
-import { heart, eyeOutline } from 'ionicons/icons';
+import { heart, eyeOutline, chevronBackOutline, logoFacebook, logoApple } from 'ionicons/icons';
 import { SupabaseService } from '../services/supabase';
 
 @Component({
@@ -31,7 +32,7 @@ import { SupabaseService } from '../services/supabase';
   imports: [
     IonContent, IonHeader, IonTitle, IonToolbar, IonIcon, 
     IonText, IonCard, IonItem, IonLabel, IonInput, 
-    IonButton, CommonModule, FormsModule
+    IonButton, IonCheckbox, CommonModule, FormsModule
   ]
 })
 export class LoginPage implements OnInit {
@@ -46,7 +47,7 @@ export class LoginPage implements OnInit {
     private loadingCtrl: LoadingController
   ) {
     // Registramos los iconos para evitar warnings en consola
-    addIcons({ heart, eyeOutline });
+    addIcons({ heart, eyeOutline, chevronBackOutline, logoFacebook, logoApple });
   }
 
   ngOnInit() {}
@@ -94,6 +95,13 @@ export class LoginPage implements OnInit {
    */
   goToRegister() {
     this.router.navigateByUrl('/register');
+  }
+
+  /**
+   * Navega a la pantalla principal de bienvenida
+   */
+  goToWelcome() {
+    this.router.navigate(['/welcome']);
   }
 
   /**

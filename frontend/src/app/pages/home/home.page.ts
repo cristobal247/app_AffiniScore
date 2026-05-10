@@ -8,7 +8,7 @@ import {
   IonAvatar, IonButtons
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { heart, flash, settingsSharp } from 'ionicons/icons';
+import { heart, flash, settingsSharp, chatbubblesOutline } from 'ionicons/icons';
 import { SupabaseService } from '../../services/supabase'; // Ajusta la ruta si es necesario
 
 import { NavController } from '@ionic/angular/standalone';
@@ -36,7 +36,7 @@ export class HomePage implements OnInit {
     private router: Router,
     private navCtrl: NavController
   ) {
-    addIcons({ heart, flash, settingsSharp });
+    addIcons({ heart, flash, settingsSharp, chatbubblesOutline });
   }
 
   async ngOnInit() {

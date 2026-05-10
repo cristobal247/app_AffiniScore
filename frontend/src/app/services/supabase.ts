@@ -3,6 +3,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { environment } from 'src/environments/environment';
 import { firstValueFrom } from 'rxjs';
+import imageCompression from 'browser-image-compression';
 
 export interface ChatRoom {
   id: string;
@@ -76,7 +77,7 @@ export class SupabaseService {
       });
 
       const response = await firstValueFrom(
-        this.http.post<any>(`${this.apiUrl}/api/v1/partnerships/invite`, null, { headers, params: { user1_id } })
+        this.http.post<any>(`${this.apiUrl}/api/v1/partnerships/invite`, { user1_id }, { headers })
       );
       
       return { token: response.token || response.invite_token };
@@ -182,28 +183,44 @@ export class SupabaseService {
       .eq('id', userId);
   }
 
-  // Subir imagen de avatar al Storage
+  // Subir imagen de avatar al Storage con compresión
   async uploadAvatar(file: File) {
     const user = await this.getCurrentUser();
     if (!user) return { error: 'Usuario no autenticado' };
 
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${user.id}_${new Date().getTime()}.${fileExt}`;
-    const filePath = `public/${fileName}`;
+    try {
+      const options = {
+        maxSizeMB: 0.5,
+        maxWidthOrHeight: 800,
+        useWebWorker: true,
+      };
+      
+      const compressedFile = await imageCompression(file, options);
 
-    const { error: uploadError } = await this.supabase.storage
-      .from('avatars')
-      .upload(filePath, file);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}_${new Date().getTime()}.${fileExt}`;
+      const filePath = `public/${fileName}`;
 
-    if (uploadError) {
-      return { error: uploadError.message };
+      const { error: uploadError } = await this.supabase.storage
+        .from('avatar')
+        .upload(filePath, compressedFile, {
+          cacheControl: '3600',
+          upsert: true
+        });
+
+      if (uploadError) {
+        return { error: uploadError.message };
+      }
+
+      const { data: { publicUrl } } = this.supabase.storage
+        .from('avatar')
+        .getPublicUrl(filePath);
+
+      return { publicUrl };
+    } catch (err: any) {
+      console.error('Error comprimiendo o subiendo la imagen:', err);
+      return { error: err.message || 'Error al procesar la imagen' };
     }
-
-    const { data: { publicUrl } } = this.supabase.storage
-      .from('avatars')
-      .getPublicUrl(filePath);
-
-    return { publicUrl };
   }
 
   // Actualizar la URL del avatar en el perfil

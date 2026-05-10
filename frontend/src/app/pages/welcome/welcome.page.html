@@ -1,0 +1,27 @@
+<ion-content class="welcome-bg" [fullscreen]="true">
+  <div class="welcome-container">
+    
+    <div class="welcome-text-section">
+      <h1 class="welcome-title">Bienvenido</h1>
+      <p class="welcome-subtitle">
+        ¡Hola! <br>
+        Estamos aquí para ayudarte a fortalecer tu relación.<br>
+        Tú eliges: <strong>Inicia sesión</strong> o <strong>crea una cuenta</strong>.
+      </p>
+    </div>
+
+    <div class="welcome-image-section">
+      <img src="assets/images/mascota.png" alt="Mascota AffiniScore" class="mascot-img" />
+    </div>
+
+    <div class="welcome-buttons-section">
+      <ion-button expand="block" shape="round" class="btn-create" routerLink="/register">
+        Crear Cuenta
+      </ion-button>
+      <ion-button expand="block" shape="round" fill="outline" class="btn-login" routerLink="/login">
+        Iniciar Sesión
+      </ion-button>
+    </div>
+
+  </div>
+</ion-content>

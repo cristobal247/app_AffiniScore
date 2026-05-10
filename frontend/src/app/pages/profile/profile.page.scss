@@ -215,12 +215,22 @@ ion-content {
 }
 
 .logout-btn {
-  margin-top: 20px;
-  --color: #B0232A;
+  margin-top: 0px;
+  margin-bottom: 100px;
+  --background: rgba(224, 90, 90, 0.1);
+  --color: #E05A5A;
+  --border-radius: 20px;
+  --box-shadow: none;
+  height: 55px;
   font-weight: 700;
   font-size: 16px;
   text-transform: none;
   letter-spacing: 0;
+
+  ion-icon {
+    font-size: 24px;
+    margin-right: 8px;
+  }
 }
 
 ion-toolbar {

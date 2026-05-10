@@ -64,8 +64,8 @@ export class RegisterPage {
     }
   }
 
-  goBack() {
-    this.navCtrl.back();
+  goToWelcome() {
+    this.router.navigate(['/welcome']);
   }
 
   goToLogin() {

@@ -56,7 +56,7 @@ export const routes: Routes = [
   },
   {
     path: '',
-    redirectTo: 'login', // O 'actions' si ya estás logueada
+    redirectTo: 'welcome',
     pathMatch: 'full',
   },
   {
@@ -100,11 +100,6 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
-    path: 'chat',
-    loadComponent: () => import('./pages/Chat/chat.page').then( m => m.ChatPage),
-    canActivate: [authGuard]
-  },
-  {
     path: 'coach',
     redirectTo: 'tabs/chat',
     pathMatch: 'full'
@@ -113,5 +108,10 @@ export const routes: Routes = [
     path: 'tienda',
     loadComponent: () => import('./tienda/tienda.page').then( m => m.TiendaPage),
     canActivate: [authGuard]
+  },
+  {
+    path: 'welcome',
+    loadComponent: () => import('./pages/welcome/welcome.page').then( m => m.WelcomePage),
+    canActivate: [publicGuard]
   }
 ];
