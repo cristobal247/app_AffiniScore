@@ -1,0 +1,227 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar color="light">
+    <ion-buttons slot="start">
+      <ion-button (click)="goBack()" class="btn-back">
+        <ion-icon slot="icon-only" name="chevron-back-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <div class="header-title">
+      <h1>Trivia Rápida</h1>
+      <p>60 segundos de diversión</p>
+    </div>
+    <ion-buttons slot="end">
+      <ion-button color="medium">
+        <ion-icon slot="icon-only" name="volume-mute-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <!-- SETUP STATE -->
+  <ng-container *ngIf="gameState === 'setup' && !gameStarted">
+    <div class="setup-container">
+      <div class="setup-header">
+        <div class="game-icon">🎮</div>
+        <h2>¡Prepárense para jugar!</h2>
+        <p>Escriban sus nombres para comenzar la partida</p>
+      </div>
+
+      <ion-card class="setup-card">
+        <ion-card-content>
+          <div class="input-group">
+            <label>Nombre del Jugador 1</label>
+            <ion-input
+              [(ngModel)]="player1Name"
+              placeholder="Tu nombre"
+              class="player-input"
+            ></ion-input>
+          </div>
+
+          <div class="input-group">
+            <label>Nombre del Jugador 2</label>
+            <ion-input
+              [(ngModel)]="player2Name"
+              placeholder="Nombre de tu pareja"
+              class="player-input"
+            ></ion-input>
+          </div>
+        </ion-card-content>
+      </ion-card>
+
+      <div class="game-info-box">
+        <h3>¿Cómo jugar?</h3>
+        <ol>
+          <li>🎯 Se mostrará una pregunta</li>
+          <li>⏱️ Tienen 60 segundos en total</li>
+          <li>💭 Responden por turnos alternado</li>
+          <li>⭐ Ganan puntos por respuestas correctas</li>
+        </ol>
+      </div>
+
+      <ion-button
+        expand="block"
+        size="large"
+        class="btn-start-game"
+        (click)="startGame()"
+      >
+        <ion-icon slot="start" name="play-outline"></ion-icon>
+        Comenzar Juego
+      </ion-button>
+    </div>
+  </ng-container>
+
+  <!-- PLAYING STATE -->
+  <ng-container *ngIf="gameState === 'playing' && gameSession">
+    <div class="playing-container">
+      <!-- Timer Bar -->
+      <div class="timer-bar">
+        <div class="timer-display" [class.time-warning]="timeLeft < 10">
+          <ion-icon name="hourglass-outline"></ion-icon>
+          <span>{{ getFormattedTime() }}</span>
+        </div>
+        <div class="timer-progress">
+          <div class="progress-fill" [style.width.%]="(timeLeft / 60) * 100"></div>
+        </div>
+      </div>
+
+      <!-- Score Board -->
+      <div class="scoreboard">
+        <div class="player-score" [class.active]="gameSession.currentRound % 2 === 0">
+          <div class="player-name">{{ gameSession.player1.name }}</div>
+          <div class="player-points">{{ gameSession.player1.score }}</div>
+          <span class="points-label">pts</span>
+        </div>
+        <div class="vs-separator">VS</div>
+        <div class="player-score" [class.active]="gameSession.currentRound % 2 === 1">
+          <div class="player-name">{{ gameSession.player2.name }}</div>
+          <div class="player-points">{{ gameSession.player2.score }}</div>
+          <span class="points-label">pts</span>
+        </div>
+      </div>
+
+      <!-- Question Card -->
+      <ng-container *ngIf="getCurrentQuestion() as question">
+        <ion-card class="question-card">
+          <ion-card-content>
+            <div class="question-header">
+              <span class="round-badge">Pregunta {{ gameSession.currentRound + 1 }}/{{ gameSession.totalRounds }}</span>
+              <span class="difficulty-badge" [ngClass]="getDifficultyBadgeClass(question.difficulty)">
+                {{ getDifficultyLabel(question.difficulty) }}
+              </span>
+            </div>
+
+            <div class="question-content">
+              <h2>{{ question.question }}</h2>
+              <span class="points-info">+{{ question.points }} Puntos</span>
+            </div>
+
+            <div class="player-turn">
+              Turno de: <strong>{{ getCurrentPlayer()?.name }}</strong>
+            </div>
+          </ion-card-content>
+        </ion-card>
+      </ng-container>
+
+      <!-- Answer Input -->
+      <div class="answer-section">
+        <label>Respuesta</label>
+        <ion-input
+          [(ngModel)]="currentAnswerText"
+          (keyup.enter)="submitAnswer()"
+          placeholder="Escribe tu respuesta aquí..."
+          class="answer-input"
+        ></ion-input>
+      </div>
+
+      <!-- Submit Button -->
+      <ion-button
+        expand="block"
+        size="large"
+        class="btn-submit"
+        (click)="submitAnswer()"
+        [disabled]="!currentAnswerText.trim()"
+      >
+        <ion-icon slot="start" name="checkmark-outline"></ion-icon>
+        Enviar Respuesta
+      </ion-button>
+    </div>
+  </ng-container>
+
+  <!-- FINISHED STATE -->
+  <ng-container *ngIf="gameState === 'finished' && gameSession">
+    <div class="finished-container">
+      <div class="results-header">
+        <div class="trophy-icon" *ngIf="getWinnerInfo()?.winner !== 'tie'">🏆</div>
+        <div class="trophy-icon" *ngIf="getWinnerInfo()?.winner === 'tie'">🤝</div>
+        <h2 *ngIf="getWinnerInfo()?.winner === 'player1'">¡{{ gameSession.player1.name }} gana!</h2>
+        <h2 *ngIf="getWinnerInfo()?.winner === 'player2'">¡{{ gameSession.player2.name }} gana!</h2>
+        <h2 *ngIf="getWinnerInfo()?.winner === 'tie'">¡Empate perfecto!</h2>
+      </div>
+
+      <!-- Final Scores -->
+      <div class="final-scores">
+        <ion-card class="score-card player-1">
+          <ion-card-content>
+            <h3>{{ gameSession.player1.name }}</h3>
+            <div class="final-score">{{ gameSession.player1.score }}</div>
+            <p class="correct-answers">{{ gameSession.player1.correctAnswers }} respuestas correctas</p>
+          </ion-card-content>
+        </ion-card>
+
+        <ion-card class="score-card player-2">
+          <ion-card-content>
+            <h3>{{ gameSession.player2.name }}</h3>
+            <div class="final-score">{{ gameSession.player2.score }}</div>
+            <p class="correct-answers">{{ gameSession.player2.correctAnswers }} respuestas correctas</p>
+          </ion-card-content>
+        </ion-card>
+      </div>
+
+      <!-- Stats -->
+      <ion-card class="stats-card">
+        <ion-card-content>
+          <h3>Estadísticas de la Partida</h3>
+          <div class="stats-list">
+            <div class="stat-item">
+              <span class="stat-label">Preguntas respondidas</span>
+              <span class="stat-value">{{ gameSession.currentRound }}/{{ gameSession.totalRounds }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Tiempo utilizado</span>
+              <span class="stat-value">{{ 60 - timeLeft }}s</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Puntos totales</span>
+              <span class="stat-value">{{ gameSession.player1.score + gameSession.player2.score }}</span>
+            </div>
+          </div>
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Action Buttons -->
+      <div class="action-buttons">
+        <ion-button
+          expand="block"
+          color="primary"
+          size="large"
+          class="btn-play-again"
+          (click)="playAgain()"
+        >
+          <ion-icon slot="start" name="refresh-outline"></ion-icon>
+          Jugar de Nuevo
+        </ion-button>
+
+        <ion-button
+          expand="block"
+          fill="outline"
+          size="large"
+          (click)="goBack()"
+        >
+          <ion-icon slot="start" name="chevron-back-outline"></ion-icon>
+          Volver
+        </ion-button>
+      </div>
+    </div>
+  </ng-container>
+</ion-content>

@@ -1,0 +1,68 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar mode="ios">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/actions" text="Atrás"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Recuerdos Compartidos</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="memories-container">
+    <input
+      #fileInput
+      type="file"
+      accept="image/*"
+      hidden
+      (change)="onFileSelected($event)" />
+
+    <!-- Mensaje de carga -->
+    <div *ngIf="isLoading" class="loading-message">
+      <p>Cargando recuerdos...</p>
+    </div>
+
+    <!-- Mensaje cuando no hay recuerdos -->
+    <div *ngIf="!isLoading && memories.length === 0" class="empty-state">
+      <ion-icon name="image-outline" class="empty-icon"></ion-icon>
+      <h2>Sin recuerdos aún</h2>
+      <p>Comiencen a compartir fotos y momentos especiales</p>
+    </div>
+
+    <!-- Grid de recuerdos -->
+    <div *ngIf="!isLoading && memories.length > 0" class="memories-grid">
+      <ion-card *ngFor="let memory of memories" class="memory-card">
+        <!-- Imagen del recuerdo -->
+        <div class="memory-image-container">
+          <img [src]="memory.image_url" alt="Recuerdo" class="memory-image" />
+          <div class="date-badge">{{ formatDate(memory.date) }}</div>
+        </div>
+
+        <ion-card-content class="memory-content">
+          <!-- Notas de texto si existen -->
+          <div *ngIf="memory.notes" class="memory-notes">
+            <p>{{ memory.notes }}</p>
+          </div>
+
+          <!-- Botón para agregar nota de voz -->
+          <ion-button
+            expand="block"
+            fill="outline"
+            color="danger"
+            size="small"
+            (click)="addVoiceNote(memory)"
+            class="voice-note-btn">
+            <ion-icon slot="start" name="microphone-outline"></ion-icon>
+            {{ memory.voice_note_url ? 'Escuchar nota' : 'Agregar nota' }}
+          </ion-button>
+        </ion-card-content>
+      </ion-card>
+    </div>
+  </div>
+
+  <!-- Botón flotante para agregar nuevo recuerdo -->
+  <ion-fab slot="fixed" vertical="bottom" horizontal="end">
+    <ion-fab-button (click)="addNewMemory()" color="danger">
+      <ion-icon name="camera-outline"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+</ion-content>
