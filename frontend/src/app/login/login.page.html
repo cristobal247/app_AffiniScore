@@ -1,74 +1,70 @@
-<ion-content [fullscreen]="true">
-  <div class="login-container">
-    
+<ion-content [fullscreen]="true" class="login-content">
+  <div class="top-background">
     <div class="header">
-      <ion-icon src="assets/icons/hero/outline/heart.svg"></ion-icon>
-      <h1>AffiniScore</h1>
+      <ion-button fill="clear" color="dark" class="back-button" (click)="goToWelcome()">
+        <ion-icon name="chevron-back-outline"></ion-icon>
+        Volver
+      </ion-button>
     </div>
+  </div>
 
-    <div class="logo-central">
-      <img src="/assets/images/logo_circular.png" alt="Logo">
-    </div>
-
+  <div class="bottom-card">
     <div class="titles">
-      <h2>AffiniScore</h2>
-      <p>Puntos para tu relación <span class="dot">•</span> Creciendo Juntos</p>
+      <h2>Bienvenido de nuevo</h2>
+      <p>¿Listo para continuar fortaleciendo tu relación?<br>Tu camino comienza aquí.</p>
     </div>
 
-    <ion-card class="login-card">
+    <div class="form-container">
       <div class="input-group">
-        <ion-label class="custom-label">CORREO ELECTRÓNICO</ion-label>
-        <ion-item lines="none" class="custom-item">
+        <ion-item lines="none" class="custom-input-item">
           <ion-input 
             type="email" 
             [(ngModel)]="email" 
-            placeholder="tu@email.com">
+            placeholder="Ingresa tu correo">
           </ion-input>
         </ion-item>
       </div>
 
       <div class="input-group">
-        <ion-label class="custom-label">CONTRASEÑA</ion-label>
-        <ion-item lines="none" class="custom-item">
+        <ion-item lines="none" class="custom-input-item">
           <ion-input 
             type="password" 
             [(ngModel)]="password" 
-            placeholder="••••••••">
+            placeholder="Contraseña">
           </ion-input>
           <ion-icon src="assets/icons/hero/outline/eye.svg" slot="end" class="eye-icon"></ion-icon>
         </ion-item>
       </div>
 
-      <div class="forgot-container">
-        <ion-button fill="clear" class="forgot-btn">
-          ¿Olvidaste tu contraseña?
-        </ion-button>
+      <div class="options-row">
+        <div class="forgot-pwd">
+          <span>¿Olvidaste tu contraseña?</span>
+        </div>
       </div>
 
       <ion-button expand="block" class="main-btn" (click)="onLogin()">
         Iniciar Sesión
       </ion-button>
-    </ion-card>
 
-    <div class="divider">
-      <span>O continuar con</span>
-    </div>
-
-    <div class="social-row">
-      <div class="social-btn">
-        <img src="assets/images/google_icon.png"> Google
+      <div class="divider">
+        <span>Ingresar con</span>
       </div>
-      <div class="social-btn">
-        <img src="assets/images/apple_icon.png"> Apple
+
+      <div class="social-row">
+        <div class="social-icon fb">
+          <ion-icon name="logo-facebook"></ion-icon>
+        </div>
+        <div class="social-icon google">
+          <img src="assets/images/google_icon.png" alt="Google">
+        </div>
+        <div class="social-icon apple">
+          <ion-icon name="logo-apple"></ion-icon>
+        </div>
+      </div>
+
+      <div class="footer-text">
+        <p>¿No tienes una cuenta? <span class="register-link" (click)="goToRegister()">Regístrate</span></p>
       </div>
     </div>
-
-    <div class="footer-text">
-      <p>¿Aún no tienes una cuenta? 
-        <span class="register-link" (click)="goToRegister()">Regístrate</span> 
-        y vincula a tu pareja
-      </p>
-    </div>
-
   </div>
 </ion-content>

@@ -6,13 +6,6 @@ $red-brand: #bd343a;
 $red-light: #fbecec;
 $white: #ffffff;
 
-// Aplicar fondo a la pantalla
-.dashboard-bg {
-  --background: #{$bg-color};
-}
-
-
-
 // Contenedor general
 .dashboard-container {
   padding: 0 20px 40px 20px;

@@ -18,7 +18,7 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content>
+<ion-content class="catalog-bg" [fullscreen]="true">
   <div class="catalog-list">
     <div class="action-item" *ngFor="let item of filteredActions" (click)="registerAction(item)">
       <div class="icon-box">

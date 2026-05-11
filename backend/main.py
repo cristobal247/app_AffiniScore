@@ -4,7 +4,17 @@ from pydantic import BaseModel
 import random
 import string
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Modelo solo para cuando el Usuario A invita
 class InviteRequest(BaseModel):
@@ -21,11 +31,23 @@ async def create_partnership(request: InviteRequest):
     token = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
     
     try:
-        response = supabase.table("partnerships").insert({
-            "user1_id": request.user1_id,
-            "pairing_token": token,
-            "status": "pending"
-        }).execute()
+        # Verificar si el usuario ya tiene una invitación generada
+        existing = supabase.table("partnerships").select("*").eq("user1_id", request.user1_id).execute()
+        
+        if existing.data:
+            # Si ya existe, actualizamos el token
+            response = supabase.table("partnerships").update({
+                "pairing_token": token,
+                "status": "pending"
+            }).eq("user1_id", request.user1_id).execute()
+        else:
+            # Si no existe, creamos una nueva
+            response = supabase.table("partnerships").insert({
+                "user1_id": request.user1_id,
+                "pairing_token": token,
+                "status": "pending"
+            }).execute()
+            
         return {"message": "Invitación creada", "token": token}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

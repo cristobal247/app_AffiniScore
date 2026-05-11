@@ -7,14 +7,19 @@
   height: 100%;
 }
 
-ion-content {
-  // Eliminamos cualquier rastro de fondo oscuro heredado
-  --background: #F8F8F8;
+.catalog-bg {
+  /* Fondo con gradiente marcado en salmón, en esquinas opuestas (arriba-derecha, abajo-izquierda) */
+  --background: radial-gradient(circle at 100% 0%, rgba(240, 138, 125, 0.25) 0%, rgba(245, 243, 243, 1) 45%),
+                radial-gradient(circle at 0% 100%, rgba(224, 90, 90, 0.2) 0%, rgba(245, 243, 243, 1) 50%);
+  background-color: #F5F3F3;
 }
 
 /* --- HEADER Y BUSCADOR --- */
 .catalog-header {
-  --background: #FFFFFF;
+  --background: transparent;
+  --border-style: none !important;
+  --border-width: 0 !important;
+  box-shadow: none !important;
   ion-title {
     font-weight: 700;
     letter-spacing: -0.5px;
@@ -23,7 +28,10 @@ ion-content {
 }
 
 .search-toolbar {
-  --background: #FFFFFF;
+  --background: transparent;
+  --border-style: none !important;
+  --border-width: 0 !important;
+  box-shadow: none !important;
   padding: 0 8px 12px;
 }
 
@@ -42,7 +50,7 @@ ion-content {
 
 /* --- LISTADO DE ACCIONES --- */
 .catalog-list {
-  background: #F8F8F8; // Refuerzo para asegurar que no se vea negro al scrollear
+  background: transparent; // Hacemos transparente para que se vea el gradiente
   padding: 10px 0 30px; // Espacio extra al final para que no tape el footer
   min-height: 100%;
 }
