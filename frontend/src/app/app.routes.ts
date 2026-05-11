@@ -30,14 +30,7 @@ export const routes: Routes = [
         path: 'mapa',
         loadComponent: () => import('./pages/mapa/mapa.page').then(m => m.MapaPage)
       },
-      {
-        path: 'profile',
-        loadComponent: () => import('./pages/profile/profile.page').then(m => m.ProfilePage)
-      },
-      {
-        path: 'chat',
-        loadComponent: () => import('./pages/chat-list/chat-list.page').then(m => m.ChatListPage)
-      },
+
       {
         path: 'chat-ai',
         loadComponent: () => import('./pages/Chat/chat.page').then(m => m.ChatPage)
@@ -90,13 +83,13 @@ export const routes: Routes = [
   },
   {
     path: 'profile',
-    redirectTo: 'tabs/profile',
-    pathMatch: 'full'
+    loadComponent: () => import('./pages/profile/profile.page').then(m => m.ProfilePage),
+    canActivate: [authGuard]
   },
   {
     path: 'chat',
-    redirectTo: 'tabs/chat',
-    pathMatch: 'full'
+    loadComponent: () => import('./pages/chat-list/chat-list.page').then(m => m.ChatListPage),
+    canActivate: [authGuard]
   },
   {
     path: 'retos',

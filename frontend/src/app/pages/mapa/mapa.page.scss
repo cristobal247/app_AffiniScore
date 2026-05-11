@@ -6,6 +6,12 @@
 	--muted: #8f8f8f;
 }
 
+.scrolling-header-container {
+  padding-top: calc(var(--ion-safe-area-top, 20px) + 15px);
+  padding-bottom: 5px;
+  width: 100%;
+}
+
 ion-content.map-page {
 	--background: var(--bone);
 	background: var(--bone);

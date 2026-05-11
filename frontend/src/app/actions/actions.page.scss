@@ -6,6 +6,12 @@
 
 
 
+.scrolling-header-container {
+  padding-top: calc(var(--ion-safe-area-top, 20px) + 15px);
+  padding-bottom: 5px;
+  width: 100%;
+}
+
 .main-wrapper { padding: 16px; }
 
 .main-section-title {

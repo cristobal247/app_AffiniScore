@@ -83,7 +83,7 @@ export class PartnerChatPage implements OnInit, OnDestroy {
     const msgText = this.newMessage.trim();
     this.newMessage = ''; // Limpiar input rápidamente para mejor UX
     
-    await this.supabaseSvc.sendMessage(this.roomId, msgText, 'USER');
+    await this.supabaseSvc.sendMessage(this.roomId, msgText);
     // El mensaje aparecerá por la suscripción en tiempo real o lo podemos agregar manualmente
   }
 

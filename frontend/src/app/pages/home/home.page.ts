@@ -8,7 +8,17 @@ import {
   IonAvatar, IonButtons
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { heart, flash, settingsSharp, documentTextOutline, trendingUpOutline } from 'ionicons/icons';
+import { 
+  heart, 
+  flash, 
+  settingsSharp, 
+  documentTextOutline, 
+  trendingUpOutline,
+  chatbubblesOutline,
+  starOutline,
+  location,
+  imagesOutline
+} from 'ionicons/icons';
 import { SupabaseService } from '../../services/supabase'; // Ajusta la ruta si es necesario
 
 import { NavController } from '@ionic/angular/standalone';
@@ -31,13 +41,24 @@ export class HomePage implements OnInit {
   metaSemanal: number = 500;
   nivelAfinidad: number = 1;
   porcentajeAfinidad: number = 0;
+  userAvatarUrl: string | null = null;
 
   constructor(
     private supabaseSvc: SupabaseService,
     private router: Router,
     private navCtrl: NavController
   ) {
-    addIcons({ heart, flash, settingsSharp, documentTextOutline, trendingUpOutline });
+    addIcons({ 
+      heart, 
+      flash, 
+      settingsSharp, 
+      documentTextOutline, 
+      trendingUpOutline,
+      chatbubblesOutline,
+      starOutline,
+      location,
+      imagesOutline
+    });
   }
 
   private pointsSub?: import('rxjs').Subscription;
@@ -95,6 +116,8 @@ export class HomePage implements OnInit {
         
         // Progreso hacia la meta SEMANAL
         this.porcentajeAfinidad = Math.min(100, Math.round((this.puntosSemanales / this.metaSemanal) * 100));
+        
+        this.userAvatarUrl = data.avatar_url || null;
       }
     } catch (error) {
       console.error('Error al cargar puntos:', error);

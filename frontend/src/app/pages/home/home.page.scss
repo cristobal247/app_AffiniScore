@@ -7,6 +7,12 @@ $red-light: #fbecec;
 $white: #ffffff;
 
 // Contenedor general
+.scrolling-header-container {
+  padding-top: calc(var(--ion-safe-area-top, 20px) + 15px);
+  padding-bottom: 5px;
+  width: 100%;
+}
+
 .dashboard-container {
   padding: 0 20px 40px 20px;
   display: flex;

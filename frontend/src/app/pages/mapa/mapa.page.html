@@ -1,32 +1,33 @@
-<ion-header class="ion-no-border">
-  <ion-toolbar mode="ios" class="main-header-toolbar">
+<ion-content class="map-page">
+  
+  <!-- Header que se desplaza con el contenido -->
+  <div class="scrolling-header-container">
     <div class="header-content-wrapper">
-      <ion-buttons slot="start">
-        <ion-button class="profile-avatar-btn" routerLink="/tabs/profile">
+      <ion-buttons>
+        <ion-button class="profile-avatar-btn" routerLink="/profile">
           <ion-avatar class="user-avatar-top">
-            <img src="assets/images/user.png" alt="Perfil" />
+            <img [src]="userAvatarUrl || '/assets/images/user.png'" alt="Perfil" />
           </ion-avatar>
         </ion-button>
       </ion-buttons>
+      
       <div class="brand-group">
-        <h1 class="brand-title-gradient"></h1>
       </div>
-      <ion-buttons slot="end">
+      
+      <ion-buttons>
         <ion-button class="btn-settings">
-          <ion-icon src="assets/icons/hero/outline/cog-6-tooth.svg"></ion-icon>
+          <ion-icon src="/assets/icons/hero/outline/cog-6-tooth.svg"></ion-icon>
         </ion-button>
       </ion-buttons>
     </div>
-  </ion-toolbar>
-</ion-header>
+  </div>
 
-<ion-content class="map-page">
   <div class="page-wrapper">
     <h2 class="page-title">Mapa de Conexión</h2>
 
     <div class="tip-card">
       <div class="tip-icon">
-        <ion-icon src="assets/icons/hero/outline/map-pin.svg"></ion-icon>
+        <ion-icon src="/assets/icons/hero/outline/map-pin.svg"></ion-icon>
       </div>
       <div class="tip-copy">
         <p>Están cerca del lugar de su primera cita. Vayan para ganar 100 Affini Points</p>
@@ -37,14 +38,14 @@
     <div class="map-card">
       <div id="map"></div>
       <div class="map-avatar">
-        <img src="assets/images/user.png" alt="Tu" />
+        <img [src]="userAvatarUrl || '/assets/images/user.png'" alt="Tu" />
         <span>Tu</span>
       </div>
       <div class="map-target">
-        <ion-icon src="assets/icons/hero/outline/paper-airplane.svg"></ion-icon>
+        <ion-icon src="/assets/icons/hero/outline/paper-airplane.svg"></ion-icon>
       </div>
       <div class="map-favorite">
-        <ion-icon src="assets/icons/hero/outline/heart.svg"></ion-icon>
+        <ion-icon src="/assets/icons/hero/outline/heart.svg"></ion-icon>
       </div>
       <div class="map-tag">
         <p class="tag-title">DESTINO ESPECIAL</p>

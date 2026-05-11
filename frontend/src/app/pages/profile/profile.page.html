@@ -1,19 +1,22 @@
-<ion-header class="ion-no-border">
-  <ion-toolbar mode="ios">
-    <ion-buttons slot="start">
-      <ion-back-button defaultHref="/actions" text="Atrás"></ion-back-button>
-    </ion-buttons>
-    <ion-title>Mi Perfil</ion-title>
-  </ion-toolbar>
-</ion-header>
-
 <ion-content>
+  <!-- Header que se desplaza con el contenido -->
+  <div class="scrolling-header-container profile-header-scroll">
+    <div class="header-content-wrapper">
+      <ion-buttons>
+        <ion-back-button defaultHref="/tabs/dashboard" text="Atrás" color="danger"></ion-back-button>
+      </ion-buttons>
+      <div class="brand-group">
+      </div>
+      <div style="width: 48px;"></div> <!-- Spacer for symmetry -->
+    </div>
+  </div>
+
   <div class="profile-container">
     <div class="user-info-section">
       <div class="avatar-container" (click)="triggerFileInput()">
         <div class="avatar-circle">
           <img *ngIf="avatarUrl" [src]="avatarUrl" alt="Avatar" />
-          <ion-icon *ngIf="!avatarUrl" src="assets/icons/hero/outline/user-circle.svg"></ion-icon>
+          <ion-icon *ngIf="!avatarUrl" src="/assets/icons/hero/outline/user-circle.svg"></ion-icon>
         </div>
         <div class="edit-badge">
           <ion-icon name="camera-outline"></ion-icon>
@@ -26,12 +29,44 @@
       <p>Miembro de AffiniScore</p>
     </div>
 
-    <!-- BOTÓN PARA IR A VINCULACIÓN QR -->
-    <ion-card class="qr-linking-card" (click)="goToQr()" button="true">
+    <!-- SECCIÓN DE VINCULACIÓN (CONDICIONAL) -->
+    <ion-card *ngIf="!hasPartner" class="qr-linking-card" routerLink="/qr" button="true">
       <ion-card-content class="qr-card-content">
         <ion-icon name="qr-code-outline" class="heart-icon" color="primary"></ion-icon>
         <h3 class="qr-title">Vincular con tu Pareja</h3>
         <p class="qr-subtitle">Usa tu código QR para conectar tu cuenta.</p>
+      </ion-card-content>
+    </ion-card>
+
+    <ion-card *ngIf="hasPartner" class="qr-linking-card partner-status-card">
+      <ion-card-content class="qr-card-content">
+        <div class="partnership-visual">
+          <div class="avatar-mini">
+            <img *ngIf="avatarUrl" [src]="avatarUrl" alt="Tú" />
+            <ion-icon *ngIf="!avatarUrl" name="person-circle-outline"></ion-icon>
+          </div>
+          <div class="heart-connection">
+            <ion-icon name="heart" color="danger"></ion-icon>
+          </div>
+          <div class="avatar-mini">
+            <img *ngIf="partnerAvatarUrl" [src]="partnerAvatarUrl" alt="Pareja" />
+            <ion-icon *ngIf="!partnerAvatarUrl" name="person-circle-outline"></ion-icon>
+          </div>
+        </div>
+        
+        <h3 class="qr-title">Vinculado con {{ partnerName }}</h3>
+        <p class="qr-subtitle">Tu relación está sincronizada. ¡Sigan sumando puntos juntos!</p>
+        <div style="display: flex; flex-direction: row; gap: 10px; margin-top: 15px; justify-content: center; align-items: center; width: 100%;">
+          <ion-button fill="clear" color="medium" size="small" (click)="confirmUnlink()" style="font-size: 12px; text-transform: none; --padding-start: 8px; --padding-end: 8px;">
+            <ion-icon slot="start" name="heart-dislike-outline" style="font-size: 16px;"></ion-icon>
+            Desvincular
+          </ion-button>
+          <div style="width: 1px; height: 16px; background-color: #e0e0e0;"></div>
+          <ion-button fill="clear" color="danger" size="small" (click)="linkWithSomeoneElse()" style="font-size: 12px; text-transform: none; --padding-start: 8px; --padding-end: 8px;">
+            <ion-icon slot="start" name="qr-code-outline" style="font-size: 16px;"></ion-icon>
+            Volver a vincularse
+          </ion-button>
+        </div>
       </ion-card-content>
     </ion-card>
 
@@ -159,7 +194,7 @@
       </ion-button>
 
       <ion-button expand="block" fill="clear" color="danger" (click)="logout()" class="logout-btn">
-        <ion-icon slot="start" src="assets/icons/hero/outline/arrow-right-on-rectangle.svg"></ion-icon>
+        <ion-icon slot="start" src="/assets/icons/hero/outline/arrow-right-on-rectangle.svg"></ion-icon>
         Cerrar Sesión
       </ion-button>
     </div>

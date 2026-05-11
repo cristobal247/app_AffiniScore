@@ -1,4 +1,4 @@
-import { Component, AfterViewInit } from '@angular/core';
+import { Component, AfterViewInit, OnInit } from '@angular/core';
 import { 
   IonContent, 
   IonHeader, 
@@ -40,6 +40,7 @@ export class MapaPage implements AfterViewInit {
   isRecording: boolean = false;
   private mediaRecorder: MediaRecorder | null = null;
   private audioChunks: Blob[] = [];
+  userAvatarUrl: string | null = null;
 
   constructor(
     private supabaseSvc: SupabaseService,
@@ -47,8 +48,27 @@ export class MapaPage implements AfterViewInit {
     private loadingCtrl: LoadingController
   ) {}
 
+  async ngOnInit() {
+    await this.loadUserProfile();
+  }
+
+  async ionViewWillEnter() {
+    await this.loadUserProfile();
+  }
+
   ngAfterViewInit() {
     this.initMap();
+  }
+
+  async loadUserProfile() {
+    try {
+      const { data } = await this.supabaseSvc.getUserProfile();
+      if (data) {
+        this.userAvatarUrl = data.avatar_url || null;
+      }
+    } catch (error) {
+      console.error('Error al cargar perfil en mapa:', error);
+    }
   }
 
   private async initMap(): Promise<void> {

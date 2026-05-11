@@ -1,7 +1,7 @@
-import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, ViewChild, ElementRef, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { 
   IonContent, IonHeader, IonTitle, IonToolbar, IonButton, 
   IonIcon, IonItem, IonLabel, IonList, LoadingController,
@@ -9,7 +9,21 @@ import {
   ToastController
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { logOutOutline, personCircleOutline, chevronForwardOutline, heartOutline, qrCodeOutline, shieldCheckmarkOutline, notificationsOutline, checkmarkCircleOutline, phonePortraitOutline, cameraOutline, documentTextOutline } from 'ionicons/icons';
+import { 
+  logOutOutline, 
+  personCircleOutline, 
+  chevronForwardOutline, 
+  heartOutline, 
+  heart,
+  heartDislikeOutline, 
+  qrCodeOutline, 
+  shieldCheckmarkOutline, 
+  notificationsOutline, 
+  checkmarkCircleOutline, 
+  phonePortraitOutline, 
+  cameraOutline, 
+  documentTextOutline 
+} from 'ionicons/icons';
 import { SupabaseService } from '../../services/supabase';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -36,7 +50,7 @@ export interface NotificationSettings {
     IonContent, IonHeader, IonTitle, IonToolbar, IonButton, 
     IonIcon, IonItem, IonLabel, IonList, IonToggle,
     IonButtons, IonBackButton, IonCard, IonCardContent,
-    CommonModule, FormsModule
+    CommonModule, FormsModule, RouterModule
   ]
 })
 export class ProfilePage implements OnInit {
@@ -58,44 +72,123 @@ export class ProfilePage implements OnInit {
 
   avatarUrl: string | null = null;
   isUploading = false;
+  hasPartner: boolean = false;
+  partnerName: string = '';
+  partnerAvatarUrl: string | null = null;
 
   constructor(
     private supabaseSvc: SupabaseService,
     private router: Router,
     private loadingCtrl: LoadingController,
-    private toastCtrl: ToastController
+    private toastCtrl: ToastController,
+    private cdr: ChangeDetectorRef
   ) {
-    addIcons({ logOutOutline, personCircleOutline, chevronForwardOutline, heartOutline, qrCodeOutline, shieldCheckmarkOutline, notificationsOutline, checkmarkCircleOutline, phonePortraitOutline, cameraOutline, documentTextOutline });
+    addIcons({ 
+      logOutOutline, 
+      personCircleOutline, 
+      chevronForwardOutline, 
+      heartOutline, 
+      heart,
+      heartDislikeOutline, 
+      qrCodeOutline, 
+      shieldCheckmarkOutline, 
+      notificationsOutline, 
+      checkmarkCircleOutline, 
+      phonePortraitOutline, 
+      cameraOutline, 
+      documentTextOutline 
+    });
   }
 
-  async ngOnInit() {
+  ngOnInit() {
+    this.loadProfileData();
+  }
+
+  ionViewWillEnter() {
+    this.loadProfileData();
+  }
+
+  async loadProfileData() {
     const user = await this.supabaseSvc.getCurrentUser();
     this.userEmail = user?.email;
 
     const { data: profile } = await this.supabaseSvc.getUserProfile();
-    if (profile) {
-      if (profile.avatar_url) {
-        this.avatarUrl = profile.avatar_url;
+    console.log('Current profile fetched:', profile);
+    
+    if (profile && profile.avatar_url) {
+      this.avatarUrl = profile.avatar_url;
+    }
+    
+    if (profile && profile.partnership_id) {
+      this.hasPartner = true;
+      const { data: partner, error: partnerError } = await this.supabaseSvc.getPartnerProfile(profile.partnership_id);
+      if (partnerError) {
+        console.error('Error fetching partner profile:', partnerError);
       }
-      
-      // Load privacy settings
-      if (profile.profile_visible !== undefined) this.privacySettings.profileVisibleToPartner = profile.profile_visible;
-      if (profile.show_streak !== undefined) this.privacySettings.showStreak = profile.show_streak;
-      if (profile.share_activity !== undefined) this.privacySettings.shareActivityStatus = profile.share_activity;
-      
-      // Load notification settings
-      if (profile.push_enabled !== undefined) this.notificationSettings.pushEnabled = profile.push_enabled;
-      if (profile.daily_reminder !== undefined) this.notificationSettings.dailyReminder = profile.daily_reminder;
-      if (profile.challenge_invites !== undefined) this.notificationSettings.challengeInvites = profile.challenge_invites;
-      if (profile.score_milestones !== undefined) this.notificationSettings.scoreMilestones = profile.score_milestones;
+      console.log('Partner data fetched:', partner);
+      if (partner) {
+        this.partnerName = partner.full_name || partner.email || 'Tu Pareja';
+        this.partnerAvatarUrl = partner.avatar_url || null;
+      } else {
+        this.partnerName = 'Tu Pareja';
+        this.partnerAvatarUrl = null;
+      }
+    } else {
+      this.hasPartner = false;
+      this.partnerName = '';
+    }
+    
+    this.cdr.detectChanges();
+  }
+
+  public async confirmUnlink() {
+    const loading = await this.loadingCtrl.create({
+      message: 'Desvinculando...',
+      mode: 'ios'
+    });
+    await loading.present();
+
+    const res = await this.supabaseSvc.unlinkPartner();
+    await loading.dismiss();
+
+    if (res.error) {
+      this.showToast(res.error, 'danger');
+    } else {
+      this.hasPartner = false;
+      this.partnerName = '';
+      this.showToast('Te has desvinculado de tu pareja.', 'success');
     }
   }
 
-  triggerFileInput() {
+  public async linkWithSomeoneElse() {
+    const loading = await this.loadingCtrl.create({
+      message: 'Preparando nueva vinculación...',
+      mode: 'ios'
+    });
+    await loading.present();
+
+    const res = await this.supabaseSvc.unlinkPartner();
+    await loading.dismiss();
+
+    if (res.error) {
+      this.showToast(res.error, 'danger');
+    } else {
+      this.hasPartner = false;
+      this.partnerName = '';
+      this.showToast('Te has desvinculado. Ahora puedes vincularte con alguien más.', 'success');
+      this.router.navigateByUrl('/qr');
+    }
+  }
+
+  public navigateToQr() {
+    this.router.navigateByUrl('/qr');
+  }
+
+  public triggerFileInput() {
     this.fileInput.nativeElement.click();
   }
 
-  async onFileSelected(event: any) {
+  public async onFileSelected(event: any) {
     const file = event.target.files[0];
     if (!file) return;
 
@@ -133,26 +226,33 @@ export class ProfilePage implements OnInit {
           const ctx = canvas.getContext('2d');
           if (ctx) {
             ctx.drawImage(img, 0, 0, width, height);
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-            
-            const updateRes = await this.supabaseSvc.uploadAvatar(dataUrl);
-            
-            if (updateRes.error) {
-              console.error('Supabase Error:', updateRes.error);
-              const errMsg = typeof updateRes.error === 'string' ? updateRes.error : updateRes.error.message;
-              this.showToast('Error al subir: ' + errMsg, 'danger');
-            } else {
-              // Obtenemos la url real en caso de que Storage lo haya subido, o el dataUrl si fue el fallback
-              const newProfile = await this.supabaseSvc.getUserProfile();
-              this.avatarUrl = newProfile.data?.avatar_url || dataUrl;
-              this.showToast('Foto de perfil actualizada exitosamente.', 'success');
-            }
-          } else {
-            this.showToast('Error al procesar la imagen.', 'danger');
+            canvas.toBlob(async (blob) => {
+              if (blob) {
+                // 1. Subir al bucket 'avatars'
+                const uploadRes = await this.supabaseSvc.uploadAvatar(blob);
+                
+                if (uploadRes.error) {
+                  console.error('Upload Error:', uploadRes.error);
+                  this.showToast('Error al subir imagen: ' + uploadRes.error, 'danger');
+                } else if (uploadRes.publicUrl) {
+                  // 2. Actualizar el perfil con la URL pública
+                  const updateRes = await this.supabaseSvc.updateAvatarUrl(uploadRes.publicUrl);
+                  
+                  if (updateRes.error) {
+                    this.showToast('Error al actualizar perfil.', 'danger');
+                  } else {
+                    this.avatarUrl = uploadRes.publicUrl;
+                    this.showToast('Foto de perfil actualizada exitosamente.', 'success');
+                  }
+                }
+              } else {
+                this.showToast('Error al procesar la imagen.', 'danger');
+              }
+              this.isUploading = false;
+              await loading.dismiss();
+              event.target.value = null;
+            }, 'image/jpeg', 0.8);
           }
-          this.isUploading = false;
-          await loading.dismiss();
-          event.target.value = null;
         };
         img.src = e.target.result;
       };
@@ -164,7 +264,7 @@ export class ProfilePage implements OnInit {
     }
   }
 
-  async showToast(message: string, color: string) {
+  public async showToast(message: string, color: string) {
     const toast = await this.toastCtrl.create({
       message,
       duration: 3000,
@@ -174,40 +274,25 @@ export class ProfilePage implements OnInit {
     toast.present();
   }
 
-  goToQr() {
-    this.router.navigateByUrl('/qr');
+
+  public onPrivacyChange(): void {
+    console.log('Privacy updated', this.privacySettings);
   }
 
-  async onPrivacyChange() {
-    await this.supabaseSvc.updateProfileSettings({
-      profile_visible: this.privacySettings.profileVisibleToPartner,
-      show_streak: this.privacySettings.showStreak,
-      share_activity: this.privacySettings.shareActivityStatus
-    });
-    console.log('Privacy updated in DB', this.privacySettings);
+  public onNotificationChange(): void {
+    console.log('Notifications updated', this.notificationSettings);
   }
 
-  async onNotificationChange() {
-    await this.supabaseSvc.updateProfileSettings({
-      push_enabled: this.notificationSettings.pushEnabled,
-      daily_reminder: this.notificationSettings.dailyReminder,
-      challenge_invites: this.notificationSettings.challengeInvites,
-      score_milestones: this.notificationSettings.scoreMilestones
-    });
-    console.log('Notifications updated in DB', this.notificationSettings);
-  }
-
-  async enablePushNotifications() {
+  public enablePushNotifications(): void {
     this.notificationSettings.pushEnabled = true;
-    await this.onNotificationChange();
-    this.showToast('Notificaciones activadas', 'success');
+    console.log('Push notifications enabled');
   }
 
-  sendTestNotification(): void {
-    this.showToast('Notificación de prueba enviada', 'primary');
+  public sendTestNotification(): void {
+    console.log('Test notification sent');
   }
 
-  async logout() {
+  public async logout() {
     const loading = await this.loadingCtrl.create({
       message: 'Cerrando sesión...',
       mode: 'ios'

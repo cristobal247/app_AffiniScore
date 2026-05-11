@@ -28,20 +28,27 @@
 
     <!-- TAB: Mi Código QR -->
     <div class="tab-content" *ngIf="activeTab === 'qr'">
-      <div class="qr-code-box">
-        <!-- Uso de paréntesis para leer el signal -->
-        <qrcode [qrdata]="qrData()" [width]="180" [errorCorrectionLevel]="'M'">
-        </qrcode>
-      </div>
-
-      <div class="short-code">{{ shortCode() }}</div>
-
-      <p class="helper-text">MUESTRA ESTE CÓDIGO A TU PAREJA</p>
-
-      <ion-button expand="block" class="copy-btn" (click)="copyCode()">
-        <ion-icon slot="start" name="copy-outline"></ion-icon>
-        Copiar Código
-      </ion-button>
+      <ng-container *ngIf="!qrData(); else qrGenerated">
+        <ion-button expand="block" color="primary" (click)="loadInviteCode()">
+          <ion-icon slot="start" name="qr-code-outline"></ion-icon>
+          Generar código de vinculación
+        </ion-button>
+      </ng-container>
+      <ng-template #qrGenerated>
+        <div class="qr-code-box">
+          <qrcode [qrdata]="qrData()" [width]="180" [errorCorrectionLevel]="'M'">
+          </qrcode>
+        </div>
+        <div class="short-code">{{ shortCode() }}</div>
+        <p class="helper-text">MUESTRA ESTE CÓDIGO A TU PAREJA</p>
+        <ion-button expand="block" class="copy-btn" (click)="copyCode()">
+          <ion-icon slot="start" name="copy-outline"></ion-icon>
+          Copiar Código
+        </ion-button>
+        <ion-button expand="block" fill="outline" color="medium" (click)="clearInviteCode()" style="margin-top: 8px;">
+          Limpiar código
+        </ion-button>
+      </ng-template>
     </div>
 
     <!-- TAB: Escanear (Usamos [class.ion-hide] para no destruir el div de la cámara) -->

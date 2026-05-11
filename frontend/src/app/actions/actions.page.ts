@@ -14,7 +14,7 @@ import {
   restaurantOutline, homeOutline, giftOutline, heartOutline, flashOutline, 
   settingsSharp, addCircle, starSharp, headsetOutline, mapOutline, flash,
   chevronForwardOutline, lockClosed, personOutline, checkmarkCircle, chatbubblesOutline,
-  cartOutline, timeOutline, phonePortraitOutline, closeCircleOutline
+  cartOutline, timeOutline, phonePortraitOutline, closeCircleOutline, sparkles
 } from 'ionicons/icons';
 import { SupabaseService, Activity, DisconnectChallenge } from '../services/supabase';
 import { GroqService } from '../services/groq.service';
@@ -47,6 +47,7 @@ export class ActionsPage implements OnInit {
   
   points: number = 0;
   nivelAfinidad: number = 1;
+  userAvatarUrl: string | null = null;
 
   disconnectChallenges: DisconnectChallenge[] = [];
   challengeImages = [
@@ -67,7 +68,7 @@ export class ActionsPage implements OnInit {
       restaurantOutline, homeOutline, giftOutline, heartOutline, flashOutline, 
       settingsSharp, addCircle, starSharp, headsetOutline, mapOutline, flash,
       chevronForwardOutline, lockClosed, personOutline, checkmarkCircle, chatbubblesOutline,
-      cartOutline, timeOutline, phonePortraitOutline, closeCircleOutline
+      cartOutline, timeOutline, phonePortraitOutline, closeCircleOutline, sparkles
     });
   }
 
@@ -86,6 +87,7 @@ export class ActionsPage implements OnInit {
       const { data, error } = await this.supabaseSvc.getUserProfile();
       if (data) {
         this.points = data.total_points || 0;
+        this.userAvatarUrl = data.avatar_url || null;
         this.calcularNivel();
       }
     } catch (error) {

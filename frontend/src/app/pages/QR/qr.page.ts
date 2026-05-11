@@ -35,8 +35,8 @@ export class QrPage implements OnInit, OnDestroy {
   activeTab: 'qr' | 'scan' = 'qr';
   isManualMode: boolean = false;
 
-  qrData = signal<string>('cargando...');
-  shortCode = signal<string>('...');
+  qrData = signal<string>('');
+  shortCode = signal<string>('');
 
   manualCode: string = '';
   // CORRECCIÓN TS2709: Se usa any para evitar conflictos de namespace
@@ -65,21 +65,26 @@ export class QrPage implements OnInit, OnDestroy {
     const user = await this.supabaseSvc.getCurrentUser();
     if (user?.id) {
       this.currentUserId = user.id;
-      await this.loadInviteCode(user.id);
+      // Ya no generamos el código automáticamente
     }
   }
 
-  async loadInviteCode(userId: string) {
-    const response = await this.supabaseSvc.invitePartner(userId);
+  async loadInviteCode() {
+    if (!this.currentUserId) return;
+    const response = await this.supabaseSvc.invitePartner(this.currentUserId);
     if (response.token) {
       const token = response.token;
       this.qrData.set(`affiniscore_link_${token}`);
       this.shortCode.set(token.split('').join(' '));
     } else {
-      this.qrData.set(`affiniscore_link_${userId}`);
-      const short = userId.substring(0, 6).toUpperCase();
-      this.shortCode.set(short.split('').join(' '));
+      this.qrData.set('');
+      this.shortCode.set('');
     }
+  }
+  // Nuevo método para limpiar el código QR
+  clearInviteCode() {
+    this.qrData.set('');
+    this.shortCode.set('');
   }
 
   ngOnDestroy() {
@@ -124,7 +129,7 @@ export class QrPage implements OnInit, OnDestroy {
 
     if (response.success) {
       await this.stopScanner();
-      this.navCtrl.navigateRoot('/tabs/profile', { animationDirection: 'back' });
+      this.navCtrl.navigateRoot('/profile', { animationDirection: 'back' });
     } else {
       const toast = await this.toastCtrl.create({
         message: response.error || 'Código inválido.',

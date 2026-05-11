@@ -78,7 +78,7 @@ export class SupabaseService {
       });
 
       const response = await firstValueFrom(
-        this.http.post<any>(`${this.apiUrl}/api/v1/partnerships/invite`, null, { headers, params: { user1_id } })
+        this.http.post<any>(`${this.apiUrl}/api/v1/partnerships/invite`, { user1_id }, { headers })
       );
       
       return { token: response.token || response.invite_token };
@@ -170,99 +170,27 @@ export class SupabaseService {
     if (!user) return { data: null, error: 'No user' };
 
     return await this.supabase
-      .from('user_profiles')
+      .from('profiles')
       .select('*')
       .eq('id', user.id)
       .single();
   }
 
-  // Subir avatar a Supabase Storage y actualizar el perfil
-  async uploadAvatar(dataUrl: string) {
-    const user = await this.getCurrentUser();
-    if (!user) return { error: 'No user' };
-
-    try {
-      // 1. Convertir Base64 a Blob
-      const response = await fetch(dataUrl);
-      const blob = await response.blob();
-      
-      const filePath = `${user.id}/avatar_${Date.now()}.jpg`;
-
-      // 2. Subir a Storage
-      const { data, error } = await this.supabase.storage
-        .from('avatars')
-        .upload(filePath, blob, { upsert: true, contentType: 'image/jpeg' });
-
-      if (error) throw error;
-
-      // 3. Obtener URL pública
-      const { data: { publicUrl } } = this.supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
-
-      // 4. Guardar URL en el perfil
-      return await this.updateAvatarUrl(publicUrl);
-    } catch (error) {
-      console.error('Error al subir avatar:', error);
-      // Fallback: Si no existe el bucket de storage, guardamos el Base64 directamente
-      return await this.updateAvatarUrl(dataUrl);
-    }
-  }
-
-  // Actualizar solo la URL del avatar
-  async updateAvatarUrl(url: string) {
-    const user = await this.getCurrentUser();
-    if (!user) return { error: 'No user' };
-
-    return await this.supabase
-      .from('user_profiles')
-      .update({ avatar_url: url })
-      .eq('id', user.id);
-  }
-
-  // Actualizar configuraciones del perfil
-  async updateProfileSettings(settings: any) {
-    const user = await this.getCurrentUser();
-    if (!user) return { error: 'No user' };
-
-    return await this.supabase
-      .from('user_profiles')
-      .update(settings)
-      .eq('id', user.id);
-  }
-
-  // Obtener puntos obtenidos en la semana actual (Suma los de la pareja si están vinculados)
+  // Obtener puntos obtenidos en la semana actual
   async getWeeklyPoints() {
     const user = await this.getCurrentUser();
     if (!user) return { data: 0, error: 'Usuario no autenticado' };
-
-    const { data: profile } = await this.getUserProfile();
-    const partnershipId = profile?.partnership_id;
 
     const startOfWeek = new Date();
     // Lunes como inicio de semana
     startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay() + (startOfWeek.getDay() === 0 ? -6 : 1));
     startOfWeek.setHours(0, 0, 0, 0);
 
-    let query = this.supabase
+    const { data, error } = await this.supabase
       .from('user_actions_log')
       .select('points_earned')
+      .eq('user_id', user.id)
       .gte('created_at', startOfWeek.toISOString());
-
-    if (partnershipId) {
-      // Si el usuario está vinculado, sumar los puntos de todos los involucrados
-      const { data: partners } = await this.supabase
-        .from('user_profiles')
-        .select('id')
-        .eq('partnership_id', partnershipId);
-        
-      const partnerIds = partners ? partners.map((p: any) => p.id) : [user.id];
-      query = query.in('user_id', partnerIds);
-    } else {
-      query = query.eq('user_id', user.id);
-    }
-
-    const { data, error } = await query;
 
     if (error) {
       console.error('Error fetching weekly points:', error);
@@ -336,26 +264,36 @@ export class SupabaseService {
 
   // Actualizar datos generales del perfil
   async updateProfile(userId: string, updates: any) {
-    return await this.supabase
-      .from('user_profiles')
+    const res = await this.supabase
+      .from('profiles')
       .update(updates)
       .eq('id', userId);
+
+    if (!res.error) {
+      this.pointsUpdated.next();
+    }
+    return res;
   }
 
-  // Subir imagen de avatar al Storage
-  async uploadAvatar(file: File) {
+  // Subir imagen de avatar al Storage (bucket 'avatars')
+  async uploadAvatar(file: File | Blob) {
     const user = await this.getCurrentUser();
     if (!user) return { error: 'Usuario no autenticado' };
 
-    const fileExt = file.name.split('.').pop();
+    // Si es un Blob, le asignamos una extensión por defecto .jpg
+    const fileExt = (file instanceof File) ? file.name.split('.').pop() : 'jpg';
     const fileName = `${user.id}_${new Date().getTime()}.${fileExt}`;
-    const filePath = `public/${fileName}`;
+    const filePath = `public/${fileName}`; // Guardar en la carpeta public del bucket
 
     const { error: uploadError } = await this.supabase.storage
       .from('avatars')
-      .upload(filePath, file);
+      .upload(filePath, file, {
+        upsert: true,
+        contentType: 'image/jpeg'
+      });
 
     if (uploadError) {
+      console.error('Error al subir avatar:', uploadError);
       return { error: uploadError.message };
     }
 
@@ -371,10 +309,15 @@ export class SupabaseService {
     const user = await this.getCurrentUser();
     if (!user) return { error: 'Usuario no autenticado' };
 
-    return await this.supabase
-      .from('user_profiles')
+    const res = await this.supabase
+      .from('profiles')
       .update({ avatar_url: url, updated_at: new Date().toISOString() })
       .eq('id', user.id);
+
+    if (!res.error) {
+      this.pointsUpdated.next();
+    }
+    return res;
   }
 
   /* ========================================================================
@@ -423,7 +366,7 @@ export class SupabaseService {
     const newTotal = (profile?.total_points || 0) + points;
 
     const result = await this.supabase
-      .from('user_profiles')
+      .from('profiles')
       .update({ total_points: newTotal, updated_at: new Date() })
       .eq('id', user.id);
       
@@ -449,7 +392,7 @@ export class SupabaseService {
 
     // Actualizamos el perfil
     const result = await this.supabase
-      .from('user_profiles')
+      .from('profiles')
       .update({ total_points: newTotal, updated_at: new Date() })
       .eq('id', user.id);
       
@@ -474,55 +417,8 @@ export class SupabaseService {
   }
 
   /* ========================================================================
-     4. CHAT EN TIEMPO REAL Y SUSCRIPCIONES
+     4. CHAT EN TIEMPO REAL
      ======================================================================== */
-
-  // Suscribirse en tiempo real a las acciones de la pareja para actualizar la afinidad
-  async subscribeToPointsRealtime(callback: () => void) {
-    const user = await this.getCurrentUser();
-    if (!user) return null;
-
-    const { data: profile } = await this.getUserProfile();
-    const partnershipId = profile?.partnership_id;
-
-    if (partnershipId) {
-      // Obtener IDs de ambos usuarios en la pareja
-      const { data: partners } = await this.supabase
-        .from('user_profiles')
-        .select('id')
-        .eq('partnership_id', partnershipId);
-        
-      const partnerIds = partners ? partners.map((p: any) => p.id) : [user.id];
-
-      // Creamos un canal por cada usuario de la pareja
-      const channels = partnerIds.map((id: string) => {
-        return this.supabase
-          .channel(`points:${id}`)
-          .on(
-            'postgres_changes',
-            { event: 'INSERT', schema: 'public', table: 'user_actions_log', filter: `user_id=eq.${id}` },
-            () => {
-              callback();
-            }
-          )
-          .subscribe();
-      });
-      return channels;
-    } else {
-      // Si no tiene pareja, solo escucha sus propios puntos
-      const channel = this.supabase
-        .channel(`points:${user.id}`)
-        .on(
-          'postgres_changes',
-          { event: 'INSERT', schema: 'public', table: 'user_actions_log', filter: `user_id=eq.${user.id}` },
-          () => {
-            callback();
-          }
-        )
-        .subscribe();
-      return [channel];
-    }
-  }
 
   // Obtener una sala de chat específica por ID
   async getRoomDetails(roomId: string) {
@@ -542,57 +438,39 @@ export class SupabaseService {
       .order('created_at', { ascending: true });
   }
 
-  // Obtener las sesiones de IA privadas del usuario
-  async getAiSessions() {
+  // Enviar un nuevo mensaje a la API de FastAPI
+  async sendMessage(canalId: string, message: string, imageUrl?: string) {
     const user = await this.getCurrentUser();
-    if (!user) return { data: [], error: 'Usuario no autenticado' };
+    if (!user) return { error: 'Usuario no autenticado' };
 
-    return await this.supabase
-      .from('chat_rooms')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('room_type', 'PRIVATE_AI')
-      .order('created_at', { ascending: false });
-  }
+    const { data: profile } = await this.getUserProfile();
+    const emisor = profile?.full_name || user.email?.split('@')[0] || 'Usuario';
 
-  // Crear una nueva sesión de IA
-  async createAiSession(title: string = 'Nueva Conversación') {
-    const user = await this.getCurrentUser();
-    if (!user) return { data: null, error: 'Usuario no autenticado' };
+    try {
+      const { data: session } = await this.supabase.auth.getSession();
+      const tokenHeader = session?.session?.access_token || '';
 
-    return await this.supabase
-      .from('chat_rooms')
-      .insert({
-        user_id: user.id,
-        room_type: 'PRIVATE_AI',
-        title: title
-      })
-      .select('*')
-      .single();
-  }
-
-  // Actualizar el título de una sesión de IA
-  async updateSessionTitle(roomId: string, title: string) {
-    return await this.supabase
-      .from('chat_rooms')
-      .update({ title: title })
-      .eq('id', roomId);
-  }
-
-  // Enviar un nuevo mensaje a una sala
-  async sendMessage(roomId: string, message: string, senderType: 'USER' | 'AI' = 'USER', metadata: any = {}) {
-    const user = await this.getCurrentUser();
-    if (!user && senderType === 'USER') return { error: 'Usuario no autenticado' };
-
-    return await this.supabase
-      .from('chat_messages')
-      .insert({
-        room_id: roomId,
-        sender_id: senderType === 'USER' ? user?.id : null,
-        sender_type: senderType,
-        message: message,
-        metadata: metadata
+      const headers = new HttpHeaders({
+        'Authorization': `Bearer ${tokenHeader}`,
+        'Content-Type': 'application/json'
       });
+
+      const body = {
+        text: message,
+        image_url: imageUrl || null
+      };
+
+      const endpoint = `${this.apiUrl}/api/chat/${canalId}/${encodeURIComponent(emisor)}`;
+      
+      const response = await firstValueFrom(
+        this.http.post<any>(endpoint, body, { headers })
+      );
+      
+      return { data: response, error: null };
+    } catch (err: any) {
+      console.error('Error al enviar mensaje vía API:', err);
+      return { data: null, error: err.error?.detail || err.message };
+    }
   }
 
   // Suscribirse a nuevos mensajes en tiempo real
@@ -642,35 +520,19 @@ export class SupabaseService {
     return { url: publicUrl, error: null };
   }
 
-  // Enviar alerta SOS directamente al backend (FastAPI)
-  async sendSosAlert(latitude: number, longitude: number, audioBase64: string) {
+  // Guardar la alerta en la base de datos
+  async sendSosAlert(latitude: number, longitude: number, audioUrl: string | null) {
     const user = await this.getCurrentUser();
     if (!user) return { error: 'Usuario no autenticado' };
 
-    const { data: session } = await this.supabase.auth.getSession();
-    const tokenHeader = session?.session?.access_token || '';
-
-    const headers = new HttpHeaders({
-      'Authorization': `Bearer ${tokenHeader}`,
-      'Content-Type': 'application/json'
-    });
-
-    const body = {
-      usuario_id: user.id,
-      lat: latitude,
-      lng: longitude,
-      audio_base64: audioBase64
-    };
-
-    try {
-      const response = await firstValueFrom(
-        this.http.post<any>(`${this.apiUrl}/api/panic`, body, { headers })
-      );
-      return { data: response, error: null };
-    } catch (err: any) {
-      console.error('Error al enviar pánico al backend:', err);
-      return { error: err.error?.detail || 'Error al conectar con el backend SOS' };
-    }
+    return await this.supabase
+      .from('sos_alerts')
+      .insert({
+        user_id: user.id,
+        latitude,
+        longitude,
+        audio_url: audioUrl
+      });
   }
 
   /* ========================================================================
@@ -846,5 +708,45 @@ export class SupabaseService {
       }, { onConflict: 'user_id,challenge_id' });
 
     return updated;
+  }
+
+  // Obtener el perfil de la pareja
+  async getPartnerProfile(partnershipId: string) {
+    const user = await this.getCurrentUser();
+    if (!user) return { data: null, error: 'Usuario no autenticado' };
+
+    return await this.supabase
+      .from('profiles')
+      .select('full_name, email, avatar_url')
+      .eq('partnership_id', partnershipId)
+      .neq('id', user.id)
+      .single();
+  }
+
+  // Desvincular pareja
+  async unlinkPartner() {
+    try {
+      const user = await this.getCurrentUser();
+      if (!user) return { error: 'Usuario no autenticado' };
+
+      const { data: session } = await this.supabase.auth.getSession();
+      const tokenHeader = session?.session?.access_token || '';
+
+      const headers = new HttpHeaders({
+        'Authorization': `Bearer ${tokenHeader}`,
+        'Content-Type': 'application/json'
+      });
+
+      const body = { user_id: user.id };
+      
+      await firstValueFrom(
+        this.http.post<any>(`${this.apiUrl}/api/v1/partnerships/unlink`, body, { headers })
+      );
+      
+      return { success: true };
+    } catch (err: any) {
+      console.error('Error in unlinkPartner:', err);
+      return { error: err.error?.detail || 'Error al desvincular' };
+    }
   }
 }
