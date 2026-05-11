@@ -387,7 +387,15 @@ export class SupabaseService {
     const res = await this.supabase
       .from('profiles')
       .update({ avatar_url: url, updated_at: new Date().toISOString() })
-      .eq('id', user.id);
+      .eq('id', user.id)
+      .select();
+
+    if (res.error) {
+      console.error('Error updating avatar in DB:', res.error);
+    } else if (!res.data || res.data.length === 0) {
+      console.error('Avatar update silently failed! RLS policy or missing row?', res);
+      return { error: { message: 'El perfil no se actualizó (RLS o fila faltante).' } };
+    }
 
     if (!res.error) {
       this.pointsUpdated.next();
