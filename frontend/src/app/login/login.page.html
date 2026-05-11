@@ -37,7 +37,7 @@
       </div>
 
       <div class="options-row">
-        <div class="forgot-pwd">
+        <div class="forgot-pwd" (click)="forgotPassword()" style="cursor: pointer;">
           <span>¿Olvidaste tu contraseña?</span>
         </div>
       </div>
@@ -51,13 +51,13 @@
       </div>
 
       <div class="social-row">
-        <div class="social-icon fb">
+        <div class="social-icon fb" (click)="loginWithProvider('facebook')" style="cursor: pointer;">
           <ion-icon name="logo-facebook"></ion-icon>
         </div>
-        <div class="social-icon google">
+        <div class="social-icon google" (click)="loginWithProvider('google')" style="cursor: pointer;">
           <img src="assets/images/google_icon.png" alt="Google">
         </div>
-        <div class="social-icon apple">
+        <div class="social-icon apple" (click)="loginWithProvider('apple')" style="cursor: pointer;">
           <ion-icon name="logo-apple"></ion-icon>
         </div>
       </div>

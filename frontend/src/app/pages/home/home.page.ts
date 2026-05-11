@@ -38,7 +38,7 @@ import { NavController } from '@ionic/angular/standalone';
 export class HomePage implements OnInit {
   points: number = 0;
   puntosSemanales: number = 0;
-  metaSemanal: number = 500;
+  metaSemanal: number = 3000; // Meta aumentada para que el porcentaje suba más lento y sea realista
   nivelAfinidad: number = 1;
   porcentajeAfinidad: number = 0;
   userAvatarUrl: string | null = null;
@@ -110,8 +110,8 @@ export class HomePage implements OnInit {
       if (data) {
         this.points = data.total_points || 0;
         
-        // Cada 1000 puntos se sube de nivel
-        const puntosPorNivel = 1000;
+        // Cada 5000 puntos se sube de nivel (hace que sea un reto real)
+        const puntosPorNivel = 5000;
         this.nivelAfinidad = Math.floor(this.points / puntosPorNivel) + 1;
         
         // Progreso hacia la meta SEMANAL

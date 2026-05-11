@@ -136,12 +136,34 @@ export class SupabaseService {
     });
   }
 
-  // Iniciar sesión
+  // Iniciar sesión con Email
   async signIn(email: string, password: string) {
     return await this.supabase.auth.signInWithPassword({
       email,
       password,
     });
+  }
+
+  // Iniciar sesión con Redes Sociales (Google, Apple, Facebook)
+  async signInWithProvider(provider: 'google' | 'apple' | 'facebook') {
+    return await this.supabase.auth.signInWithOAuth({
+      provider: provider,
+      options: {
+        redirectTo: 'http://localhost:8103/tabs/dashboard'
+      }
+    });
+  }
+
+  // Restablecer contraseña
+  async resetPassword(email: string) {
+    return await this.supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: 'http://localhost:8103/login' // O la URL a donde deba volver para actualizar
+    });
+  }
+
+  // Actualizar contraseña (usado después de recuperar)
+  async updatePassword(newPassword: string) {
+    return await this.supabase.auth.updateUser({ password: newPassword });
   }
 
   // Cerrar sesión
@@ -176,21 +198,38 @@ export class SupabaseService {
       .single();
   }
 
-  // Obtener puntos obtenidos en la semana actual
+  // Obtener puntos obtenidos en la semana actual (Suma los de la pareja si están vinculados)
   async getWeeklyPoints() {
     const user = await this.getCurrentUser();
     if (!user) return { data: 0, error: 'Usuario no autenticado' };
+
+    const { data: profile } = await this.getUserProfile();
+    const partnershipId = profile?.partnership_id;
 
     const startOfWeek = new Date();
     // Lunes como inicio de semana
     startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay() + (startOfWeek.getDay() === 0 ? -6 : 1));
     startOfWeek.setHours(0, 0, 0, 0);
 
-    const { data, error } = await this.supabase
+    let query = this.supabase
       .from('user_actions_log')
       .select('points_earned')
-      .eq('user_id', user.id)
       .gte('created_at', startOfWeek.toISOString());
+
+    if (partnershipId) {
+      // Si el usuario está vinculado, sumar los puntos de todos los involucrados
+      const { data: partners } = await this.supabase
+        .from('profiles') // Asumiendo que los perfiles están en la tabla 'profiles'
+        .select('id')
+        .eq('partnership_id', partnershipId);
+        
+      const partnerIds = partners ? partners.map((p: any) => p.id) : [user.id];
+      query = query.in('user_id', partnerIds);
+    } else {
+      query = query.eq('user_id', user.id);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error('Error fetching weekly points:', error);
@@ -199,6 +238,42 @@ export class SupabaseService {
 
     const weeklyTotal = data.reduce((sum: number, log: any) => sum + (log.points_earned || 0), 0);
     return { data: weeklyTotal, error: null };
+  }
+
+  // Suscribirse a cambios en tiempo real en los puntos
+  async subscribeToPointsRealtime(callback: () => void) {
+    const user = await this.getCurrentUser();
+    if (!user) return null;
+
+    const { data: profile } = await this.getUserProfile();
+    const partnershipId = profile?.partnership_id;
+
+    let filter = `user_id=eq.${user.id}`;
+    if (partnershipId) {
+      const { data: partners } = await this.supabase
+        .from('profiles')
+        .select('id')
+        .eq('partnership_id', partnershipId);
+        
+      if (partners && partners.length > 0) {
+        const partnerIds = partners.map((p: any) => p.id);
+        filter = `user_id=in.(${partnerIds.join(',')})`;
+      }
+    }
+
+    const channel = this.supabase
+      .channel('points-realtime')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'user_actions_log', filter },
+        () => {
+          this.pointsUpdated.next();
+          callback();
+        }
+      )
+      .subscribe();
+
+    return [channel];
   }
 
   // Obtener historial de puntos detallado de la semana actual
@@ -417,8 +492,45 @@ export class SupabaseService {
   }
 
   /* ========================================================================
-     4. CHAT EN TIEMPO REAL
+     4. CHAT EN TIEMPO REAL E INTELIGENCIA ARTIFICIAL
      ======================================================================== */
+
+  // Obtener todas las sesiones de IA del usuario actual
+  async getAiSessions() {
+    const user = await this.getCurrentUser();
+    if (!user) return { data: null, error: 'Usuario no autenticado' };
+
+    return await this.supabase
+      .from('chat_rooms')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('room_type', 'PRIVATE_AI')
+      .order('created_at', { ascending: false });
+  }
+
+  // Crear una nueva sesión de IA
+  async createAiSession(title: string = 'Nueva Conversación') {
+    const user = await this.getCurrentUser();
+    if (!user) return { data: null, error: 'Usuario no autenticado' };
+
+    return await this.supabase
+      .from('chat_rooms')
+      .insert({
+        user_id: user.id,
+        room_type: 'PRIVATE_AI',
+        title: title
+      })
+      .select('*')
+      .single();
+  }
+
+  // Actualizar el título de una sesión de IA
+  async updateSessionTitle(roomId: string, title: string) {
+    return await this.supabase
+      .from('chat_rooms')
+      .update({ title: title })
+      .eq('id', roomId);
+  }
 
   // Obtener una sala de chat específica por ID
   async getRoomDetails(roomId: string) {
@@ -438,38 +550,31 @@ export class SupabaseService {
       .order('created_at', { ascending: true });
   }
 
-  // Enviar un nuevo mensaje a la API de FastAPI
-  async sendMessage(canalId: string, message: string, imageUrl?: string) {
+  // Enviar un nuevo mensaje (guardar en la base de datos directamente)
+  async sendMessage(canalId: string, message: string, senderType: 'USER' | 'AI' = 'USER') {
     const user = await this.getCurrentUser();
     if (!user) return { error: 'Usuario no autenticado' };
 
-    const { data: profile } = await this.getUserProfile();
-    const emisor = profile?.full_name || user.email?.split('@')[0] || 'Usuario';
-
     try {
-      const { data: session } = await this.supabase.auth.getSession();
-      const tokenHeader = session?.session?.access_token || '';
+      const senderId = senderType === 'AI' ? 'groq-bot' : user.id;
 
-      const headers = new HttpHeaders({
-        'Authorization': `Bearer ${tokenHeader}`,
-        'Content-Type': 'application/json'
-      });
-
-      const body = {
-        text: message,
-        image_url: imageUrl || null
-      };
-
-      const endpoint = `${this.apiUrl}/api/chat/${canalId}/${encodeURIComponent(emisor)}`;
+      const { data, error } = await this.supabase
+        .from('chat_messages')
+        .insert({
+          room_id: canalId,
+          sender_id: senderId,
+          sender_type: senderType,
+          message: message
+        })
+        .select('*')
+        .single();
+        
+      if (error) throw error;
       
-      const response = await firstValueFrom(
-        this.http.post<any>(endpoint, body, { headers })
-      );
-      
-      return { data: response, error: null };
+      return { data, error: null };
     } catch (err: any) {
-      console.error('Error al enviar mensaje vía API:', err);
-      return { data: null, error: err.error?.detail || err.message };
+      console.error('Error al guardar mensaje en Supabase:', err);
+      return { data: null, error: err.message };
     }
   }
 
