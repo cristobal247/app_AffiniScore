@@ -73,8 +73,21 @@ export class ProfilePage implements OnInit {
     this.userEmail = user?.email;
 
     const { data: profile } = await this.supabaseSvc.getUserProfile();
-    if (profile && profile.avatar_url) {
-      this.avatarUrl = profile.avatar_url;
+    if (profile) {
+      if (profile.avatar_url) {
+        this.avatarUrl = profile.avatar_url;
+      }
+      
+      // Load privacy settings
+      if (profile.profile_visible !== undefined) this.privacySettings.profileVisibleToPartner = profile.profile_visible;
+      if (profile.show_streak !== undefined) this.privacySettings.showStreak = profile.show_streak;
+      if (profile.share_activity !== undefined) this.privacySettings.shareActivityStatus = profile.share_activity;
+      
+      // Load notification settings
+      if (profile.push_enabled !== undefined) this.notificationSettings.pushEnabled = profile.push_enabled;
+      if (profile.daily_reminder !== undefined) this.notificationSettings.dailyReminder = profile.daily_reminder;
+      if (profile.challenge_invites !== undefined) this.notificationSettings.challengeInvites = profile.challenge_invites;
+      if (profile.score_milestones !== undefined) this.notificationSettings.scoreMilestones = profile.score_milestones;
     }
   }
 
@@ -122,14 +135,16 @@ export class ProfilePage implements OnInit {
             ctx.drawImage(img, 0, 0, width, height);
             const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
             
-            const updateRes = await this.supabaseSvc.updateAvatarUrl(dataUrl);
+            const updateRes = await this.supabaseSvc.uploadAvatar(dataUrl);
             
             if (updateRes.error) {
               console.error('Supabase Error:', updateRes.error);
               const errMsg = typeof updateRes.error === 'string' ? updateRes.error : updateRes.error.message;
-              this.showToast('Error: ' + errMsg, 'danger');
+              this.showToast('Error al subir: ' + errMsg, 'danger');
             } else {
-              this.avatarUrl = dataUrl;
+              // Obtenemos la url real en caso de que Storage lo haya subido, o el dataUrl si fue el fallback
+              const newProfile = await this.supabaseSvc.getUserProfile();
+              this.avatarUrl = newProfile.data?.avatar_url || dataUrl;
               this.showToast('Foto de perfil actualizada exitosamente.', 'success');
             }
           } else {
@@ -163,21 +178,33 @@ export class ProfilePage implements OnInit {
     this.router.navigateByUrl('/qr');
   }
 
-  onPrivacyChange(): void {
-    console.log('Privacy updated', this.privacySettings);
+  async onPrivacyChange() {
+    await this.supabaseSvc.updateProfileSettings({
+      profile_visible: this.privacySettings.profileVisibleToPartner,
+      show_streak: this.privacySettings.showStreak,
+      share_activity: this.privacySettings.shareActivityStatus
+    });
+    console.log('Privacy updated in DB', this.privacySettings);
   }
 
-  onNotificationChange(): void {
-    console.log('Notifications updated', this.notificationSettings);
+  async onNotificationChange() {
+    await this.supabaseSvc.updateProfileSettings({
+      push_enabled: this.notificationSettings.pushEnabled,
+      daily_reminder: this.notificationSettings.dailyReminder,
+      challenge_invites: this.notificationSettings.challengeInvites,
+      score_milestones: this.notificationSettings.scoreMilestones
+    });
+    console.log('Notifications updated in DB', this.notificationSettings);
   }
 
-  enablePushNotifications(): void {
+  async enablePushNotifications() {
     this.notificationSettings.pushEnabled = true;
-    console.log('Push notifications enabled');
+    await this.onNotificationChange();
+    this.showToast('Notificaciones activadas', 'success');
   }
 
   sendTestNotification(): void {
-    console.log('Test notification sent');
+    this.showToast('Notificación de prueba enviada', 'primary');
   }
 
   async logout() {

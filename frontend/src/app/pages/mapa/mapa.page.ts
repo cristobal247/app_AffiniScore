@@ -174,18 +174,22 @@ export class MapaPage implements AfterViewInit {
         const lat = coordinates.coords.latitude;
         const lng = coordinates.coords.longitude;
 
-        // 2. Subir audio a Supabase Storage
-        const { url, error: uploadError } = await this.supabaseSvc.uploadSosAudio(audioBlob);
-        
-        if (uploadError) {
-          throw new Error('Error al subir el audio');
-        }
+        // Convertir el audio a Base64 para mandarlo al backend
+        const base64Audio = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(audioBlob);
+          reader.onloadend = () => {
+            const base64String = (reader.result as string).split(',')[1];
+            resolve(base64String);
+          };
+          reader.onerror = reject;
+        });
 
-        // 3. Guardar el registro completo (URL + coordenadas) en la base de datos
-        const { error: dbError } = await this.supabaseSvc.sendSosAlert(lat, lng, url);
+        // 2. Enviar el registro completo (URL/Base64 + coordenadas) directamente al backend
+        const { error: dbError } = await this.supabaseSvc.sendSosAlert(lat, lng, base64Audio);
         
         if (dbError) {
-          throw new Error('Error al guardar el SOS en la base de datos');
+          throw new Error('Error al procesar el SOS en el backend');
         }
 
         await loading.dismiss();

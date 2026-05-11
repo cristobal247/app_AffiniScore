@@ -176,21 +176,93 @@ export class SupabaseService {
       .single();
   }
 
-  // Obtener puntos obtenidos en la semana actual
+  // Subir avatar a Supabase Storage y actualizar el perfil
+  async uploadAvatar(dataUrl: string) {
+    const user = await this.getCurrentUser();
+    if (!user) return { error: 'No user' };
+
+    try {
+      // 1. Convertir Base64 a Blob
+      const response = await fetch(dataUrl);
+      const blob = await response.blob();
+      
+      const filePath = `${user.id}/avatar_${Date.now()}.jpg`;
+
+      // 2. Subir a Storage
+      const { data, error } = await this.supabase.storage
+        .from('avatars')
+        .upload(filePath, blob, { upsert: true, contentType: 'image/jpeg' });
+
+      if (error) throw error;
+
+      // 3. Obtener URL pública
+      const { data: { publicUrl } } = this.supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      // 4. Guardar URL en el perfil
+      return await this.updateAvatarUrl(publicUrl);
+    } catch (error) {
+      console.error('Error al subir avatar:', error);
+      // Fallback: Si no existe el bucket de storage, guardamos el Base64 directamente
+      return await this.updateAvatarUrl(dataUrl);
+    }
+  }
+
+  // Actualizar solo la URL del avatar
+  async updateAvatarUrl(url: string) {
+    const user = await this.getCurrentUser();
+    if (!user) return { error: 'No user' };
+
+    return await this.supabase
+      .from('user_profiles')
+      .update({ avatar_url: url })
+      .eq('id', user.id);
+  }
+
+  // Actualizar configuraciones del perfil
+  async updateProfileSettings(settings: any) {
+    const user = await this.getCurrentUser();
+    if (!user) return { error: 'No user' };
+
+    return await this.supabase
+      .from('user_profiles')
+      .update(settings)
+      .eq('id', user.id);
+  }
+
+  // Obtener puntos obtenidos en la semana actual (Suma los de la pareja si están vinculados)
   async getWeeklyPoints() {
     const user = await this.getCurrentUser();
     if (!user) return { data: 0, error: 'Usuario no autenticado' };
+
+    const { data: profile } = await this.getUserProfile();
+    const partnershipId = profile?.partnership_id;
 
     const startOfWeek = new Date();
     // Lunes como inicio de semana
     startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay() + (startOfWeek.getDay() === 0 ? -6 : 1));
     startOfWeek.setHours(0, 0, 0, 0);
 
-    const { data, error } = await this.supabase
+    let query = this.supabase
       .from('user_actions_log')
       .select('points_earned')
-      .eq('user_id', user.id)
       .gte('created_at', startOfWeek.toISOString());
+
+    if (partnershipId) {
+      // Si el usuario está vinculado, sumar los puntos de todos los involucrados
+      const { data: partners } = await this.supabase
+        .from('user_profiles')
+        .select('id')
+        .eq('partnership_id', partnershipId);
+        
+      const partnerIds = partners ? partners.map((p: any) => p.id) : [user.id];
+      query = query.in('user_id', partnerIds);
+    } else {
+      query = query.eq('user_id', user.id);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error('Error fetching weekly points:', error);
@@ -402,8 +474,55 @@ export class SupabaseService {
   }
 
   /* ========================================================================
-     4. CHAT EN TIEMPO REAL
+     4. CHAT EN TIEMPO REAL Y SUSCRIPCIONES
      ======================================================================== */
+
+  // Suscribirse en tiempo real a las acciones de la pareja para actualizar la afinidad
+  async subscribeToPointsRealtime(callback: () => void) {
+    const user = await this.getCurrentUser();
+    if (!user) return null;
+
+    const { data: profile } = await this.getUserProfile();
+    const partnershipId = profile?.partnership_id;
+
+    if (partnershipId) {
+      // Obtener IDs de ambos usuarios en la pareja
+      const { data: partners } = await this.supabase
+        .from('user_profiles')
+        .select('id')
+        .eq('partnership_id', partnershipId);
+        
+      const partnerIds = partners ? partners.map((p: any) => p.id) : [user.id];
+
+      // Creamos un canal por cada usuario de la pareja
+      const channels = partnerIds.map((id: string) => {
+        return this.supabase
+          .channel(`points:${id}`)
+          .on(
+            'postgres_changes',
+            { event: 'INSERT', schema: 'public', table: 'user_actions_log', filter: `user_id=eq.${id}` },
+            () => {
+              callback();
+            }
+          )
+          .subscribe();
+      });
+      return channels;
+    } else {
+      // Si no tiene pareja, solo escucha sus propios puntos
+      const channel = this.supabase
+        .channel(`points:${user.id}`)
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'user_actions_log', filter: `user_id=eq.${user.id}` },
+          () => {
+            callback();
+          }
+        )
+        .subscribe();
+      return [channel];
+    }
+  }
 
   // Obtener una sala de chat específica por ID
   async getRoomDetails(roomId: string) {
@@ -421,6 +540,43 @@ export class SupabaseService {
       .select('*')
       .eq('room_id', roomId)
       .order('created_at', { ascending: true });
+  }
+
+  // Obtener las sesiones de IA privadas del usuario
+  async getAiSessions() {
+    const user = await this.getCurrentUser();
+    if (!user) return { data: [], error: 'Usuario no autenticado' };
+
+    return await this.supabase
+      .from('chat_rooms')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('room_type', 'PRIVATE_AI')
+      .order('created_at', { ascending: false });
+  }
+
+  // Crear una nueva sesión de IA
+  async createAiSession(title: string = 'Nueva Conversación') {
+    const user = await this.getCurrentUser();
+    if (!user) return { data: null, error: 'Usuario no autenticado' };
+
+    return await this.supabase
+      .from('chat_rooms')
+      .insert({
+        user_id: user.id,
+        room_type: 'PRIVATE_AI',
+        title: title
+      })
+      .select('*')
+      .single();
+  }
+
+  // Actualizar el título de una sesión de IA
+  async updateSessionTitle(roomId: string, title: string) {
+    return await this.supabase
+      .from('chat_rooms')
+      .update({ title: title })
+      .eq('id', roomId);
   }
 
   // Enviar un nuevo mensaje a una sala
@@ -486,19 +642,35 @@ export class SupabaseService {
     return { url: publicUrl, error: null };
   }
 
-  // Guardar la alerta en la base de datos
-  async sendSosAlert(latitude: number, longitude: number, audioUrl: string | null) {
+  // Enviar alerta SOS directamente al backend (FastAPI)
+  async sendSosAlert(latitude: number, longitude: number, audioBase64: string) {
     const user = await this.getCurrentUser();
     if (!user) return { error: 'Usuario no autenticado' };
 
-    return await this.supabase
-      .from('sos_alerts')
-      .insert({
-        user_id: user.id,
-        latitude,
-        longitude,
-        audio_url: audioUrl
-      });
+    const { data: session } = await this.supabase.auth.getSession();
+    const tokenHeader = session?.session?.access_token || '';
+
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${tokenHeader}`,
+      'Content-Type': 'application/json'
+    });
+
+    const body = {
+      usuario_id: user.id,
+      lat: latitude,
+      lng: longitude,
+      audio_base64: audioBase64
+    };
+
+    try {
+      const response = await firstValueFrom(
+        this.http.post<any>(`${this.apiUrl}/api/panic`, body, { headers })
+      );
+      return { data: response, error: null };
+    } catch (err: any) {
+      console.error('Error al enviar pánico al backend:', err);
+      return { error: err.error?.detail || 'Error al conectar con el backend SOS' };
+    }
   }
 
   /* ========================================================================

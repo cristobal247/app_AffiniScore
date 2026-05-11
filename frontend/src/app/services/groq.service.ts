@@ -96,4 +96,47 @@ Restricciones:
       }
     ];
   }
+
+  // Cargar historial desde la base de datos para mantener el contexto
+  setConversationHistory(dbMessages: any[]) {
+    this.resetConversation();
+    
+    // Mapeamos los mensajes de la base de datos al formato de Groq
+    for (const msg of dbMessages) {
+      if (msg.sender_type === 'USER') {
+        this.conversationHistory.push({ role: 'user', content: msg.message });
+      } else if (msg.sender_type === 'AI') {
+        this.conversationHistory.push({ role: 'assistant', content: msg.message });
+      }
+    }
+  }
+
+  // Generar un título corto para la conversación basado en el primer mensaje
+  async generateTitle(firstMessage: string): Promise<string> {
+    try {
+      const response = await fetch(this.apiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${environment.apiKeyGroq}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [
+            { role: 'system', content: 'Eres un generador de títulos. Responde SOLO con un título corto (máximo 4 palabras) que resuma el tema del mensaje del usuario. Sin comillas ni texto adicional.' },
+            { role: 'user', content: firstMessage }
+          ],
+          temperature: 0.5,
+          max_tokens: 20,
+        })
+      });
+
+      if (!response.ok) return 'Nueva Conversación';
+      
+      const data = await response.json();
+      return data.choices[0]?.message?.content?.trim().replace(/['"]/g, '') || 'Nueva Conversación';
+    } catch {
+      return 'Nueva Conversación';
+    }
+  }
 }

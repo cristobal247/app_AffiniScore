@@ -41,20 +41,37 @@ export class HomePage implements OnInit {
   }
 
   private pointsSub?: import('rxjs').Subscription;
+  private realtimeChannels: any[] = [];
 
   async ngOnInit() {
     await this.cargarDatosAfinidad();
     
-    // Suscribirse a los cambios de puntos para actualizar el dashboard en tiempo real
+    // Suscribirse a los cambios de puntos locales
     this.pointsSub = this.supabaseSvc.pointsUpdated.subscribe(() => {
       this.cargarDatosAfinidad();
     });
+
+    // Suscribirse en tiempo real a los puntos de la pareja en Supabase
+    // Esto funciona igual que la IA del chat, actualizando el porcentaje al instante
+    const channels = await this.supabaseSvc.subscribeToPointsRealtime(() => {
+      this.cargarDatosAfinidad();
+    });
+    if (channels) {
+      this.realtimeChannels = channels;
+    }
   }
 
   ngOnDestroy() {
     if (this.pointsSub) {
       this.pointsSub.unsubscribe();
     }
+    
+    // Limpiar canales de Supabase Realtime
+    this.realtimeChannels.forEach(channel => {
+      if (channel) {
+        this.supabaseSvc['supabase'].removeChannel(channel);
+      }
+    });
   }
 
   // Se ejecuta cada vez que el usuario vuelve a esta pestaña
