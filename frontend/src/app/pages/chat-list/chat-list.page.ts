@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { RouterModule } from '@angular/router';
 
+import { SupabaseService } from '../../services/supabase';
+
 @Component({
   selector: 'app-chat-list',
   templateUrl: './chat-list.page.html',
@@ -11,7 +13,9 @@ import { RouterModule } from '@angular/router';
   standalone: true,
   imports: [IonicModule, CommonModule, FormsModule, RouterModule]
 })
-export class ChatListPage implements OnInit {
+export class ChatListPage {
+
+  userAvatarUrl: string | null = null;
 
   chats = [
     {
@@ -34,8 +38,12 @@ export class ChatListPage implements OnInit {
     }
   ];
 
-  constructor() {}
+  constructor(private supabaseSvc: SupabaseService) {}
 
-  ngOnInit() {
+  async ionViewWillEnter() {
+    const { data: profile } = await this.supabaseSvc.getUserProfile();
+    if (profile?.avatar_url) {
+      this.userAvatarUrl = profile.avatar_url;
+    }
   }
 }

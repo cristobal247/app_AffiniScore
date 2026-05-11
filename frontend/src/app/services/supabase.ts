@@ -84,7 +84,36 @@ export class SupabaseService {
       return { token: response.token || response.invite_token };
     } catch (err: any) {
       console.error('Error in invitePartner:', err);
+      if (err.status === 0) {
+        alert('Error: No se pudo conectar al servidor de Python (http://localhost:8000). Asegúrate de que FastAPI esté corriendo.');
+      } else {
+        alert('Error al generar código: ' + (err.error?.detail || err.message));
+      }
       return { error: err.error?.detail || 'Error al generar código de invitación' };
+    }
+  }
+
+  // Unirse a la pareja: envía el token
+  async getPartnerNameByToken(token: string): Promise<{ name?: string; error?: string }> {
+    try {
+      const { data: partnership, error: pError } = await this.supabase
+        .from('partnerships')
+        .select('user1_id')
+        .eq('pairing_token', token)
+        .eq('status', 'pending')
+        .single();
+        
+      if (pError || !partnership) return { error: 'Código inválido o ya usado.' };
+      
+      const { data: profile } = await this.supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', partnership.user1_id)
+        .single();
+        
+      return { name: profile?.full_name || 'Usuario sin nombre' };
+    } catch (err: any) {
+      return { error: 'Error al buscar la pareja.' };
     }
   }
 
@@ -564,13 +593,11 @@ export class SupabaseService {
     if (!user) return { error: 'Usuario no autenticado' };
 
     try {
-      const senderId = senderType === 'AI' ? 'groq-bot' : user.id;
-
       const { data, error } = await this.supabase
         .from('chat_messages')
         .insert({
           room_id: canalId,
-          sender_id: senderId,
+          sender_id: user.id, // Siempre usamos el ID del usuario para evitar conflictos de llave foránea (UUID)
           sender_type: senderType,
           message: message
         })
@@ -830,7 +857,7 @@ export class SupabaseService {
 
     return await this.supabase
       .from('profiles')
-      .select('full_name, email, avatar_url')
+      .select('full_name, avatar_url')
       .eq('partnership_id', partnershipId)
       .neq('id', user.id)
       .single();

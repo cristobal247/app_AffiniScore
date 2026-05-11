@@ -5,7 +5,7 @@ import {
   IonContent, IonHeader, IonTitle, IonToolbar, IonButton,
   IonIcon, IonButtons, IonBackButton, IonModal, IonCard, IonCardContent,
   IonLabel, IonInput, IonSpinner,
-  ToastController, LoadingController, NavController
+  ToastController, LoadingController, NavController, AlertController
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import {
@@ -53,7 +53,8 @@ export class QrPage implements OnInit, OnDestroy {
     private supabaseSvc: SupabaseService,
     private toastCtrl: ToastController,
     private loadingCtrl: LoadingController,
-    private navCtrl: NavController
+    private navCtrl: NavController,
+    private alertCtrl: AlertController
   ) {
     addIcons({
       heartOutline, qrCodeOutline, scanOutline, cameraOutline,
@@ -70,7 +71,10 @@ export class QrPage implements OnInit, OnDestroy {
   }
 
   async loadInviteCode() {
-    if (!this.currentUserId) return;
+    if (!this.currentUserId) {
+      alert('Error: No se pudo obtener la información de tu cuenta. Intenta cerrar sesión y volver a entrar.');
+      return;
+    }
     const response = await this.supabaseSvc.invitePartner(this.currentUserId);
     if (response.token) {
       const token = response.token;
@@ -119,26 +123,66 @@ export class QrPage implements OnInit, OnDestroy {
     if (!this.currentUserId) return;
 
     const loading = await this.loadingCtrl.create({
-      message: 'Vinculando pareja...',
+      message: 'Buscando pareja...',
       spinner: 'crescent'
     });
     await loading.present();
 
-    const response = await this.supabaseSvc.joinPartnership(token, this.currentUserId);
+    const partnerInfo = await this.supabaseSvc.getPartnerNameByToken(token);
     await loading.dismiss();
 
-    if (response.success) {
-      await this.stopScanner();
-      this.navCtrl.navigateRoot('/profile', { animationDirection: 'back' });
-    } else {
+    if (partnerInfo.error) {
       const toast = await this.toastCtrl.create({
-        message: response.error || 'Código inválido.',
+        message: partnerInfo.error,
         duration: 3000,
         color: 'danger',
         position: 'top'
       });
       toast.present();
+      return;
     }
+
+    const alert = await this.alertCtrl.create({
+      header: 'Confirmar Vinculación',
+      message: `¿Deseas vincular tu cuenta con <strong>${partnerInfo.name}</strong>?`,
+      buttons: [
+        {
+          text: 'Cancelar',
+          role: 'cancel',
+          handler: () => {
+            console.log('Vinculación cancelada');
+          }
+        },
+        {
+          text: 'Sí, vincular',
+          handler: async () => {
+            const joinLoading = await this.loadingCtrl.create({
+              message: 'Vinculando...',
+              spinner: 'crescent'
+            });
+            await joinLoading.present();
+            
+            const response = await this.supabaseSvc.joinPartnership(token, this.currentUserId!);
+            await joinLoading.dismiss();
+
+            if (response.success) {
+              await this.stopScanner();
+              this.navCtrl.navigateRoot('/tabs/profile', { animationDirection: 'back' });
+            } else {
+              const toast = await this.toastCtrl.create({
+                message: response.error || 'Ocurrió un error.',
+                duration: 3000,
+                color: 'danger',
+                position: 'top'
+              });
+              toast.present();
+            }
+          }
+        }
+      ]
+    });
+
+    await alert.present();
   }
 
   async copyCode() {

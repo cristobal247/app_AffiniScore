@@ -24,7 +24,7 @@ import { sendOutline, arrowBackOutline, videocam, call, ellipsisVertical, happyO
     CommonModule, FormsModule, RouterModule
   ]
 })
-export class ChatPage implements OnInit, OnDestroy {
+export class ChatPage implements OnDestroy {
   @ViewChild(IonContent, { static: false }) content!: IonContent;
   
   aiSessions: any[] = [];
@@ -44,13 +44,18 @@ export class ChatPage implements OnInit, OnDestroy {
     addIcons({ sendOutline, arrowBackOutline, videocam, call, ellipsisVertical, happyOutline, cameraOutline, send, sparkles, ellipsisHorizontal, addCircleOutline: 'add-circle-outline', chatbubbleOutline: 'chatbubble-outline' });
   }
 
-  async ngOnInit() {
+  userAvatarUrl: string | null = null;
+
+  async ionViewWillEnter() {
     const user = await this.supabaseSvc.getCurrentUser();
     if (user) {
       this.currentUserId = user.id;
       const { data: profile } = await this.supabaseSvc.getUserProfile();
       if (profile?.full_name) {
         this.currentUserName = profile.full_name;
+      }
+      if (profile?.avatar_url) {
+        this.userAvatarUrl = profile.avatar_url;
       }
       
       await this.loadSessionsList();
@@ -174,6 +179,6 @@ export class ChatPage implements OnInit, OnDestroy {
   }
 
   isMine(msg: ChatMessage): boolean {
-    return msg.sender_id === this.currentUserId;
+    return msg.sender_id === this.currentUserId && msg.sender_type !== 'AI';
   }
 }

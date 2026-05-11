@@ -9,8 +9,9 @@
     <ion-title style="color: #bd343a; font-weight: 800; text-align: center; font-size: 18px; letter-spacing: -0.5px;">Chats</ion-title>
     
     <ion-buttons slot="end" style="padding-right: 8px;">
-      <ion-avatar style="width: 36px; height: 36px;">
-        <img src="assets/images/user.png" alt="Perfil" style="object-fit: cover;" />
+      <ion-avatar style="width: 36px; height: 36px; background: #e0e0e0; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+        <img *ngIf="userAvatarUrl" [src]="userAvatarUrl" alt="Perfil" style="object-fit: cover; width: 100%; height: 100%;" />
+        <ion-icon *ngIf="!userAvatarUrl" name="person" style="font-size: 20px; color: #7e7e7e;"></ion-icon>
       </ion-avatar>
     </ion-buttons>
   </ion-toolbar>

@@ -127,7 +127,7 @@ export class ProfilePage implements OnInit {
       }
       console.log('Partner data fetched:', partner);
       if (partner) {
-        this.partnerName = partner.full_name || partner.email || 'Tu Pareja';
+        this.partnerName = partner.full_name || 'Tu Pareja';
         this.partnerAvatarUrl = partner.avatar_url || null;
       } else {
         this.partnerName = 'Tu Pareja';
