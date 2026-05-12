@@ -1,41 +1,171 @@
-# 💖 AffiniScore
+# AffiniScore 💖
+**Sistema Inteligente de Gamificación y Fortalecimiento Relacional**
 
-## 📖 Información Base del Proyecto
-**AffiniScore** es una aplicación móvil nativa diseñada para fortalecer la relación de parejas adultas (mayores de 30 años) afectada por la rutina y la hiperconexión. La plataforma se basa principalmente en un **sistema de puntajes (Affini Points)** que incentiva y gamifica las interacciones positivas a través del registro de "actos de servicio" y "retos de desconexión". 
-Además, integra un "Terapeuta de Pareja IA" como mediador, una bandeja de comunicación con distintos niveles de privacidad, herramientas de conciencia espacial (geofencing) y seguridad (S.O.S).
+Aplicación móvil para la reconexión de parejas mediante incentivos y asistencia de Inteligencia Artificial [6, 7].
 
-* **Cliente:** Cristián Gómez (Academia Tecnológica Triskeledu).
-* **Metodología:** Aprendizaje Basado en Problemas (ABP) / Scrum.
-
-## 👥 Equipo de Desarrollo
-* **Belén Toloza:** Jefa de Proyecto y Analista Programador.
-* **Ignacio Álvarez:** Analista de Base de Datos y Analista QA.
-* **Cristóbal Paredes:** Analista de Base de Datos y Analista Programador.
-
-## 🛠️ Tecnologías Utilizadas
-* **Frontend:** Ionic Framework y Angular (Aplicación Móvil).
-* **Backend (Intermedio y WebSockets):** FastAPI (Python) para la gestión de la bandeja de chats en tiempo real y la orquestación de la IA.
-* **Backend y Base de Datos:** Supabase (Almacenamiento y sincronización).
-* **Geolocalización:** API de Mapbox.
-* **Inteligencia Artificial:** Gemini / Google AI Studio (Procesamiento de Terapeuta IA, análisis de interacciones y validación de puntos).
-
-## 📁 Estructura del Repositorio (Control de Auditoría)
-Para dar cumplimiento a las normativas de auditoría, este repositorio se divide en tres directorios:
-1. **`/Gestión`**: Actas de reunión, documento de identificación del proyecto (Guía 1) y conformación del equipo (`Integrantes.txt`).
-2. **`/Documentación`**: Carta Gantt, diagramas técnicos (UML, MER, Ishikawa, Casos de Uso), mockups e informes de avance.
-3. **`/Producto`**: Código fuente de la app, backend en FastAPI, scripts de base de datos y registro de dependencias.
+`Ionic` `Angular` `FastAPI` `Supabase` `Mapbox` `Gemini IA`
 
 ---
 
-## 🚀 Estado de Avance del Proyecto
+## Tabla de Contenidos
+- [Descripción](#descripción)
+- [Características principales](#características-principales)
+- [Stack Tecnológico](#stack-tecnológico)
+- [Requisitos del sistema](#requisitos-del-sistema)
+- [Instalación y ejecución](#instalación-y-ejecución)
+- [Variables de entorno](#variables-de-entorno)
+- [Estructura del proyecto (Auditoría Duoc UC)](#estructura-del-proyecto)
+- [Guía de uso](#guía-de-uso)
+- [Endpoints API](#endpoints-api)
+- [Guía de desarrollo y contribución](#guía-de-desarrollo)
+- [Notas adicionales](#notas-adicionales)
 
-### ✅ Módulos y Entregables Terminados
-* **Diseño UX/UI:** Mockups finalizados bajo el estándar "Clean UI" enfocados en el panel de control, mapa y chat.
-* **Planificación Técnica:** Diagramas de Casos de Uso, Diagrama de Ishikawa y alcance del proyecto definidos.
+---
 
-### 🚧 Módulos en Construcción (Desarrollo Activo)
-* **1. Módulo de Puntos y Recompensas (Core):** Programación del sistema de "Affini Points". Incluye el registro de actos de servicio, el canje de recompensas en la vida real y la gestión de retos de desconexión (ej. citas sin celular).
-* **2. Módulo de Comunicación y Asistencia IA:** Desarrollo con FastAPI de la bandeja de 3 chats (privado de pareja, individual con IA y terapia grupal con IA), incorporando análisis de sentimiento y sugerencia de respuestas empáticas.
-* **3. Módulo de Gestión y Reportería (CRUD):** Login, vinculación de cuentas por código QR, panel de dashboard con el índice de afinidad y exportación de reportes de la relación.
-* **4. Módulo de Mapa y Seguridad:** Integración de Mapbox para ubicación en tiempo real, botón de pánico S.O.S y activación de geofencing para detectar "Tiempo de Calidad" al estar físicamente juntos.
-* **5. Validación Multimedia IA:** Lógica para asignar puntos de forma automática al analizar el nivel de bienestar en fotos o evidencias de salidas de la pareja.
+## Descripción
+AffiniScore es una solución móvil diseñada estratégicamente para parejas adultas (mayores de 30 años) que buscan combatir la desconexión física y emocional causada por la rutina diaria y la hiperconexión digital [4, 6, 8]. A través de un ecosistema seguro, la aplicación fomenta el tiempo de calidad mediante la gamificación de "Actos de Servicio", validación de recuerdos a través de IA, y la asistencia empática del Terapeuta IA "Sinclair" [4, 9-11].
+
+---
+
+## Características principales
+
+### 1. Sistema de Affini Points y Gamificación
+- **Registro de Acciones de Servicio:** Botones rápidos para registrar gestos cotidianos [4].
+- **Tienda de Recompensas:** Canje de puntos por permisos o premios en la vida real [4].
+- **Retos de Desconexión:** Desafíos para realizar actividades sin pantallas [4].
+- **Juego de Memoria Histórica:** Interacciones rápidas basadas en recordar fotografías conjuntas pasadas [12].
+
+### 2. Inteligencia Artificial y Validación (Sinclair)
+- **Validación Multimedia:** Carga de fotos de citas; la IA analiza la emocionalidad para asignar Affini Points automáticamente [9].
+- **Terapeuta IA:** Chat individual y grupal con la IA para resolver conflictos y recibir sugerencias empáticas [10, 13].
+
+### 3. Mapa, Conciencia Espacial y Privacidad
+- **Tiempo de Calidad (Geofencing):** La app detecta cuando ambos celulares están a menos de 50 metros y sugiere actividades [14].
+- **Botón S.O.S (Pánico):** Envío de ubicación exacta y 5 segundos de audio en emergencias [13, 14].
+- **Dashboard y Reportería:** Exportación del Reporte de Salud Relacional en formato PDF [14].
+
+---
+
+## Stack Tecnológico
+
+| Componente | Tecnología |
+| :--- | :--- |
+| **Framework Frontend** | Ionic + Angular (Multiplataforma iOS/Android) [5, 15] |
+| **Backend API** | FastAPI + Python (Uvicorn / Pydantic) [16, 17] |
+| **Base de Datos / BaaS** | Supabase (PostgreSQL) [16, 18, 19] |
+| **Autenticación** | Supabase Auth (JWT + RLS) [18] |
+| **Mapas / Geolocalización**| Mapbox API (Geofencing) |
+| **Inteligencia Artificial** | Gemini / Google AI Studio (Provisorio) -> API Triskeledu |
+
+---
+
+## Requisitos del sistema
+
+### Dispositivo Móvil (Cliente)
+- iOS 13.0+ o Android 8.0+
+- Conectividad a Internet (3G/4G/5G o WiFi) para sincronización en tiempo real.
+
+### Permisos Requeridos
+- **Ubicación (GPS):** Para funciones de Geofencing y Botón S.O.S [13, 14].
+- **Cámara/Galería:** Para carga de fotos en retos de desconexión [9].
+- **Micrófono:** Para grabaciones de emergencia (S.O.S) [14].
+
+---
+
+## Instalación y ejecución
+
+### Prerrequisitos
+```bash
+npm install -g @ionic/cli @angular/cli
+pip install virtualenv
+Clonar el repositorio
+git clone https://github.com/TuUsuario/AffiniScore.git
+cd AffiniScore
+1. Iniciar Backend (FastAPI)
+cd Producto/backend
+python -m venv venv
+# Activar entorno: venv\Scripts\activate (Windows) o source venv/bin/activate (Mac/Linux)
+pip install -r requirements.txt
+uvicorn main:app --reload
+2. Iniciar Frontend (Ionic/Angular)
+cd Producto/frontend
+npm install
+ionic serve
+
+--------------------------------------------------------------------------------
+Variables de entorno
+Frontend (src/environments/environment.ts):
+export const environment = {
+  production: false,
+  supabaseUrl: 'TU_SUPABASE_URL',
+  supabaseKey: 'TU_SUPABASE_ANON_KEY',
+  mapbox: { accessToken: 'TU_MAPBOX_TOKEN' }
+};
+Backend (Producto/backend/.env):
+SUPABASE_URL=tu_supabase_url
+SUPABASE_SERVICE_KEY=tu_service_role_key
+GEMINI_API_KEY=tu_token_google_ai_studio
+
+--------------------------------------------------------------------------------
+Estructura del proyecto (Auditoría Duoc UC)
+Este repositorio cumple con la normativa exigida por la coordinación de TPY1101
+.
+AffiniScore/
+├── 📁 Gestión/                # Documentos administrativos [21].
+│   ├── 1.1.2_Documento_de_registro.docx
+│   └── Integrantes.txt
+├── 📁 Documentación/          # Diseño, arquitectura y QA [22].
+│   ├── Informes_de_Avance/
+│   ├── Diagramas_UML_y_MER/
+│   ├── Plan_de_Pruebas_y_QA/
+│   └── Carta_Gantt/
+└── 📁 Producto/               # Entregables técnicos [3].
+    ├── backend/               # API en FastAPI
+    ├── frontend/              # Aplicación móvil en Ionic
+    └── scripts_bd/            # Scripts SQL (Creación de tablas y poblado de prueba)
+
+
+--------------------------------------------------------------------------------
+Guía de uso
+Registro y Vinculación: Los usuarios crean su cuenta y sincronizan sus perfiles mediante un token único o código QR generado por la app
+.
+Acciones Diarias: Un usuario registra una "Acción de Servicio" (ej. Preparar el desayuno). El compañero la valida para sumar Affini Points
+.
+Retos y Validación IA: Realizan un reto de desconexión, suben una fotografía y la IA analiza la imagen para otorgar bonificaciones
+.
+Asistencia: Utilizan el chat privado o consultan a "Sinclair" (Terapeuta IA) para mejorar la comunicación
+.
+
+--------------------------------------------------------------------------------
+Endpoints API (FastAPI)
+URL Base Local: http://127.0.0.1:8000
+Endpoint
+Método
+Descripción
+/api/v1/partnerships/invite
+POST
+Genera token de invitación (6 dígitos)
+.
+/api/v1/partnerships/join
+POST
+Une a la pareja mediante el token e inicia la relación
+.
+/api/chat/{id_canal}/{usuario}
+POST
+Envía mensaje al chat (1: Pareja, 2: Individual con IA, 3: Grupal con IA). Guarda historial en DB.
+/api/v1/activities/catalog
+GET
+Retorna el catálogo de retos y acciones de servicio
+.
+/api/v1/user_profiles
+GET
+Retorna datos del usuario autenticado (JWT)
+.
+
+--------------------------------------------------------------------------------
+Estándares y Notas Adicionales
+Proyecto desarrollado como parte de la asignatura Taller Aplicado de Programación (TPY1101) en DUOC UC
+.
+Vinculación con el Medio: Proyecto codesarñado para el cliente Academia Tecnológica Triskeledu bajo el modelo CREA+
+.
+Calidad del Código: El proyecto utiliza ESLint/Prettier (Frontend) y PEP8 (Backend). Todo código en main debe superar las pruebas documentadas en la carpeta de Documentación/QA.
