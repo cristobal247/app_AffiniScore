@@ -2,27 +2,27 @@ import { Component, ViewChild, ElementRef, OnInit, ChangeDetectorRef } from '@an
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import { 
-  IonContent, IonHeader, IonTitle, IonToolbar, IonButton, 
+import {
+  IonContent, IonHeader, IonTitle, IonToolbar, IonButton,
   IonIcon, IonItem, IonLabel, IonList, LoadingController,
   IonButtons, IonBackButton, IonCard, IonCardContent, IonToggle,
   ToastController
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { 
-  logOutOutline, 
-  personCircleOutline, 
-  chevronForwardOutline, 
-  heartOutline, 
+import {
+  logOutOutline,
+  personCircleOutline,
+  chevronForwardOutline,
+  heartOutline,
   heart,
-  heartDislikeOutline, 
-  qrCodeOutline, 
-  shieldCheckmarkOutline, 
-  notificationsOutline, 
-  checkmarkCircleOutline, 
-  phonePortraitOutline, 
-  cameraOutline, 
-  documentTextOutline 
+  heartDislikeOutline,
+  qrCodeOutline,
+  shieldCheckmarkOutline,
+  notificationsOutline,
+  checkmarkCircleOutline,
+  phonePortraitOutline,
+  cameraOutline,
+  documentTextOutline
 } from 'ionicons/icons';
 import { SupabaseService } from '../../services/supabase';
 import jsPDF from 'jspdf';
@@ -47,7 +47,7 @@ export interface NotificationSettings {
   styleUrls: ['./profile.page.scss'],
   standalone: true,
   imports: [
-    IonContent, IonHeader, IonTitle, IonToolbar, IonButton, 
+    IonContent, IonHeader, IonTitle, IonToolbar, IonButton,
     IonIcon, IonItem, IonLabel, IonList, IonToggle,
     IonButtons, IonBackButton, IonCard, IonCardContent,
     CommonModule, FormsModule, RouterModule
@@ -56,13 +56,13 @@ export interface NotificationSettings {
 export class ProfilePage implements OnInit {
   @ViewChild('fileInput', { static: false }) fileInput!: ElementRef;
   userEmail: string | undefined = '';
-  
+
   privacySettings: PrivacySettings = {
     profileVisibleToPartner: true,
     showStreak: true,
     shareActivityStatus: true,
   };
-  
+
   notificationSettings: NotificationSettings = {
     pushEnabled: false,
     dailyReminder: true,
@@ -83,20 +83,20 @@ export class ProfilePage implements OnInit {
     private toastCtrl: ToastController,
     private cdr: ChangeDetectorRef
   ) {
-    addIcons({ 
-      logOutOutline, 
-      personCircleOutline, 
-      chevronForwardOutline, 
-      heartOutline, 
+    addIcons({
+      logOutOutline,
+      personCircleOutline,
+      chevronForwardOutline,
+      heartOutline,
       heart,
-      heartDislikeOutline, 
-      qrCodeOutline, 
-      shieldCheckmarkOutline, 
-      notificationsOutline, 
-      checkmarkCircleOutline, 
-      phonePortraitOutline, 
-      cameraOutline, 
-      documentTextOutline 
+      heartDislikeOutline,
+      qrCodeOutline,
+      shieldCheckmarkOutline,
+      notificationsOutline,
+      checkmarkCircleOutline,
+      phonePortraitOutline,
+      cameraOutline,
+      documentTextOutline
     });
   }
 
@@ -110,34 +110,61 @@ export class ProfilePage implements OnInit {
 
   async loadProfileData() {
     const user = await this.supabaseSvc.getCurrentUser();
-    this.userEmail = user?.email;
+    if (!user) return;
+    this.userEmail = user.email;
 
+    // 1. Obtener mi perfil
     const { data: profile } = await this.supabaseSvc.getUserProfile();
     console.log('Current profile fetched:', profile);
-    
+
     if (profile && profile.avatar_url) {
       this.avatarUrl = profile.avatar_url;
     }
-    
-    if (profile && profile.partnership_id) {
+
+    // 2. Buscar vinculación activa en la tabla 'partnerships'
+    // El usuario puede ser user1_id o user2_id
+    const { data: partnerships, error: psError } = await (this.supabaseSvc as any).supabase
+      .from('partnerships')
+      .select('*')
+      .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
+      .eq('status', 'active')
+      .limit(1);
+
+    if (psError) {
+      console.error('Error fetching partnerships:', psError);
+    }
+
+    if (partnerships && partnerships.length > 0) {
+      const p = partnerships[0];
       this.hasPartner = true;
-      const { data: partner, error: partnerError } = await this.supabaseSvc.getPartnerProfile(profile.partnership_id);
-      if (partnerError) {
-        console.error('Error fetching partner profile:', partnerError);
-      }
-      console.log('Partner data fetched:', partner);
-      if (partner) {
-        this.partnerName = partner.full_name || 'Tu Pareja';
-        this.partnerAvatarUrl = partner.avatar_url || null;
+
+      // Identificar el ID de la pareja
+      const partnerId = p.user1_id === user.id ? p.user2_id : p.user1_id;
+
+      if (partnerId) {
+        // 3. Obtener el nombre de la pareja desde la tabla 'profiles'
+        const { data: partnerProfile, error: ppError } = await (this.supabaseSvc as any).supabase
+          .from('profiles')
+          .select('full_name, avatar_url')
+          .eq('id', partnerId)
+          .single();
+
+        if (ppError) {
+          console.error('Error fetching partner profile:', ppError);
+          this.partnerName = 'Tu Pareja';
+        } else if (partnerProfile) {
+          this.partnerName = partnerProfile.full_name || 'Tu Pareja';
+          this.partnerAvatarUrl = partnerProfile.avatar_url || null;
+        }
       } else {
         this.partnerName = 'Tu Pareja';
-        this.partnerAvatarUrl = null;
       }
     } else {
       this.hasPartner = false;
       this.partnerName = '';
+      this.partnerAvatarUrl = null;
     }
-    
+
     this.cdr.detectChanges();
   }
 
@@ -156,6 +183,7 @@ export class ProfilePage implements OnInit {
     } else {
       this.hasPartner = false;
       this.partnerName = '';
+      this.partnerAvatarUrl = null;
       this.showToast('Te has desvinculado de tu pareja.', 'success');
     }
   }
@@ -175,6 +203,7 @@ export class ProfilePage implements OnInit {
     } else {
       this.hasPartner = false;
       this.partnerName = '';
+      this.partnerAvatarUrl = null;
       this.showToast('Te has desvinculado. Ahora puedes vincularte con alguien más.', 'success');
       this.router.navigateByUrl('/qr');
     }
@@ -230,14 +259,14 @@ export class ProfilePage implements OnInit {
               if (blob) {
                 // 1. Subir al bucket 'avatars'
                 const uploadRes = await this.supabaseSvc.uploadAvatar(blob);
-                
+
                 if (uploadRes.error) {
                   console.error('Upload Error:', uploadRes.error);
                   this.showToast('Error al subir imagen: ' + uploadRes.error, 'danger');
                 } else if (uploadRes.publicUrl) {
                   // 2. Actualizar el perfil con la URL pública
                   const updateRes = await this.supabaseSvc.updateAvatarUrl(uploadRes.publicUrl);
-                  
+
                   if (updateRes.error) {
                     this.showToast('Error al actualizar perfil.', 'danger');
                   } else {
@@ -300,7 +329,7 @@ export class ProfilePage implements OnInit {
     await loading.present();
 
     await this.supabaseSvc.signOut();
-    
+
     await loading.dismiss();
     this.router.navigateByUrl('/login', { replaceUrl: true });
   }
@@ -320,7 +349,7 @@ export class ProfilePage implements OnInit {
       // Agrupar por día de la semana
       const daysOfWeek = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
       const groupedByDay: { [key: string]: number } = {};
-      
+
       let weeklyTotal = 0;
 
       (history || []).forEach((log: any) => {
