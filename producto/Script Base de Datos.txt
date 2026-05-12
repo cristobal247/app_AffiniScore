@@ -1,0 +1,136 @@
+-- 1. Tablas Independientes o Primarias
+CREATE TABLE public.profiles (
+  id uuid NOT NULL,
+  full_name text,
+  avatar_url text,
+  love_language text,
+  updated_at timestamp with time zone DEFAULT now(),
+  total_points integer NOT NULL DEFAULT 0,
+  birth_date date,
+  preferences jsonb DEFAULT '{}'::jsonb,
+  CONSTRAINT profiles_pkey PRIMARY KEY (id),
+  CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id)
+);
+
+CREATE TABLE public.activity_catalog (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  category text NOT NULL,
+  default_points integer NOT NULL,
+  activity_type text DEFAULT 'ROUTINE'::text CHECK (activity_type = ANY (ARRAY['ROUTINE'::text, 'CHALLENGE'::text])),
+  subcategory text,
+  description text,
+  CONSTRAINT activity_catalog_pkey PRIMARY KEY (id)
+);
+
+-- 2. Tabla de Vinculación (Depende de profiles)
+CREATE TABLE public.partnerships (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user1_id uuid UNIQUE,
+  user2_id uuid UNIQUE,
+  pairing_token text UNIQUE,
+  status text DEFAULT 'pending'::text,
+  anniversary_date date,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT partnerships_pkey PRIMARY KEY (id),
+  CONSTRAINT partnerships_user1_id_fkey FOREIGN KEY (user1_id) REFERENCES public.profiles(id),
+  CONSTRAINT partnerships_user2_id_fkey FOREIGN KEY (user2_id) REFERENCES public.profiles(id)
+);
+
+-- 3. Tablas Dependientes (Dependen de partnerships, profiles o catalog)
+CREATE TABLE public.chat_rooms (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  partnership_id uuid,
+  room_type text NOT NULL CHECK (room_type = ANY (ARRAY['COUPLE'::text, 'PRIVATE_AI'::text, 'GROUP_AI'::text])),
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT chat_rooms_pkey PRIMARY KEY (id),
+  CONSTRAINT chat_rooms_partnership_id_fkey FOREIGN KEY (partnership_id) REFERENCES public.partnerships(id)
+);
+
+CREATE TABLE public.chat_messages (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  room_id uuid NOT NULL,
+  sender_id uuid,
+  sender_type text NOT NULL CHECK (sender_type = ANY (ARRAY['USER'::text, 'AI'::text])),
+  message text NOT NULL,
+  metadata jsonb DEFAULT '{}'::jsonb,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT chat_messages_pkey PRIMARY KEY (id),
+  CONSTRAINT chat_messages_room_id_fkey FOREIGN KEY (room_id) REFERENCES public.chat_rooms(id),
+  CONSTRAINT chat_messages_sender_id_fkey FOREIGN KEY (sender_id) REFERENCES public.profiles(id)
+);
+
+CREATE TABLE public.points_ledger (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  partnership_id uuid,
+  user_id uuid,
+  points integer NOT NULL,
+  ai_validated boolean DEFAULT false,
+  created_at timestamp with time zone DEFAULT now(),
+  act_id uuid,
+  CONSTRAINT points_ledger_pkey PRIMARY KEY (id),
+  CONSTRAINT points_ledger_partnership_id_fkey FOREIGN KEY (partnership_id) REFERENCES public.partnerships(id),
+  CONSTRAINT points_ledger_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id),
+  CONSTRAINT points_ledger_act_id_fkey FOREIGN KEY (act_id) REFERENCES public.activity_catalog(id)
+);
+
+CREATE TABLE public.geozones (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  partnership_id uuid,
+  name text,
+  latitude double precision,
+  longitude double precision,
+  radius integer DEFAULT 50,
+  CONSTRAINT geozones_pkey PRIMARY KEY (id),
+  CONSTRAINT geozones_partnership_id_fkey FOREIGN KEY (partnership_id) REFERENCES public.partnerships(id)
+);
+
+CREATE TABLE public.locations (
+  user_id uuid NOT NULL,
+  latitude double precision,
+  longitude double precision,
+  privacy_enabled boolean DEFAULT true,
+  last_update timestamp with time zone DEFAULT now(),
+  CONSTRAINT locations_pkey PRIMARY KEY (user_id),
+  CONSTRAINT locations_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id)
+);
+
+CREATE TABLE public.sos_alerts (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid,
+  latitude double precision,
+  longitude double precision,
+  audio_url text,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT sos_alerts_pkey PRIMARY KEY (id),
+  CONSTRAINT sos_alerts_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id)
+);
+
+CREATE TABLE public.real_rewards (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  partnership_id uuid,
+  description text NOT NULL,
+  point_cost integer NOT NULL,
+  is_redeemed boolean DEFAULT false,
+  CONSTRAINT real_rewards_pkey PRIMARY KEY (id),
+  CONSTRAINT real_rewards_partnership_id_fkey FOREIGN KEY (partnership_id) REFERENCES public.partnerships(id)
+);
+
+
+
+-- Poblado para el catálogo de actividades
+INSERT INTO public.activity_catalog (name, category, default_points, activity_type, subcategory, description)
+VALUES 
+-- ACTOS DE SERVICIO (ROUTINE)
+('Preparar desayuno sorpresa', 'Actos de Servicio', 15, 'ROUTINE', 'Hogar', 'Preparar y llevar el desayuno a la cama o mesa sin que el otro lo pida.'),
+('Encargarse de las tareas del hijo', 'Actos de Servicio', 20, 'ROUTINE', 'Hogar', 'Asumir la responsabilidad de tareas escolares o cuidados que correspondían al otro.'),
+('Lavar la loza/Limpiar cocina', 'Actos de Servicio', 10, 'ROUTINE', 'Hogar', 'Realizar limpieza profunda de la cocina de forma voluntaria.'),
+('Masaje relajante (15 min)', 'Actos de Servicio', 25, 'ROUTINE', 'Bienestar', 'Brindar un momento de relajo tras una jornada laboral estresante.'),
+('Cuidado de mascotas (baño/paseo)', 'Actos de Servicio', 15, 'ROUTINE', 'Hogar', 'Encargarse por completo de la higiene o paseo largo de las mascotas.'),
+
+-- RETOS DE DESCONEXIÓN (CHALLENGE)
+('Cena sin celulares', 'Retos de Desconexión', 50, 'CHALLENGE', 'Citas', 'Tener una cena completa (mínimo 45 min) con ambos teléfonos en modo avión o guardados.'),
+('Paseo por el parque sin pantallas', 'Retos de Desconexión', 40, 'CHALLENGE', 'Aire Libre', 'Caminata de 30 minutos conversando sin revisar redes sociales ni mensajes.'),
+('Noche de juegos de mesa', 'Retos de Desconexión', 45, 'CHALLENGE', 'Diversión', 'Sesión de juegos de mesa o cartas para fomentar la interacción cara a cara.'),
+('Cocinar juntos una receta nueva', 'Retos de Desconexión', 60, 'CHALLENGE', 'Hogar', 'Preparar un plato complejo desde cero sin distracciones digitales (solo música de fondo).'),
+('Maratón de películas/series sin scroll', 'Retos de Desconexión', 35, 'CHALLENGE', 'Ocio', 'Ver una película completa sin tomar el celular ni una sola vez.');
