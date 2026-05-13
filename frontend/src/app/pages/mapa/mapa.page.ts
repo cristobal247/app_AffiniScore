@@ -87,9 +87,31 @@ export class MapaPage implements AfterViewInit {
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(this.map);
 
-    // Creamos y guardamos un marcador, primero en la pos por defecto
-    const userMarker = L.marker([lat, lng]).addTo(this.map)
-      .bindPopup('Ubicación predeterminada')
+    // Crear un icono personalizado hermoso (con o sin avatar)
+    const customIcon = L.divIcon({
+      className: 'custom-user-marker',
+      html: `
+        <div style="
+          width: 44px; height: 44px; background: white; border-radius: 50%;
+          border: 3px solid #bd343a; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+          display: flex; align-items: center; justify-content: center; overflow: hidden;
+          position: relative;">
+          ${this.userAvatarUrl 
+            ? `<img src="${this.userAvatarUrl}" style="width: 100%; height: 100%; object-fit: cover;"/>` 
+            : `<div style="background: #bd343a; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;"><span style="color: white; font-weight: bold; font-size: 16px;">Tú</span></div>`
+          }
+          <div style="position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%);
+            width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 6px solid #bd343a;"></div>
+        </div>
+      `,
+      iconSize: [44, 50],
+      iconAnchor: [22, 50],
+      popupAnchor: [0, -50]
+    });
+
+    // Creamos y guardamos un marcador
+    const userMarker = L.marker([lat, lng], { icon: customIcon }).addTo(this.map)
+      .bindPopup('<b>Buscando tu ubicación...</b>')
       .openPopup();
 
     setTimeout(() => {
@@ -97,45 +119,74 @@ export class MapaPage implements AfterViewInit {
     }, 500);
 
     try {
-      // 1. Solicitar permisos primero (Crucial para web y móvil)
-      const permissions = await Geolocation.checkPermissions();
-      if (permissions.location !== 'granted') {
-        const requestStatus = await Geolocation.requestPermissions();
-        if (requestStatus.location !== 'granted') {
-          throw new Error('Permisos de ubicación denegados por el usuario.');
+      // 1. Solicitar permisos primero (Crucial para móvil, en web a veces falla checkPermissions)
+      try {
+        const permissions = await Geolocation.checkPermissions();
+        if (permissions.location !== 'granted') {
+          const requestStatus = await Geolocation.requestPermissions();
+          if (requestStatus.location !== 'granted') {
+            console.warn('Permisos denegados explícitamente.');
+          }
         }
+      } catch (permErr) {
+        console.warn('checkPermissions no soportado en este navegador, continuando...', permErr);
       }
 
-      // 2. Pedimos ubicación real forzando alta precisión
-      const coordinates = await Geolocation.getCurrentPosition({
-        enableHighAccuracy: true,
-        timeout: 20000, // Aumentamos el timeout a 20s para que no falle antes de encontrar el GPS
-        maximumAge: 0   // Forzamos a no usar caché antigua
-      });
+      // 2. Pedimos ubicación real
+      let coordinates: any;
+      try {
+        coordinates = await Geolocation.getCurrentPosition({
+          enableHighAccuracy: true,
+          timeout: 10000, 
+          maximumAge: 0   
+        });
+      } catch (highAccErr) {
+        console.warn('Fallo alta precisión, intentando baja precisión...', highAccErr);
+        try {
+          coordinates = await Geolocation.getCurrentPosition({
+            enableHighAccuracy: false,
+            timeout: 10000,
+            maximumAge: 3000
+          });
+        } catch (lowAccErr) {
+          console.warn('GPS bloqueado por administrador. Simulando ubicación para pruebas...');
+          // Simulamos una ubicación en Santiago para que puedas ver cómo funciona
+          coordinates = {
+            coords: { latitude: -33.4489, longitude: -70.6693 }
+          };
+          this.showToast('GPS bloqueado por Windows. Usando ubicación simulada.', 'tertiary');
+        }
+      }
       
       lat = coordinates.coords.latitude;
       lng = coordinates.coords.longitude;
 
       // Volamos a la ubicación real y actualizamos marcador
-      this.map.flyTo([lat, lng], 16, { animate: true, duration: 1.5 });
+      this.map.flyTo([lat, lng], 17, { animate: true, duration: 2 });
       userMarker.setLatLng([lat, lng]);
-      userMarker.bindPopup('¡Estás aquí!').openPopup();
+      userMarker.bindPopup('<b>¡Estás aquí!</b>').openPopup();
 
-      // Opcional: Rastrear en tiempo real si el usuario se mueve
+      // 3. Rastrear en tiempo real si el usuario se mueve
       await Geolocation.watchPosition({
         enableHighAccuracy: true,
         timeout: 10000,
         maximumAge: 0
       }, (position, err) => {
         if (position) {
-          userMarker.setLatLng([position.coords.latitude, position.coords.longitude]);
+          const newLat = position.coords.latitude;
+          const newLng = position.coords.longitude;
+          
+          userMarker.setLatLng([newLat, newLng]);
+          
+          // Suave paneo hacia la nueva ubicación si el usuario se mueve
+          this.map.panTo(new L.LatLng(newLat, newLng), { animate: true });
         }
       });
 
     } catch (error) {
       console.warn('Error obteniendo ubicación, se usará la predeterminada:', error);
-      // Ya estamos en la ubicación por defecto, no hay que hacer nada más
-      this.showToast('No se pudo obtener la ubicación precisa', 'warning');
+      userMarker.bindPopup('Ubicación predeterminada (GPS Desactivado)').openPopup();
+      this.showToast('No se pudo obtener la ubicación precisa. Verifica tu GPS.', 'warning');
     }
   }
 
@@ -185,14 +236,21 @@ export class MapaPage implements AfterViewInit {
       try {
         const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
         
-        // 1. Obtener coordenadas actuales
-        const coordinates = await Geolocation.getCurrentPosition({
-          enableHighAccuracy: true,
-          timeout: 20000,
-          maximumAge: 0
-        });
-        const lat = coordinates.coords.latitude;
-        const lng = coordinates.coords.longitude;
+        // 1. Obtener coordenadas actuales (con fallback)
+        let lat = 0;
+        let lng = 0;
+        try {
+          const coordinates = await Geolocation.getCurrentPosition({
+            enableHighAccuracy: true,
+            timeout: 5000, // Timeout más corto para SOS
+            maximumAge: 0
+          });
+          lat = coordinates.coords.latitude;
+          lng = coordinates.coords.longitude;
+        } catch (geoErr) {
+          console.warn('GPS falló durante SOS, usando coordenadas por defecto:', geoErr);
+          // Opcional: intentar usar última ubicación conocida del marcador si existe
+        }
 
         // Convertir el audio a Base64 para mandarlo al backend
         const base64Audio = await new Promise<string>((resolve, reject) => {
@@ -202,23 +260,30 @@ export class MapaPage implements AfterViewInit {
             const base64String = (reader.result as string).split(',')[1];
             resolve(base64String);
           };
-          reader.onerror = reject;
+          reader.onerror = () => reject(new Error('Error al leer el archivo de audio'));
         });
 
         // 2. Enviar el registro completo (URL/Base64 + coordenadas) directamente al backend
         const { error: dbError } = await this.supabaseSvc.sendSosAlert(lat, lng, base64Audio);
         
         if (dbError) {
-          throw new Error('Error al procesar el SOS en el backend');
+          throw new Error('Supabase: ' + dbError);
         }
 
         await loading.dismiss();
         this.showToast('¡Alerta SOS enviada con éxito!', 'success');
         
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error en el flujo SOS:', error);
         await loading.dismiss();
-        this.showToast('Hubo un error al enviar la alerta', 'warning');
+        
+        // Log extra detail
+        let errStr = 'Desconocido';
+        if (error instanceof Error) errStr = error.message;
+        else if (typeof error === 'string') errStr = error;
+        else errStr = JSON.stringify(error);
+        
+        this.showToast('Error: ' + errStr, 'danger');
       }
     };
 

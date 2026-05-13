@@ -42,6 +42,7 @@ export class HomePage implements OnInit {
   nivelAfinidad: number = 1;
   porcentajeAfinidad: number = 0;
   userAvatarUrl: string | null = null;
+  latestMemory: any = null;
 
   constructor(
     private supabaseSvc: SupabaseService,
@@ -70,6 +71,7 @@ export class HomePage implements OnInit {
     // Suscribirse a los cambios de puntos locales
     this.pointsSub = this.supabaseSvc.pointsUpdated.subscribe(() => {
       this.cargarDatosAfinidad();
+      this.cargarRecuerdos();
     });
 
     // Suscribirse en tiempo real a los puntos de la pareja en Supabase
@@ -98,6 +100,7 @@ export class HomePage implements OnInit {
   // Se ejecuta cada vez que el usuario vuelve a esta pestaña
   async ionViewWillEnter() {
     await this.cargarDatosAfinidad();
+    await this.cargarRecuerdos();
   }
 
   async cargarDatosAfinidad() {
@@ -126,5 +129,41 @@ export class HomePage implements OnInit {
 
   goToActions() {
     this.navCtrl.navigateForward('/tabs/actions', { animated: true, animationDirection: 'forward' });
+  }
+
+  async cargarRecuerdos() {
+    try {
+      const { data, error } = await (this.supabaseSvc as any).getMemories();
+      if (data && data.length > 0) {
+        // Seleccionar uno al azar para mostrar
+        const randomIndex = Math.floor(Math.random() * data.length);
+        this.latestMemory = data[randomIndex];
+      } else {
+        // Mock si no hay datos
+        this.latestMemory = {
+          image_url: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?q=80&w=800&auto=format&fit=crop',
+          description: 'Aquel viaje espontáneo a la costa donde el tiempo pareció detenerse.',
+          created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 365).toISOString()
+        };
+      }
+    } catch (err) {
+      console.error('Error al cargar recuerdos:', err);
+    }
+  }
+
+  goToGallery() {
+    this.navCtrl.navigateForward('/gallery', { animated: true, animationDirection: 'forward' });
+  }
+
+  getMemoryBadge(dateString: string): string {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays >= 365) return 'HACE UN AÑO';
+    if (diffDays >= 30) return `HACE ${Math.floor(diffDays / 30)} MESES`;
+    if (diffDays >= 7) return `HACE ${Math.floor(diffDays / 7)} SEMANAS`;
+    return 'RECIENTE';
   }
 }

@@ -115,5 +115,10 @@ export const routes: Routes = [
     path: 'welcome',
     loadComponent: () => import('./pages/welcome/welcome.page').then( m => m.WelcomePage),
     canActivate: [publicGuard]
+  },
+  {
+    path: 'gallery',
+    loadComponent: () => import('./pages/gallery/gallery.page').then( m => m.GalleryPage),
+    canActivate: [authGuard]
   }
 ];
