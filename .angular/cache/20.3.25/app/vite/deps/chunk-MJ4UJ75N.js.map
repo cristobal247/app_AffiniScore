@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../node_modules/capacitor-voice-recorder/dist/esm/definitions.js"],
-  "sourcesContent": ["export const RecordingStatus = {\n    RECORDING: 'RECORDING',\n    PAUSED: 'PAUSED',\n    NONE: 'NONE',\n};\n"],
-  "mappings": ";AAAO,IAAM,kBAAkB;AAAA,EAC3B,WAAW;AAAA,EACX,QAAQ;AAAA,EACR,MAAM;AACV;",
-  "names": []
-}
