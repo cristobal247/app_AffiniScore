@@ -1,0 +1,134 @@
+<ion-content class="dashboard-bg" [fullscreen]="true">
+  
+  <!-- Header que se desplaza con el contenido -->
+  <div class="scrolling-header-container">
+    <div class="header-content-wrapper">
+      <ion-buttons>
+        <ion-button class="profile-avatar-btn" routerLink="/profile">
+          <ion-avatar class="user-avatar-top">
+            <img [src]="userAvatarUrl || '/assets/images/user.png'" alt="Perfil" />
+          </ion-avatar>
+        </ion-button>
+      </ion-buttons>
+      
+      <div class="brand-group">
+      </div>
+      
+      <ion-buttons>
+        <ion-button class="btn-settings" routerLink="/chat">
+          <ion-icon name="chatbubbles-outline"></ion-icon>
+        </ion-button>
+        <ion-button class="btn-settings">
+          <ion-icon src="/assets/icons/hero/outline/cog-6-tooth.svg"></ion-icon>
+        </ion-button>
+      </ion-buttons>
+    </div>
+  </div>
+
+  <div class="dashboard-container">
+    
+    <!-- Título de Sección -->
+    <div class="dashboard-header">
+      <span class="welcome-badge">BIENVENIDO DE NUEVO</span>
+      <h1 class="dashboard-title">Panel de Control</h1>
+      
+      <!-- Se mantiene visible el Nivel y los Puntos Totales -->
+      <div class="points-summary-badge" style="margin-top: 8px; display: inline-flex; align-items: center; gap: 6px; background: #fbecec; color: #bd343a; padding: 6px 12px; border-radius: 20px; font-weight: 700; font-size: 13px;">
+        <ion-icon name="star-outline"></ion-icon>
+        Nivel {{ nivelAfinidad }} • {{ points }} PTS Totales
+      </div>
+    </div>
+
+    <!-- Tarjeta Principal: AffiniScore Actual -->
+    <ion-card class="main-score-card">
+      
+      <!-- Olas SVG en el fondo -->
+      <svg class="wave-bg-svg" viewBox="0 0 1440 320" preserveAspectRatio="none">
+        <path fill="none" stroke="rgba(184, 59, 66, 0.2)" stroke-width="4" 
+              d="M0,160 C320,300,420,0,720,160 C1020,320,1120,0,1440,160"></path>
+      </svg>
+      
+      <div class="score-card-content">
+        <span class="score-subtitle">Progreso Semanal</span>
+        
+        <div class="score-row" style="display: flex; flex-direction: column; align-items: flex-start; gap: 10px;">
+          
+          <!-- Gauge Semi-circular SVG -->
+          <div class="gauge-wrapper" style="position: relative; width: 140px; height: 75px; margin-top: 10px;">
+            <svg viewBox="0 0 100 55" class="gauge-svg" style="width: 100%; height: 100%; overflow: visible;">
+              <!-- Background Arc -->
+              <path class="gauge-bg" d="M 10,50 A 40,40 0 0,1 90,50" fill="none" stroke="#fbecec" stroke-width="12" stroke-linecap="round"></path>
+              <!-- Progress Arc -->
+              <path class="gauge-progress" d="M 10,50 A 40,40 0 0,1 90,50" fill="none" stroke="url(#gauge-gradient)" stroke-width="12" stroke-linecap="round"
+                [style.stroke-dasharray]="126"
+                [style.stroke-dashoffset]="126 - (porcentajeAfinidad * 126 / 100)"
+                style="transition: stroke-dashoffset 1s ease-out;">
+              </path>
+              <!-- Gradiente para el gauge -->
+              <defs>
+                <linearGradient id="gauge-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#df5b61" />
+                  <stop offset="100%" stop-color="#bd343a" />
+                </linearGradient>
+              </defs>
+            </svg>
+            <div class="gauge-percentage" style="position: absolute; bottom: -5px; left: 0; right: 0; text-align: center; font-size: 26px; font-weight: 800; color: #bd343a;">
+              {{ porcentajeAfinidad }}%
+            </div>
+          </div>
+          
+          <div class="trend-pill" style="margin-top: 8px;">
+            <ion-icon name="trending-up-outline"></ion-icon>
+            <span>Meta: {{ metaSemanal }} pts</span>
+          </div>
+        </div>
+
+        <p class="score-description">
+          Tu conexión sigue floreciendo. Has acumulado <strong class="red-text">{{ puntosSemanales }} AffiniPoints</strong> esta semana.
+        </p>
+
+        <div style="display: flex; gap: 10px;">
+          <ion-button class="boost-btn" (click)="goToActions()">
+            Impulsar Conexión
+          </ion-button>
+        </div>
+      </div>
+    </ion-card>
+
+    <!-- Tarjeta 2: Reflexión Diaria -->
+    <ion-card class="daily-reflection-card">
+      <div class="reflection-header">
+        <ion-icon name="location" class="pin-icon"></ion-icon>
+        <span class="reflection-title">Reflexión Diaria</span>
+      </div>
+      
+      <p class="quote-text">
+        "El amor no es algo que se encuentra, es algo que se construye día a día con pequeños gestos de gratitud."
+      </p>
+
+      <div class="reflection-footer" style="display: flex; gap: 10px;">
+        <button class="respond-btn" routerLink="/tabs/chat-ai" style="background: transparent; color: #bd343a; border: 1px solid #bd343a;">Coach IA</button>
+        <button class="respond-btn" routerLink="/tabs/chat-partner">Chat Pareja +</button>
+      </div>
+    </ion-card>
+
+    <!-- Tarjeta 3: Recuerdos -->
+    <ion-card class="memories-card">
+      <div class="memory-image-container">
+        <img src="https://images.unsplash.com/photo-1511895426328-dc8714191300?q=80&w=800&auto=format&fit=crop" alt="Recuerdo de pareja">
+      </div>
+      <div class="memory-content">
+        <span class="memory-badge">HACE UN AÑO</span>
+        <h3 class="memory-title">Recuerdos</h3>
+        <p class="memory-desc">
+          Aquel viaje espontáneo a la costa donde el tiempo pareció detenerse.
+        </p>
+        <button class="gallery-btn">
+          <ion-icon name="images-outline"></ion-icon>
+          <span>Ver galería completa</span>
+        </button>
+      </div>
+    </ion-card>
+
+  </div>
+</ion-content>

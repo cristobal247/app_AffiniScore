@@ -1,0 +1,82 @@
+.welcome-bg {
+  /* Gradiente entre blanco y salmón */
+  --background: radial-gradient(circle at 10% 10%, rgba(255, 255, 255, 1) 0%, rgba(255, 230, 220, 0) 50%),
+                radial-gradient(circle at 90% 90%, rgba(255, 180, 180, 0.7) 0%, rgba(255, 230, 220, 0) 60%),
+                linear-gradient(135deg, #ffffff 0%, #fbecec 100%);
+  background-color: #ffffff;
+}
+
+.welcome-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  padding: 60px 30px 40px;
+  text-align: center;
+}
+
+.welcome-text-section {
+  margin-top: 20px;
+}
+
+.welcome-title {
+  font-size: 34px;
+  font-weight: 800;
+  color: #1A1A1A;
+  margin-bottom: 15px;
+  letter-spacing: -0.5px;
+}
+
+.welcome-subtitle {
+  font-size: 14px;
+  color: #4a4a4a;
+  line-height: 1.5;
+  margin: 0;
+
+  strong {
+    font-weight: 700;
+    color: #1A1A1A;
+  }
+}
+
+.welcome-image-section {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px 0;
+
+  .mascot-img {
+    max-width: 85%;
+    max-height: 350px;
+    object-fit: contain;
+    filter: drop-shadow(0 10px 15px rgba(0,0,0,0.05));
+    border-radius: 20px;
+  }
+}
+
+.welcome-buttons-section {
+  margin-bottom: 20px;
+
+  ion-button {
+    height: 55px;
+    margin-bottom: 15px;
+    font-weight: 700;
+    font-size: 16px;
+    text-transform: none;
+    letter-spacing: 0;
+    --border-radius: 30px;
+  }
+
+  .btn-create {
+    --background: #FFFFFF;
+    --color: #bd343a;
+    --box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  }
+
+  .btn-login {
+    --border-color: #bd343a;
+    --border-width: 1.5px;
+    --color: #bd343a;
+  }
+}

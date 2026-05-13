@@ -1,0 +1,191 @@
+<ion-content class="dashboard-bg" [fullscreen]="true">
+  
+  <!-- Header que se desplaza con el contenido -->
+  <div class="scrolling-header-container">
+    <div class="header-content-wrapper">
+      <ion-buttons>
+        <ion-button class="profile-avatar-btn" routerLink="/profile">
+          <ion-avatar class="user-avatar-top">
+            <img [src]="userAvatarUrl || '/assets/images/user.png'" alt="Perfil" />
+          </ion-avatar>
+        </ion-button>
+      </ion-buttons>
+      
+      <div class="brand-group">
+      </div>
+      
+      <ion-buttons>
+        <ion-button class="btn-settings" routerLink="/chat">
+          <ion-icon name="chatbubbles-outline"></ion-icon>
+        </ion-button>
+        <ion-button class="btn-settings">
+          <ion-icon src="/assets/icons/hero/outline/cog-6-tooth.svg"></ion-icon>
+        </ion-button>
+      </ion-buttons>
+    </div>
+  </div>
+
+  <div class="main-wrapper">
+    
+    <div class="main-section-title">
+      <h1>Registro de Acciones</h1>
+      <p>Celebra los pequeños gestos que fortalecen su unión.</p>
+    </div>
+
+    <h3 style="padding-left: 16px; font-weight: 700; color: #1e293b; margin-top: 10px;">Acciones de Servicio</h3>
+    <ion-grid class="actions-grid ion-no-padding">
+      <ion-row>
+        <ion-col size="6" *ngFor="let item of rutinas" class="ion-no-padding">
+          <ion-card class="action-card-ios" [class.is-completing]="item.isCompleting" (click)="registerAction(item)">
+            <div class="icon-wrapper">
+              <span class="emoji-icon">{{ item.subcategory | emoji }}</span>
+            </div>
+            <div class="check-overlay" *ngIf="item.isCompleting">
+              <ion-icon src="/assets/icons/hero/outline/check-circle.svg"></ion-icon>
+            </div>
+            <h2 style="font-size: 1rem; font-weight: 700; color: #1A1A1A; margin-top: 8px; margin-bottom: 4px;">{{ item.name }}</h2>
+            <span class="points">+{{ item.default_points }} Points</span>
+          </ion-card>
+        </ion-col>
+        
+        <!-- Tarjeta especial "Más acciones" movida aquí -->
+        <ion-col size="6" class="ion-no-padding">
+          <ion-card class="action-card-ios more-card" (click)="goToFullCatalog()">
+            <div class="icon-wrapper more-icon-bg">
+              <ion-icon src="/assets/icons/hero/outline/chevron-right.svg"></ion-icon>
+            </div>
+            <h2 style="font-size: 1rem; font-weight: 700; color: #1A1A1A; margin-top: 8px; margin-bottom: 4px;">Más acciones</h2>
+            <span class="points">Ver catálogo</span>
+          </ion-card>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+
+    <div class="bottom-action-container" style="margin-bottom: 24px; margin-top: 16px;">
+      <div class="input-header">
+        <ion-icon src="/assets/icons/hero/outline/plus-circle.svg" class="red-icon"></ion-icon>
+        <span>¿Hiciste algo más?</span>
+      </div>
+      <div class="pill-input-container">
+        <ion-input 
+          placeholder="Escribe tu acción aquí..." 
+          class="custom-input"
+          aria-label="Nueva acción"
+          [(ngModel)]="newActionName"
+          (keyup.enter)="addCustomAction()">
+        </ion-input>
+        <ion-button class="btn-registrar-solid" (click)="addCustomAction()">Registrar</ion-button>
+      </div>
+    </div>
+
+    <h3 style="padding-left: 16px; font-weight: 800; color: #1e293b; margin-top: 24px; font-size: 24px;">Retos de Desconexión</h3>
+    <p style="padding-left: 16px; color: #666; font-size: 14px; margin-top: -10px; margin-bottom: 16px; line-height: 1.4; padding-right: 16px;">
+      Elijan un reto juntos, dejen el celular y ganen puntos. Construyan momentos reales, libres de notificaciones.
+    </p>
+
+    <!-- Stats -->
+    <div style="background: linear-gradient(135deg, #CF303B, #F6676D); border-radius: 24px; padding: 20px; color: white; margin: 16px 16px 24px 16px; box-shadow: 0 12px 24px rgba(207, 48, 59, 0.2);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div style="background: rgba(255, 255, 255, 0.2); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+          <ion-icon name="flash" style="font-size: 20px; color: white;"></ion-icon>
+        </div>
+        <div style="background: rgba(255, 255, 255, 0.25); padding: 4px 12px; border-radius: 20px; font-size: 10px; font-weight: 800; letter-spacing: 0.5px;">RACHA: 5 DÍAS</div>
+      </div>
+      <h2 style="font-size: 22px; font-weight: 800; margin: 0 0 4px 0; letter-spacing: -0.5px;">Modo Presente</h2>
+      <p style="font-size: 13px; font-weight: 500; opacity: 0.95; margin: 0; line-height: 1.4;">Han compartido 12 horas sin pantallas esta semana.</p>
+    </div>
+
+    <div class="horizontal-scroll-container">
+      <!-- Tarjeta para Generar con IA -->
+      <div class="reto-card-ios ai-card" (click)="generateAiChallenge()">
+        <div class="ai-card-bg"></div>
+        <div class="ai-card-content">
+          <ion-icon name="sparkles" class="ai-sparkles"></ion-icon>
+          <h2 class="reto-title" style="color: white; margin-bottom: 4px;">Reto Mágico IA</h2>
+          <p class="reto-desc" style="color: rgba(255,255,255,0.9);">Deja que nuestra IA cree un reto único para ustedes.</p>
+          <div style="margin-top: auto; display: flex; align-items: center; justify-content: center;">
+            <ion-spinner *ngIf="isGeneratingAi" name="crescent" color="light"></ion-spinner>
+            <span *ngIf="!isGeneratingAi" class="ai-badge">Generar Ahora</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tarjetas Normales -->
+      <div *ngFor="let item of disconnectChallenges; let i = index" class="reto-card-ios">
+        <img [src]="item.image || getChallengeImage(i)" class="reto-img" />
+        <div class="reto-content">
+          <h2 class="reto-title">{{ item.title }}</h2>
+          <span class="reto-points-pill">Gana +{{ item.points }} Puntos</span>
+          <p class="reto-desc">{{ item.description }}</p>
+          
+          <div style="margin-top: auto; width: 100%;">
+            <ion-button expand="block" class="btn-aceptar-reto" *ngIf="!item.myAccepted" (click)="startFocusMode(item)">
+              <ion-icon name="time-outline" slot="start"></ion-icon> Empezar
+            </ion-button>
+            <ion-button expand="block" class="btn-aceptar-reto" *ngIf="item.myAccepted && !item.partnerAccepted" (click)="confirmJointAcceptance(item)" style="--background: transparent; color: #EA5556; border: 1px solid #EA5556;">
+              Confirmar Pareja
+            </ion-button>
+            <ion-button expand="block" class="btn-aceptar-reto" *ngIf="item.partnerAccepted" disabled style="--background: #E8E8E5; color: #767775; opacity: 1;">
+              Completado
+            </ion-button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="main-section-title middle">
+      <div class="title-with-points">
+        <h1>La Tienda Real</h1>
+        <div class="total-points-pill">
+          <ion-icon src="/assets/icons/hero/outline/star.svg"></ion-icon>
+          <span>{{ points }}</span>
+        </div>
+      </div>
+      <p>Canjea tus AffiniPoints por recompensas reales.</p>
+    </div>
+
+    <!-- Enlace a La Tienda Real -->
+    <ion-button expand="block" routerLink="/tienda" class="btn-go-tienda" style="--background: #1e3a8a; --border-radius: 12px; height: 50px; font-weight: bold; margin-bottom: 24px;">
+      <ion-icon name="cart-outline" slot="start"></ion-icon>
+      Entrar a la Tienda
+    </ion-button>
+
+
+
+  </div>
+</ion-content>
+
+<!-- Modal de Modo Enfoque -->
+<ion-modal [isOpen]="!!activeChallenge" [backdropDismiss]="false" class="focus-modal">
+  <ng-template>
+    <div class="focus-mode-bg">
+      <div class="focus-container">
+        <div class="focus-header">
+          <ion-icon name="phone-portrait-outline" class="focus-icon bounce-animation"></ion-icon>
+        </div>
+        <h1 class="focus-title">Modo Enfoque</h1>
+        <h2 class="focus-challenge-title">{{ activeChallenge?.title }}</h2>
+        <p class="focus-subtitle">Deja tu dispositivo a un lado. Es momento de conectar en la vida real.</p>
+        
+        <div class="timer-circle">
+          <span class="timer-text">{{ formatTime(focusTimeLeft) }}</span>
+        </div>
+        <p style="color: rgba(255,255,255,0.7); font-size: 13px; margin-top: 10px;">Ganan +{{ activeChallenge?.points }} Pts al terminar</p>
+
+        <div class="focus-actions">
+          <ion-button class="btn-abandon" fill="clear" (click)="abandonFocus()">
+            <ion-icon name="close-circle-outline" slot="start"></ion-icon>
+            Abandonar Reto
+          </ion-button>
+          
+          <!-- Botón oculto/pequeño para Demo (saltar el tiempo) -->
+          <div style="margin-top: 40px;">
+            <ion-button fill="clear" color="light" size="small" style="opacity: 0.5;" (click)="finishFocusEarly()">
+              [Demo] Finalizar Ahora
+            </ion-button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-template>
+</ion-modal>
