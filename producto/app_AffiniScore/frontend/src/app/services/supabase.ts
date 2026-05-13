@@ -80,7 +80,7 @@ export class SupabaseService {
       const response = await firstValueFrom(
         this.http.post<any>(`${this.apiUrl}/api/v1/partnerships/invite`, { user1_id }, { headers })
       );
-      
+
       return { token: response.token || response.invite_token };
     } catch (err: any) {
       console.error('Error in invitePartner:', err);
@@ -102,15 +102,15 @@ export class SupabaseService {
         .eq('pairing_token', token)
         .eq('status', 'pending')
         .single();
-        
+
       if (pError || !partnership) return { error: 'Código inválido o ya usado.' };
-      
+
       const { data: profile } = await this.supabase
         .from('profiles')
         .select('full_name')
         .eq('id', partnership.user1_id)
         .single();
-        
+
       return { name: profile?.full_name || 'Usuario sin nombre' };
     } catch (err: any) {
       return { error: 'Error al buscar la pareja.' };
@@ -130,11 +130,11 @@ export class SupabaseService {
 
       // Se asume que el backend recibe el token limpio (sin espacios) y el user2_id
       const body = { token: token.replace(/\s/g, ''), user2_id };
-      
+
       await firstValueFrom(
         this.http.post<any>(`${this.apiUrl}/api/v1/partnerships/join`, body, { headers })
       );
-      
+
       return { success: true };
     } catch (err: any) {
       console.error('Error in joinPartnership:', err);
@@ -251,7 +251,7 @@ export class SupabaseService {
         .from('profiles') // Asumiendo que los perfiles están en la tabla 'profiles'
         .select('id')
         .eq('partnership_id', partnershipId);
-        
+
       const partnerIds = partners ? partners.map((p: any) => p.id) : [user.id];
       query = query.in('user_id', partnerIds);
     } else {
@@ -283,7 +283,7 @@ export class SupabaseService {
         .from('profiles')
         .select('id')
         .eq('partnership_id', partnershipId);
-        
+
       if (partners && partners.length > 0) {
         const partnerIds = partners.map((p: any) => p.id);
         filter = `user_id=in.(${partnerIds.join(',')})`;
@@ -325,7 +325,7 @@ export class SupabaseService {
     if (logsError) return { data: [], error: logsError };
 
     const { data: catalog } = await this.getFullCatalog();
-    
+
     const history = (logs || []).map(log => {
       const act = catalog?.find(c => c.id === log.action_id);
       return {
@@ -353,7 +353,7 @@ export class SupabaseService {
     if (logsError) return { data: [], error: logsError };
 
     const { data: catalog } = await this.getFullCatalog();
-    
+
     const history = (logs || []).map(log => {
       const act = catalog?.find(c => c.id === log.action_id);
       return {
@@ -481,10 +481,10 @@ export class SupabaseService {
       .from('profiles')
       .update({ total_points: newTotal, updated_at: new Date() })
       .eq('id', user.id);
-      
+
     // Notificamos a la app que los puntos han cambiado
     this.pointsUpdated.next();
-    
+
     return result;
   }
 
@@ -507,10 +507,10 @@ export class SupabaseService {
       .from('profiles')
       .update({ total_points: newTotal, updated_at: new Date() })
       .eq('id', user.id);
-      
+
     // Notificamos a la app
     this.pointsUpdated.next();
-    
+
     return result;
   }
 
@@ -603,9 +603,9 @@ export class SupabaseService {
         })
         .select('*')
         .single();
-        
+
       if (error) throw error;
-      
+
       return { data, error: null };
     } catch (err: any) {
       console.error('Error al guardar mensaje en Supabase:', err);
@@ -625,7 +625,7 @@ export class SupabaseService {
         }
       )
       .subscribe();
-      
+
     return channel;
   }
 
@@ -639,7 +639,7 @@ export class SupabaseService {
     if (!user) return { url: null, error: 'Usuario no autenticado' };
 
     const fileName = `${user.id}_${new Date().getTime()}.webm`; // o .mp3/.ogg dependiendo del mimeType
-    
+
     const { data, error } = await this.supabase.storage
       .from('sos_audio')
       .upload(fileName, audioBlob, {
@@ -878,11 +878,11 @@ export class SupabaseService {
       });
 
       const body = { user_id: user.id };
-      
+
       await firstValueFrom(
         this.http.post<any>(`${this.apiUrl}/api/v1/partnerships/unlink`, body, { headers })
       );
-      
+
       return { success: true };
     } catch (err: any) {
       console.error('Error in unlinkPartner:', err);

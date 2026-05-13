@@ -21,7 +21,7 @@ import {
 
 // Iconos y Servicio
 import { addIcons } from 'ionicons';
-import { heart, eyeOutline, chevronBackOutline, logoFacebook, logoApple } from 'ionicons/icons';
+import { heart, eyeOutline, eyeOffOutline, chevronBackOutline, logoFacebook, logoApple } from 'ionicons/icons';
 import { SupabaseService } from '../services/supabase';
 
 @Component({
@@ -39,6 +39,7 @@ export class LoginPage implements OnInit {
   // Variables vinculadas al [(ngModel)] del HTML
   email: string = '';
   password: string = '';
+  showPassword: boolean = false;
 
   constructor(
     private supabaseSvc: SupabaseService,
@@ -47,7 +48,11 @@ export class LoginPage implements OnInit {
     private loadingCtrl: LoadingController
   ) {
     // Registramos los iconos para evitar warnings en consola
-    addIcons({ heart, eyeOutline, chevronBackOutline, logoFacebook, logoApple });
+    addIcons({ heart, eyeOutline, eyeOffOutline, chevronBackOutline, logoFacebook, logoApple });
+  }
+
+  togglePassword() {
+    this.showPassword = !this.showPassword;
   }
 
   ngOnInit() {

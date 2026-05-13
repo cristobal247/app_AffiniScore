@@ -64,6 +64,23 @@ export class RegisterPage {
     }
   }
 
+  isValidDate(dateString: string): boolean {
+    if (!dateString) return false;
+    const parts = dateString.split('-');
+    if (parts.length !== 3) return false;
+
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10);
+    const day = parseInt(parts[2], 10);
+
+    const date = new Date(year, month - 1, day);
+    return (
+      date.getFullYear() === year &&
+      date.getMonth() === month - 1 &&
+      date.getDate() === day
+    );
+  }
+
   goToWelcome() {
     this.router.navigate(['/welcome']);
   }
@@ -82,6 +99,18 @@ export class RegisterPage {
     const emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
     if (!emailRegex.test(this.email)) {
       this.showToast('Por favor ingresa un email válido');
+      return;
+    }
+
+    // Validación de fecha real
+    if (!this.isValidDate(this.birthDate)) {
+      this.showToast('La fecha de nacimiento no es válida');
+      return;
+    }
+
+    // Validación de longitud de contraseña
+    if (this.password.length < 6) {
+      this.showToast('La contraseña debe tener al menos 6 caracteres');
       return;
     }
 
