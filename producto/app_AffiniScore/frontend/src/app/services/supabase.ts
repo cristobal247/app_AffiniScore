@@ -863,6 +863,20 @@ export class SupabaseService {
       .single();
   }
 
+  async requestPoints(partnerId: string, activity: string, points: number) {
+    const user = await this.getCurrentUser();
+    const currentUserId = user?.id;
+
+    return firstValueFrom(
+      this.http.post(`${this.apiUrl}/api/v1/points/request`, {
+        sender_id: currentUserId,
+        receiver_id: partnerId,
+        activity_name: activity,
+        points_value: points
+      })
+    );
+  }
+
   // Desvincular pareja
   async unlinkPartner() {
     try {

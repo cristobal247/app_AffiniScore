@@ -5,7 +5,7 @@ import { Router, RouterModule } from '@angular/router';
 import {
   IonContent, IonHeader, IonTitle, IonToolbar, IonText,
   IonCard, IonItem, IonLabel, IonIcon, IonBadge, IonButton,
-  IonAvatar, IonButtons
+  IonAvatar, IonButtons, ToastController
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { 
@@ -17,7 +17,8 @@ import {
   chatbubblesOutline,
   starOutline,
   location,
-  imagesOutline
+  imagesOutline,
+  sparkles
 } from 'ionicons/icons';
 import { SupabaseService } from '../../services/supabase'; // Ajusta la ruta si es necesario
 
@@ -46,7 +47,8 @@ export class HomePage implements OnInit {
   constructor(
     private supabaseSvc: SupabaseService,
     private router: Router,
-    private navCtrl: NavController
+    private navCtrl: NavController,
+    private toastCtrl: ToastController
   ) {
     addIcons({ 
       heart, 
@@ -57,7 +59,8 @@ export class HomePage implements OnInit {
       chatbubblesOutline,
       starOutline,
       location,
-      imagesOutline
+      imagesOutline,
+      sparkles
     });
   }
 
@@ -74,8 +77,18 @@ export class HomePage implements OnInit {
 
     // Suscribirse en tiempo real a los puntos de la pareja en Supabase
     // Esto funciona igual que la IA del chat, actualizando el porcentaje al instante
-    const channels = await this.supabaseSvc.subscribeToPointsRealtime(() => {
-      this.cargarDatosAfinidad();
+    const channels = await this.supabaseSvc.subscribeToPointsRealtime(async () => {
+      await this.cargarDatosAfinidad();
+      
+      const toast = await this.toastCtrl.create({
+        message: '¡Tu pareja ha registrado una nueva acción!',
+        duration: 3000,
+        position: 'top',
+        color: 'danger',
+        icon: 'sparkles',
+        cssClass: 'custom-toast'
+      });
+      await toast.present();
     });
     if (channels) {
       this.realtimeChannels = channels;

@@ -5,6 +5,8 @@ import random
 import string
 
 from fastapi.middleware.cors import CORSMiddleware
+from models.points import PointRequestCreate
+
 
 app = FastAPI()
 
@@ -124,3 +126,20 @@ async def unlink_partnership(request: UnlinkRequest):
         return {"message": "Desvinculación exitosa"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/api/v1/points/request")
+async def create_point_request(request: PointRequestCreate):
+    try:
+        # Insertamos en la tabla de Supabase que creamos recién
+        response = supabase.table("pending_points").insert({
+            "sender_id": request.sender_id,
+            "receiver_id": request.receiver_id,
+            "activity_name": request.activity_name,
+            "points_value": request.points_value,
+            "status": "pending" # Siempre nace como pendiente
+        }).execute()
+        
+        return {"status": "success", "data": response.data}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))        
