@@ -121,7 +121,7 @@ export class ActionsPage implements OnInit {
     }
     const loading = await this.loadingCtrl.create({ message: 'Registrando...', spinner: 'crescent' });
     await loading.present();
-    const { error } = await this.supabaseSvc.saveActionPoint(item.id, item.default_points);
+    const { data: log, error } = await this.supabaseSvc.saveActionPoint(item.id, item.default_points);
     loading.dismiss();
     
     if (error) {
@@ -134,19 +134,25 @@ export class ActionsPage implements OnInit {
       return;
     }
 
-    // Actualización inmediata para que el usuario lo vea
-    this.points += item.default_points;
-    this.calcularNivel();
-
     item.isCompleting = true;
     setTimeout(() => {
       this.replaceCard(item);
     }, 500);
 
+    const isPending = log?.status === 'PENDING';
+    
+    if (!isPending) {
+      // Actualización inmediata solo si NO es un acto de servicio (porque ya se confirmaron)
+      this.points += item.default_points;
+      this.calcularNivel();
+    }
+
     const alert = await this.alertCtrl.create({
-      header: '¡Éxito!',
-      message: `Sumaste ${item.default_points} pts. Ahora tienes ${this.points} puntos (Nivel ${this.nivelAfinidad})`,
-      buttons: ['OK']
+      header: isPending ? 'Acción pendiente' : '¡Éxito!',
+      message: isPending 
+        ? `Esta acción es un "Acto de servicio" y requiere que tu pareja la confirme para sumarte los puntos. ¡Le acabamos de avisar!`
+        : `Sumaste ${item.default_points} pts. Ahora tienes ${this.points} puntos (Nivel ${this.nivelAfinidad})`,
+      buttons: ['Entendido']
     });
     await alert.present();
   }

@@ -100,7 +100,39 @@ ion-tab-button.tab-selected .icon-outline {
   opacity: 0;
 }
 
+/* Forzar modo claro en alertas específicas */
+.custom-alert-light {
+  --background: #ffffff !important;
+  --color: #000000 !important;
 
+  .alert-wrapper {
+    background: #ffffff !important;
+    border-radius: 20px !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1) !important;
+  }
+
+  .alert-title {
+    color: #1a1a1a !important;
+    font-weight: 700 !important;
+    font-size: 19px !important;
+  }
+
+  .alert-message {
+    color: #444444 !important;
+    font-size: 15px !important;
+    padding-top: 10px !important;
+  }
+
+  .alert-button {
+    color: #B0232A !important;
+    font-weight: 700 !important;
+    text-transform: none !important;
+  }
+
+  .alert-button-role-cancel {
+    color: #8E8E93 !important;
+  }
+}
 // Ajuste del Toolbar para que sea siempre blanco y limpio
 ion-header ion-toolbar {
   --background: #ffffff;
@@ -160,5 +192,11 @@ ion-avatar.user-avatar-top { width: 38px !important; height: 38px !important; }
   --background: radial-gradient(circle at 0% 0%, rgba(240, 138, 125, 0.25) 0%, rgba(245, 243, 243, 1) 45%),
                 radial-gradient(circle at 100% 100%, rgba(224, 90, 90, 0.2) 0%, rgba(245, 243, 243, 1) 50%);
   background-color: #F5F3F3; // Color base blanco grisáceo (similar a #f4f4f4 pero con un pequeñísimo tono cálido)
+}
+
+/* Hiding tab bar in AI Chat and Group Chat */
+body:has(app-chat) ion-tab-bar,
+body:has(app-group-chat) ion-tab-bar {
+  display: none !important;
 }
 

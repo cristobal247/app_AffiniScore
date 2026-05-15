@@ -47,8 +47,8 @@
 
       <div slot="end" class="chat-meta">
         <span class="chat-time">{{ chat.time }}</span>
-        <!-- Simulamos un contador de mensajes para la demostración del diseño -->
-        <ion-badge class="chat-badge">{{ i === 0 ? '2' : (i === 1 ? '5' : '1') }}</ion-badge>
+        <!-- Contador de mensajes reales -->
+        <ion-badge class="chat-badge" *ngIf="chat.unreadCount > 0">{{ chat.unreadCount }}</ion-badge>
       </div>
 
     </ion-item>

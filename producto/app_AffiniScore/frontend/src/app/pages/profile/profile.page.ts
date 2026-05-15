@@ -102,10 +102,40 @@ export class ProfilePage implements OnInit {
 
   ngOnInit() {
     this.loadProfileData();
+    this.setupPartnershipSubscription();
   }
 
   ionViewWillEnter() {
     this.loadProfileData();
+  }
+
+  /**
+   * Se suscribe a cambios en la tabla partnerships para detectar desvinculaciones en tiempo real
+   */
+  async setupPartnershipSubscription() {
+    const user = await this.supabaseSvc.getCurrentUser();
+    if (!user) return;
+
+    this.supabaseSvc.supabase
+      .channel('partnership-status-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'partnerships',
+        },
+        (payload: any) => {
+          const updated = payload.new;
+          // Si el cambio afecta a mi vinculación y el estado ya no es active
+          if ((updated.user1_id === user.id || updated.user2_id === user.id) && updated.status !== 'active') {
+            console.log('Detectada desvinculación en tiempo real');
+            this.loadProfileData();
+            this.showToast('Tu pareja ha desvinculado la cuenta.', 'warning');
+          }
+        }
+      )
+      .subscribe();
   }
 
   async loadProfileData() {
@@ -181,9 +211,7 @@ export class ProfilePage implements OnInit {
     if (res.error) {
       this.showToast(res.error, 'danger');
     } else {
-      this.hasPartner = false;
-      this.partnerName = '';
-      this.partnerAvatarUrl = null;
+      await this.loadProfileData(); // Refrescar datos reales
       this.showToast('Te has desvinculado de tu pareja.', 'success');
     }
   }
@@ -201,9 +229,7 @@ export class ProfilePage implements OnInit {
     if (res.error) {
       this.showToast(res.error, 'danger');
     } else {
-      this.hasPartner = false;
-      this.partnerName = '';
-      this.partnerAvatarUrl = null;
+      await this.loadProfileData(); // Refrescar antes de irse
       this.showToast('Te has desvinculado. Ahora puedes vincularte con alguien más.', 'success');
       this.router.navigateByUrl('/qr');
     }

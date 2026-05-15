@@ -10,7 +10,7 @@ import {
 import { SupabaseService, ChatMessage } from '../../services/supabase';
 import { GroqService } from '../../services/groq.service';
 import { addIcons } from 'ionicons';
-import { sendOutline, arrowBackOutline, videocam, call, ellipsisVertical, happyOutline, cameraOutline, send, sparkles, ellipsisHorizontal } from 'ionicons/icons';
+import { sendOutline, arrowBackOutline, videocam, call, ellipsisVertical, happyOutline, cameraOutline, send, sparkles, ellipsisHorizontal, chevronBackOutline, person } from 'ionicons/icons';
 
 @Component({
   selector: 'app-chat',
@@ -41,7 +41,7 @@ export class ChatPage implements OnDestroy {
     private groqSvc: GroqService,
     private menuCtrl: MenuController
   ) {
-    addIcons({ sendOutline, arrowBackOutline, videocam, call, ellipsisVertical, happyOutline, cameraOutline, send, sparkles, ellipsisHorizontal, addCircleOutline: 'add-circle-outline', chatbubbleOutline: 'chatbubble-outline' });
+    addIcons({ sendOutline, arrowBackOutline, videocam, call, ellipsisVertical, happyOutline, cameraOutline, send, sparkles, ellipsisHorizontal, chevronBackOutline, person, addCircleOutline: 'add-circle-outline', chatbubbleOutline: 'chatbubble-outline' });
   }
 
   userAvatarUrl: string | null = null;

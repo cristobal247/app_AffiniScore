@@ -1,0 +1,175 @@
+import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
+import { 
+  IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, 
+  IonBackButton, IonFooter, IonInput, IonButton, IonIcon, IonAvatar
+} from '@ionic/angular/standalone';
+import { SupabaseService, ChatMessage } from '../../services/supabase';
+import { environment } from '../../../environments/environment';
+import { addIcons } from 'ionicons';
+import { send, sparkles, ellipsisHorizontal, chevronBackOutline, person } from 'ionicons/icons';
+
+@Component({
+  selector: 'app-group-chat',
+  templateUrl: './group-chat.page.html',
+  styleUrls: ['./group-chat.page.scss'],
+  standalone: true,
+  imports: [
+    IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, 
+    IonBackButton, IonFooter, IonInput, IonButton, IonIcon, IonAvatar,
+    CommonModule, FormsModule, RouterModule
+  ]
+})
+export class GroupChatPage implements OnInit, OnDestroy {
+  @ViewChild(IonContent, { static: false }) content!: IonContent;
+  
+  messages: ChatMessage[] = [];
+  newMessage: string = '';
+  partnershipAvatars: string[] = [];
+  profileMap: { [key: string]: string } = {};
+  currentUserId: string = '';
+  partnershipId: string = '';
+  isLoading: boolean = false;
+  private subscription: any;
+
+  constructor(
+    private supabaseSvc: SupabaseService,
+    private http: HttpClient
+  ) {
+    addIcons({ send, sparkles, ellipsisHorizontal, chevronBackOutline, person });
+  }
+
+  async ngOnInit() {
+    const user = await this.supabaseSvc.getCurrentUser();
+    if (user) {
+      this.currentUserId = user.id;
+      
+      // Obtenemos la vinculación activa directamente (más fiable que el perfil)
+      const partnership = await this.supabaseSvc.getActivePartnership();
+      
+      if (partnership) {
+        this.partnershipId = partnership.id;
+        this.supabaseSvc.setLastRead(this.partnershipId); // Marcar como leído
+        await this.loadMessages();
+        await this.loadPartnershipProfiles();
+        this.setupRealtime();
+      } else {
+        console.warn('No se encontró una vinculación activa para este usuario.');
+      }
+    }
+  }
+
+  async loadPartnershipProfiles() {
+    const { data: profiles } = await this.supabaseSvc.supabase
+      .from('profiles')
+      .select('id, avatar_url')
+      .eq('partnership_id', this.partnershipId);
+    
+    if (profiles) {
+      this.partnershipAvatars = profiles
+        .map(p => p.avatar_url)
+        .filter(url => !!url);
+      
+      // Crear un mapa para acceder rápido por ID
+      profiles.forEach(p => {
+        if (p.avatar_url) {
+          this.profileMap[p.id] = p.avatar_url;
+        }
+      });
+    }
+  }
+
+  async loadMessages() {
+    const { data } = await this.supabaseSvc.getMessagesByRoom(this.partnershipId);
+    if (data) {
+      this.messages = data;
+      this.scrollToBottom();
+    }
+  }
+
+  setupRealtime() {
+    this.subscription = this.supabaseSvc.supabase
+      .channel(`room:${this.partnershipId}`)
+      .on('postgres_changes', { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'chat_messages',
+        filter: `room_id=eq.${this.partnershipId}`
+      }, (payload: any) => {
+        const newMsg = payload.new as ChatMessage;
+        if (newMsg.sender_id !== this.currentUserId) {
+          this.messages.push(newMsg);
+          this.scrollToBottom();
+        }
+      })
+      .subscribe();
+  }
+
+  ngOnDestroy() {
+    if (this.subscription) {
+      this.supabaseSvc.supabase.removeChannel(this.subscription);
+    }
+  }
+
+  async sendMessage() {
+    const trimmed = this.newMessage.trim();
+    if (!trimmed || !this.partnershipId) return;
+
+    const tempMsg: ChatMessage = {
+      id: Math.random().toString(),
+      room_id: this.partnershipId,
+      sender_id: this.currentUserId,
+      sender_type: 'USER',
+      message: trimmed,
+      created_at: new Date().toISOString(),
+      metadata: { emisor: 'Tú' }
+    };
+    
+    this.messages.push(tempMsg);
+    this.scrollToBottom();
+    this.newMessage = '';
+    this.isLoading = true;
+
+    const apiUrl = (environment as any).apiUrl || 'http://localhost:8000';
+    const url = `${apiUrl}/api/chat/3/${this.currentUserId}`;
+    
+    console.log('DEBUG: Enviando mensaje a URL:', url);
+    console.log('DEBUG: Partnership ID:', this.partnershipId);
+
+    this.http.post<any>(url, { message: trimmed }).subscribe({
+      next: (res) => {
+        console.log('DEBUG: Respuesta recibida:', res);
+        this.isLoading = false;
+        if (res.ai_response) {
+            // Verificar si el mensaje ya está (por si Realtime ya lo insertó)
+            if (!this.messages.find(m => m.id === res.ai_response.id)) {
+                this.messages.push(res.ai_response);
+                this.scrollToBottom();
+            }
+        }
+      },
+      error: (err) => {
+        console.error('DEBUG: Error enviando mensaje grupal:', err);
+        this.isLoading = false;
+        // Eliminar el mensaje temporal si falló
+        this.messages = this.messages.filter(m => m.id !== tempMsg.id);
+        alert('No se pudo enviar el mensaje. Revisa tu conexión con el servidor.');
+      }
+    });
+  }
+
+  scrollToBottom() {
+    setTimeout(() => {
+      if (this.content) {
+        this.content.scrollToBottom(300);
+      }
+    }, 100);
+  }
+
+  isMine(msg: ChatMessage): boolean {
+    return msg.sender_id === this.currentUserId;
+  }
+}

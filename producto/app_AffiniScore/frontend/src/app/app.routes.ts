@@ -40,6 +40,14 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/partner-chat/partner-chat.page').then(m => m.PartnerChatPage)
       },
       {
+        path: 'chat',
+        loadComponent: () => import('./pages/chat-list/chat-list.page').then(m => m.ChatListPage)
+      },
+      {
+        path: 'group-chat',
+        loadComponent: () => import('./pages/groupchat/group-chat.page').then(m => m.GroupChatPage)
+      },
+      {
         path: 'retos',
         redirectTo: 'actions',
         pathMatch: 'full'
@@ -88,8 +96,8 @@ export const routes: Routes = [
   },
   {
     path: 'chat',
-    loadComponent: () => import('./pages/chat-list/chat-list.page').then(m => m.ChatListPage),
-    canActivate: [authGuard]
+    redirectTo: 'tabs/chat',
+    pathMatch: 'full'
   },
   {
     path: 'retos',

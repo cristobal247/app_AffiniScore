@@ -93,3 +93,61 @@ async def process_chat_message(
     except Exception as e:
         print(e)
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/api/chat/3/{id_usuario}")
+async def process_group_chat_3_message(
+    payload: ChatMessagePayload,
+    id_usuario: str = Path(..., description="ID del usuario emisor")
+):
+    """
+    Endpoint específico para el Canal 3: Chat Grupal (Pareja + Terapeuta IA).
+    Identifica automáticamente la sala (partnership_id) del usuario.
+    """
+    try:
+        # 1. Obtener partnership_id desde la tabla 'partnerships' (porque en 'profiles' no existe la columna)
+        p_res = supabase.table("partnerships").select("id").or_(f"user1_id.eq.{id_usuario},user2_id.eq.{id_usuario}").eq("status", "active").execute()
+        
+        if not p_res.data:
+            raise HTTPException(status_code=400, detail="El usuario no tiene una pareja vinculada activa")
+            
+        partnership_id = p_res.data[0]["id"]
+
+        # Obtener el nombre del perfil
+        profile_res = supabase.table("profiles").select("full_name").eq("id", id_usuario).execute()
+        emisor_name = profile_res.data[0].get("full_name", "Usuario") if profile_res.data else "Usuario"
+        
+        # 2. Guardar mensaje del usuario
+        user_msg_data = {
+            "room_id": str(partnership_id),
+            "sender_id": id_usuario,
+            "sender_type": "USER",
+            "message": payload.message,
+            "metadata": {"emisor": emisor_name, "canal": 3},
+            "created_at": datetime.utcnow().isoformat()
+        }
+        supabase.table("chat_messages").insert(user_msg_data).execute()
+        
+        # 3. Obtener respuesta de la IA configurada como moderadora grupal
+        ai_text = await get_groq_ai_response(payload.message, is_group=True)
+        
+        # 4. Guardar respuesta de la IA
+        ai_msg_data = {
+            "room_id": str(partnership_id),
+            "sender_id": None,
+            "sender_type": "AI",
+            "message": ai_text,
+            "metadata": {"emisor": "AffiniCoach IA", "canal": 3},
+            "created_at": datetime.utcnow().isoformat()
+        }
+        supabase.table("chat_messages").insert(ai_msg_data).execute()
+        
+        return {
+            "success": True, 
+            "user_message": user_msg_data, 
+            "ai_response": ai_msg_data
+        }
+        
+    except Exception as e:
+        print(f"Error en endpoint chat canal 3: {e}")
+        if isinstance(e, HTTPException): raise e
+        raise HTTPException(status_code=500, detail=str(e))

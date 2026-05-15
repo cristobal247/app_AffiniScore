@@ -49,7 +49,7 @@ export interface DisconnectChallenge {
   providedIn: 'root'
 })
 export class SupabaseService {
-  private supabase: SupabaseClient;
+  public supabase: SupabaseClient;
   private apiUrl: string;
   public pointsUpdated = new BehaviorSubject<void>(undefined);
 
@@ -220,11 +220,39 @@ export class SupabaseService {
     const user = await this.getCurrentUser();
     if (!user) return { data: null, error: 'No user' };
 
-    return await this.supabase
+    const { data, error } = await this.supabase
       .from('profiles')
       .select('*')
       .eq('id', user.id)
       .single();
+
+    if (data) {
+      // Inyectamos el partnership_id buscando en la tabla partnerships
+      const p = await this.getActivePartnership();
+      if (p) {
+        data.partnership_id = p.id;
+      }
+    }
+
+    return { data, error };
+  }
+
+  /**
+   * Busca una vinculación activa para el usuario actual en la tabla 'partnerships'.
+   */
+  async getActivePartnership(): Promise<any | null> {
+    const user = await this.getCurrentUser();
+    if (!user) return null;
+
+    const { data, error } = await this.supabase
+      .from('partnerships')
+      .select('*')
+      .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
+      .eq('status', 'active')
+      .limit(1);
+
+    if (error || !data || data.length === 0) return null;
+    return data[0];
   }
 
   // Obtener puntos obtenidos en la semana actual (Suma los de la pareja si están vinculados)
@@ -243,16 +271,13 @@ export class SupabaseService {
     let query = this.supabase
       .from('user_actions_log')
       .select('points_earned')
+      .eq('status', 'CONFIRMED')
       .gte('created_at', startOfWeek.toISOString());
 
     if (partnershipId) {
-      // Si el usuario está vinculado, sumar los puntos de todos los involucrados
-      const { data: partners } = await this.supabase
-        .from('profiles') // Asumiendo que los perfiles están en la tabla 'profiles'
-        .select('id')
-        .eq('partnership_id', partnershipId);
-
-      const partnerIds = partners ? partners.map((p: any) => p.id) : [user.id];
+      // Obtenemos los IDs de la vinculación directamente de la tabla partnerships
+      const partnership = await this.getActivePartnership();
+      const partnerIds = partnership ? [partnership.user1_id, partnership.user2_id] : [user.id];
       query = query.in('user_id', partnerIds);
     } else {
       query = query.eq('user_id', user.id);
@@ -270,7 +295,7 @@ export class SupabaseService {
   }
 
   // Suscribirse a cambios en tiempo real en los puntos
-  async subscribeToPointsRealtime(callback: () => void) {
+  async subscribeToPointsRealtime(callback: (payload: any) => void) {
     const user = await this.getCurrentUser();
     if (!user) return null;
 
@@ -279,13 +304,9 @@ export class SupabaseService {
 
     let filter = `user_id=eq.${user.id}`;
     if (partnershipId) {
-      const { data: partners } = await this.supabase
-        .from('profiles')
-        .select('id')
-        .eq('partnership_id', partnershipId);
-
-      if (partners && partners.length > 0) {
-        const partnerIds = partners.map((p: any) => p.id);
+      const partnership = await this.getActivePartnership();
+      if (partnership) {
+        const partnerIds = [partnership.user1_id, partnership.user2_id];
         filter = `user_id=in.(${partnerIds.join(',')})`;
       }
     }
@@ -295,9 +316,9 @@ export class SupabaseService {
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'user_actions_log', filter },
-        () => {
+        (payload) => {
           this.pointsUpdated.next();
-          callback();
+          callback(payload);
         }
       )
       .subscribe();
@@ -455,37 +476,120 @@ export class SupabaseService {
     return query.order('name', { ascending: true });
   }
 
-  // Registrar una acción y sumar puntos
+  // Registrar una acción y sumar puntos (Modificado para validación)
   async saveActionPoint(actionId: string, points: number) {
     const user = await this.getCurrentUser();
     if (!user) return { error: 'Usuario no autenticado' };
 
-    // 1. Insertamos el log del evento
-    const { error: logError } = await this.supabase
+    // Verificamos si es un acto de servicio
+    const { data: catalog } = await this.getFullCatalog();
+    const actionDetails = catalog?.find(c => c.id === actionId);
+    const isServiceAction = actionDetails?.category === 'ACTO_SERVICIO';
+    const initialStatus = isServiceAction ? 'PENDING' : 'CONFIRMED';
+
+    // 1. Insertamos el log del evento con el estado correspondiente
+    const { error: logError, data: insertedLog } = await this.supabase
       .from('user_actions_log')
       .insert({
         user_id: user.id,
         action_id: actionId,
-        points_earned: points
-      });
+        points_earned: points,
+        status: initialStatus
+      })
+      .select()
+      .single();
 
     if (logError) return { error: logError };
 
-    // 2. Actualizamos el total en el perfil del usuario (Incremento)
-    // Nota: Lo ideal es que esto se haga vía RPC en Supabase para mayor seguridad,
-    // pero para el MVP podemos actualizar el valor directamente si tenemos el total previo.
-    const { data: profile } = await this.getUserProfile();
-    const newTotal = (profile?.total_points || 0) + points;
+    let result: any = { data: insertedLog, error: null };
 
-    const result = await this.supabase
-      .from('profiles')
-      .update({ total_points: newTotal, updated_at: new Date() })
-      .eq('id', user.id);
+    // 2. Si no requiere validación, sumamos los puntos inmediatamente
+    if (!isServiceAction) {
+      const { data: profile } = await this.getUserProfile();
+      const newTotal = (profile?.total_points || 0) + points;
 
-    // Notificamos a la app que los puntos han cambiado
-    this.pointsUpdated.next();
+      result = await this.supabase
+        .from('profiles')
+        .update({ total_points: newTotal, updated_at: new Date() })
+        .eq('id', user.id);
+
+      this.pointsUpdated.next();
+    } else {
+      console.log('Acción pendiente. Enviando notificación a pareja...');
+      
+      const partnership = await this.getActivePartnership();
+      if (partnership) {
+        // El partnerId es el otro usuario de la vinculación
+        const partnerId = partnership.user1_id === user.id ? partnership.user2_id : partnership.user1_id;
+        
+        if (partnerId) {
+          try {
+            const { data: session } = await this.supabase.auth.getSession();
+            const tokenHeader = session?.session?.access_token || '';
+
+            // Hacemos la llamada a nuestro nuevo endpoint en Python
+            await firstValueFrom(
+              this.http.post<any>(`${this.apiUrl}/api/v1/notifications/send`, {
+                partner_id: partnerId,
+                action_name: actionDetails?.name || 'Un acto de servicio',
+                log_id: insertedLog.id
+              }, { 
+                headers: {
+                  'Authorization': `Bearer ${tokenHeader}`,
+                  'Content-Type': 'application/json'
+                } 
+              })
+            );
+            console.log('Notificación enviada exitosamente a la pareja:', partnerId);
+          } catch (e) {
+            console.error('Error al enviar la notificación push:', e);
+          }
+        }
+      }
+    }
 
     return result;
+  }
+
+  // Validar una acción pendiente (aprueba o rechaza)
+  async validateAction(logId: string, confirm: boolean) {
+    const user = await this.getCurrentUser();
+    if (!user) return { error: 'Usuario no autenticado' };
+
+    const newStatus = confirm ? 'CONFIRMED' : 'REJECTED';
+
+    // 1. Actualizamos el estado de la acción
+    const { data: updatedLog, error: updateError } = await this.supabase
+      .from('user_actions_log')
+      .update({ 
+        status: newStatus,
+        validated_by: user.id 
+      })
+      .eq('id', logId)
+      .select()
+      .single();
+
+    if (updateError) return { error: updateError };
+
+    // 2. Si se confirmó, sumar los puntos al usuario que realizó la acción
+    if (confirm && updatedLog) {
+      const { data: ownerProfile } = await this.supabase
+        .from('profiles')
+        .select('total_points')
+        .eq('id', updatedLog.user_id)
+        .single();
+        
+      const currentPoints = ownerProfile?.total_points || 0;
+      const newTotal = currentPoints + (updatedLog.points_earned || 0);
+
+      await this.supabase
+        .from('profiles')
+        .update({ total_points: newTotal, updated_at: new Date() })
+        .eq('id', updatedLog.user_id);
+    }
+    
+    this.pointsUpdated.next();
+    return { success: true };
   }
 
   // Restar puntos al canjear una recompensa
@@ -855,11 +959,16 @@ export class SupabaseService {
     const user = await this.getCurrentUser();
     if (!user) return { data: null, error: 'Usuario no autenticado' };
 
+    // Buscamos el partnerId directamente en la tabla partnerships
+    const partnership = await this.getActivePartnership();
+    if (!partnership) return { data: null, error: 'No hay vinculación activa' };
+
+    const partnerId = partnership.user1_id === user.id ? partnership.user2_id : partnership.user1_id;
+
     return await this.supabase
       .from('profiles')
       .select('full_name, avatar_url')
-      .eq('partnership_id', partnershipId)
-      .neq('id', user.id)
+      .eq('id', partnerId)
       .single();
   }
 
@@ -902,5 +1011,46 @@ export class SupabaseService {
       console.error('Error in unlinkPartner:', err);
       return { error: err.error?.detail || 'Error al desvincular' };
     }
+  }
+
+  /* ========================================================================
+     7. LÓGICA DE MENSAJES NO LEÍDOS
+     ======================================================================== */
+
+  /**
+   * Marca una sala como leída guardando el timestamp actual localmente.
+   */
+  setLastRead(roomId: string) {
+    localStorage.setItem(`last_read_${roomId}`, new Date().toISOString());
+  }
+
+  /**
+   * Obtiene la fecha de la última vez que se leyó la sala.
+   */
+  getLastRead(roomId: string): string {
+    return localStorage.getItem(`last_read_${roomId}`) || '1970-01-01T00:00:00.000Z';
+  }
+
+  /**
+   * Cuenta los mensajes nuevos en una sala desde la última vez que se leyó.
+   */
+  async getUnreadCount(roomId: string): Promise<number> {
+    const user = await this.getCurrentUser();
+    if (!user) return 0;
+
+    const lastRead = this.getLastRead(roomId);
+    
+    const { count, error } = await this.supabase
+      .from('chat_messages')
+      .select('*', { count: 'exact', head: true })
+      .eq('room_id', roomId)
+      .gt('created_at', lastRead)
+      .neq('sender_id', user.id);
+
+    if (error) {
+      console.error('Error contando no leídos:', error);
+      return 0;
+    }
+    return count || 0;
   }
 }

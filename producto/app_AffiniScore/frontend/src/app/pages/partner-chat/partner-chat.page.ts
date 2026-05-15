@@ -42,6 +42,7 @@ export class PartnerChatPage implements OnInit, OnDestroy {
 
         if (rooms && rooms.length > 0) {
           this.roomId = rooms[0].id;
+          this.supabaseSvc.setLastRead(this.roomId!); // Marcar como leído
           await this.loadMessages();
           this.subscribeToMessages();
         } else {

@@ -1,7 +1,13 @@
 .chat-container {
-  padding: 16px 16px 30px;
+  padding: 100px 16px 30px; // Aumentado para evitar solapamiento con cabecera fija
   display: flex;
   flex-direction: column;
+}
+
+ion-header {
+  /* Fondo gradiente sólido para que los mensajes no se vean detrás pero combine con el dashboard */
+  background: radial-gradient(circle at 0% 0%, rgba(240, 138, 125, 0.2) 0%, rgba(245, 243, 243, 1) 45%) !important;
+  backdrop-filter: blur(10px);
 }
 
 .message-wrapper {
@@ -14,12 +20,16 @@
     
     .message-bubble {
       background: linear-gradient(135deg, #df5b61 0%, #bd343a 100%);
-      color: #ffffff;
+      color: #ffffff !important;
       border-radius: 20px 20px 4px 20px;
       box-shadow: 0 4px 10px rgba(189, 52, 58, 0.2);
       
+      p {
+        color: #ffffff !important;
+      }
+      
       .message-time {
-        color: rgba(255, 255, 255, 0.8);
+        color: rgba(255, 255, 255, 0.8) !important;
       }
     }
   }

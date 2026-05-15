@@ -6,9 +6,18 @@ import string
 
 from fastapi.middleware.cors import CORSMiddleware
 from models.points import PointRequestCreate
+import firebase_admin
+from firebase_admin import credentials, messaging
+
 
 
 app = FastAPI()
+
+try:
+    cred = credentials.Certificate("firebase-key.json")
+    firebase_admin.initialize_app(cred)
+except Exception as e:
+    print(f"No se pudo inicializar Firebase: {e}")
 
 app.add_middleware(
     CORSMiddleware,
@@ -81,20 +90,6 @@ async def join_partnership(request: JoinRequest):
         user1_id = partnership["user1_id"]
         user2_id = partnership["user2_id"]
         
-        try:
-            # Actualizar los perfiles de ambos usuarios con el ID de la vinculación
-            print(f"DEBUG: Updating profile for user1: {user1_id}")
-            res1 = supabase.table("profiles").update({"partnership_id": partnership_id}).eq("id", user1_id).execute()
-            print(f"DEBUG: User1 profile update response: {res1.data}")
-            
-            print(f"DEBUG: Updating profile for user2: {user2_id}")
-            res2 = supabase.table("profiles").update({"partnership_id": partnership_id}).eq("id", user2_id).execute()
-            print(f"DEBUG: User2 profile update response: {res2.data}")
-        except Exception as profile_err:
-            print(f"DEBUG: Error updating profiles: {str(profile_err)}")
-            # No lanzamos excepción aquí para que al menos la vinculación quede guardada, 
-            # pero el log nos dirá si esto falló.
-            
         return {"message": "Vinculación exitosa"}
     except HTTPException as he:
         raise he
@@ -119,10 +114,6 @@ async def unlink_partnership(request: UnlinkRequest):
         # Actualizar status a unlinked
         supabase.table("partnerships").update({"status": "unlinked"}).eq("id", partnership["id"]).execute()
         
-        # Anular partnership_id en los perfiles de ambos usuarios
-        supabase.table("profiles").update({"partnership_id": None}).eq("id", partnership["user1_id"]).execute()
-        supabase.table("profiles").update({"partnership_id": None}).eq("id", partnership["user2_id"]).execute()
-        
         return {"message": "Desvinculación exitosa"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -143,3 +134,40 @@ async def create_point_request(request: PointRequestCreate):
         return {"status": "success", "data": response.data}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))        
+
+class NotificationRequest(BaseModel):
+    partner_id: str
+    action_name: str
+    log_id: str
+
+@app.post("/api/v1/notifications/send")
+async def send_push_notification(request: NotificationRequest):
+    try:
+        # Buscar el token guardado del teléfono de la pareja
+        profile_res = supabase.table("profiles").select("fcm_token").eq("id", request.partner_id).execute()
+        
+        if not profile_res.data or not profile_res.data[0].get("fcm_token"):
+            raise HTTPException(status_code=400, detail="La pareja no tiene notificaciones activadas")
+            
+        token = profile_res.data[0]["fcm_token"]
+        
+        # Armar el mensaje para Firebase
+        message = messaging.Message(
+            notification=messaging.Notification(
+                title="¡Tu pareja te ha consentido! 💖",
+                body=f"¿Confirmas que realizó la acción: {request.action_name}?"
+            ),
+            data={
+                "type": "validation_request",
+                "log_id": request.log_id,
+                "action_name": request.action_name
+            },
+            token=token,
+        )
+        
+        # Enviar notificación
+        response = messaging.send(message)
+        return {"success": True, "message_id": response}
+    except Exception as e:
+        print(f"Error enviando push: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

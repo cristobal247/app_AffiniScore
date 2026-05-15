@@ -84,12 +84,18 @@ export class CatalogPage implements OnInit {
     });
     await loading.present();
 
-    const { error } = await this.supabaseSvc.saveActionPoint(item.id, item.default_points);
+    const { data: log, error } = await this.supabaseSvc.saveActionPoint(item.id, item.default_points);
     loading.dismiss();
 
+    const isPending = log?.status === 'PENDING';
+
     const alert = await this.alertCtrl.create({
-      header: error ? 'Error' : '¡Acción registrada!',
-      message: error ? 'No se pudo guardar la acción.' : `Sumaste ${item.default_points} puntos por "${item.name}".`,
+      header: error ? 'Error' : (isPending ? 'Acción pendiente' : '¡Acción registrada!'),
+      message: error 
+        ? 'No se pudo guardar la acción.' 
+        : (isPending 
+            ? `Tu pareja debe confirmar este "Acto de servicio" para que se te sumen los ${item.default_points} puntos.`
+            : `Sumaste ${item.default_points} puntos por "${item.name}".`),
       buttons: ['OK'],
       mode: 'ios'
     });

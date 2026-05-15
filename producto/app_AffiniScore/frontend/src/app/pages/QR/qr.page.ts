@@ -144,7 +144,9 @@ export class QrPage implements OnInit, OnDestroy {
 
     const alert = await this.alertCtrl.create({
       header: 'Confirmar Vinculación',
-      message: `¿Deseas vincular tu cuenta con <strong>${partnerInfo.name}</strong>?`,
+      mode: 'ios',
+      cssClass: 'custom-alert-light',
+      message: `¿Deseas vincular tu cuenta con ${partnerInfo.name}?`,
       buttons: [
         {
           text: 'Cancelar',
@@ -167,7 +169,18 @@ export class QrPage implements OnInit, OnDestroy {
 
             if (response.success) {
               await this.stopScanner();
-              this.navCtrl.navigateRoot('/tabs/profile', { animationDirection: 'back' });
+              const successToast = await this.toastCtrl.create({
+                message: 'Vinculación exitosa',
+                duration: 2000,
+                color: 'success',
+                position: 'top'
+              });
+              await successToast.present();
+              
+              // Pequeño retardo para asegurar que el toast se vea y luego forzar la navegación
+              setTimeout(() => {
+                this.navCtrl.navigateRoot('/profile', { animationDirection: 'forward' });
+              }, 1200);
             } else {
               const toast = await this.toastCtrl.create({
                 message: response.error || 'Ocurrió un error.',

@@ -76,19 +76,27 @@ export class HomePage implements OnInit {
     });
 
     // Suscribirse en tiempo real a los puntos de la pareja en Supabase
-    // Esto funciona igual que la IA del chat, actualizando el porcentaje al instante
-    const channels = await this.supabaseSvc.subscribeToPointsRealtime(async () => {
-      await this.cargarDatosAfinidad();
+    const channels = await this.supabaseSvc.subscribeToPointsRealtime(async (payload) => {
+      const user = await this.supabaseSvc.getCurrentUser();
       
-      const toast = await this.toastCtrl.create({
-        message: '¡Tu pareja ha registrado una nueva acción!',
-        duration: 3000,
-        position: 'top',
-        color: 'danger',
-        icon: 'sparkles',
-        cssClass: 'custom-toast'
-      });
-      await toast.present();
+      // Solo reaccionamos si la acción es de la pareja (no propia)
+      if (payload.new.user_id !== user?.id) {
+        await this.cargarDatosAfinidad();
+        
+        // Solo mostramos el Toast si la acción ya está CONFIRMADA (puntos sumados)
+        // Si está PENDING, el PushNotification/Alert ya se encarga de avisar
+        if (payload.new.status === 'CONFIRMED') {
+          const toast = await this.toastCtrl.create({
+            message: '¡Tu pareja ha ganado puntos!',
+            duration: 3000,
+            position: 'top',
+            color: 'success',
+            icon: 'sparkles',
+            cssClass: 'custom-toast'
+          });
+          await toast.present();
+        }
+      }
     });
     if (channels) {
       this.realtimeChannels = channels;
