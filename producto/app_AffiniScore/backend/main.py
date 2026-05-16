@@ -9,15 +9,31 @@ from models.points import PointRequestCreate
 import firebase_admin
 from firebase_admin import credentials, messaging
 
-
+import os
+import json
 
 app = FastAPI()
 
+# Inicialización de Firebase (Soporta archivo local o Variable de Entorno para Render)
+firebase_json = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON")
+
 try:
-    cred = credentials.Certificate("firebase-key.json")
-    firebase_admin.initialize_app(cred)
+    if firebase_json:
+        # Si estamos en Render, usamos la variable de entorno
+        firebase_info = json.loads(firebase_json)
+        cred = credentials.Certificate(firebase_info)
+        firebase_admin.initialize_app(cred)
+        print("Firebase inicializado exitosamente desde Variable de Entorno.")
+    else:
+        # Si estamos en local, usamos el archivo
+        if os.path.exists("firebase-key.json"):
+            cred = credentials.Certificate("firebase-key.json")
+            firebase_admin.initialize_app(cred)
+            print("Firebase inicializado exitosamente desde archivo local.")
+        else:
+            print("AVISO: No se encontró firebase-key.json ni Variable de Entorno.")
 except Exception as e:
-    print(f"No se pudo inicializar Firebase: {e}")
+    print(f"Error crítico al inicializar Firebase: {e}")
 
 app.add_middleware(
     CORSMiddleware,
