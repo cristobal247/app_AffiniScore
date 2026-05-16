@@ -1,0 +1,73 @@
+<ion-content class="map-page">
+  <div class="scrolling-header-container">
+    <div class="header-content-wrapper">
+      <ion-buttons>
+        <ion-button class="profile-avatar-btn" routerLink="/profile">
+          <ion-avatar class="user-avatar-top">
+            <img [src]="userAvatarUrl || '/assets/images/user.png'" alt="Perfil" />
+          </ion-avatar>
+        </ion-button>
+      </ion-buttons>
+      
+      <div class="brand-group">
+        <span class="map-mode-badge">{{ mapMode === 'mapbox' ? 'Mapbox' : 'OpenStreetMap' }}</span>
+      </div>
+      
+      <ion-buttons>
+        <ion-button class="btn-settings">
+          <ion-icon src="/assets/icons/hero/outline/cog-6-tooth.svg"></ion-icon>
+        </ion-button>
+      </ion-buttons>
+    </div>
+  </div>
+
+  <div class="page-wrapper">
+    <h2 class="page-title">Mapa de Conexión</h2>
+
+    <div class="tip-card">
+      <div class="tip-icon">
+        <ion-icon src="/assets/icons/hero/outline/map-pin.svg"></ion-icon>
+      </div>
+      <div class="tip-copy">
+        <p>La ruta se ajusta a tu ubicación actual. Acérquense al destino para ganar 100 Affini Points.</p>
+      </div>
+      <ion-button size="small" class="tip-cta">Ver ruta</ion-button>
+    </div>
+
+    <div class="map-status-card">
+      <div>
+        <span class="status-label">DESTINO ACTIVO</span>
+        <h3>{{ destinationName }}</h3>
+      </div>
+      <p>
+        {{ distanceToDestination }} m de distancia estimada · {{ estimatedTravelMinutes }} min
+      </p>
+    </div>
+
+    <div class="map-card">
+      <div id="map"></div>
+      <div class="map-tag">
+        <p class="tag-title">MODO</p>
+        <p class="tag-sub">{{ mapMode === 'mapbox' ? 'Mapbox GL JS' : 'Leaflet fallback' }}</p>
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <span class="stat-label">DISTANCIA</span>
+        <span class="stat-value">{{ distanceToDestination }} <small>m</small></span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">TIEMPO</span>
+        <span class="stat-value">{{ estimatedTravelMinutes }} <small>min</small></span>
+      </div>
+      <button 
+        class="sos-button" 
+        [class.recording]="isRecording"
+        type="button" 
+        (click)="handleSOS()">
+        {{ isRecording ? '🛑 ENVIAR SOS' : 'SOS' }}
+      </button>
+    </div>
+  </div>
+</ion-content>

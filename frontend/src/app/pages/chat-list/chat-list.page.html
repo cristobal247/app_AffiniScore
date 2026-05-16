@@ -1,0 +1,59 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar style="--background: #ffffff; padding-top: 8px;">
+    <ion-buttons slot="start">
+      <ion-button routerLink="/tabs/dashboard" style="color: #FA8072;">
+        <ion-icon name="arrow-back-outline" style="font-size: 28px;"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    
+    <ion-title style="color: #bd343a; font-weight: 800; text-align: center; font-size: 18px; letter-spacing: -0.5px;">Chats</ion-title>
+    
+    <ion-buttons slot="end" style="padding-right: 8px;">
+      <ion-avatar style="width: 36px; height: 36px; background: #e0e0e0; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+        <img *ngIf="userAvatarUrl" [src]="userAvatarUrl" alt="Perfil" style="object-fit: cover; width: 100%; height: 100%;" />
+        <ion-icon *ngIf="!userAvatarUrl" name="person" style="font-size: 20px; color: #7e7e7e;"></ion-icon>
+      </ion-avatar>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content style="--background: #ffffff;">
+  
+  <!-- Contenedor del Buscador -->
+  <div style="padding: 16px 20px 8px 20px;">
+    <div class="search-box">
+      <input type="text" placeholder="Buscar chat" style="background: transparent; border: none; outline: none; flex: 1; font-size: 15px; color: #333;" />
+      <ion-icon name="search-outline" style="color: #999; font-size: 20px; margin-left: 8px;"></ion-icon>
+    </div>
+  </div>
+
+  <!-- Lista de Chats -->
+  <ion-list lines="inset" style="background: transparent; margin-top: 8px;">
+    <ion-item *ngFor="let chat of chats; let i = index" [routerLink]="chat.route" detail="false" class="custom-chat-item">
+      
+      <ion-avatar slot="start" style="width: 50px; height: 50px; margin-right: 16px;">
+        <!-- Placeholder visual para el avatar -->
+        <div style="width: 100%; height: 100%; border-radius: 50%; display: flex; align-items: center; justify-content: center;"
+             [ngStyle]="{'background': chat.isAI ? 'linear-gradient(135deg, #e0f7fa, #80deea)' : 'linear-gradient(135deg, #ffebee, #ef9a9a)'}">
+           <ion-icon *ngIf="chat.isAI" name="hardware-chip" style="font-size: 24px; color: #00838f;"></ion-icon>
+           <ion-icon *ngIf="!chat.isAI" name="heart" style="font-size: 24px; color: #c62828;"></ion-icon>
+        </div>
+      </ion-avatar>
+
+      <ion-label>
+        <h2 class="chat-title">{{ chat.name }}</h2>
+        <p class="chat-snippet">{{ chat.lastMessage }}</p>
+      </ion-label>
+
+      <div slot="end" class="chat-meta">
+        <span class="chat-time">{{ chat.time }}</span>
+        <!-- Simulamos un contador de mensajes para la demostración del diseño -->
+        <ion-badge class="chat-badge">{{ i === 0 ? '2' : (i === 1 ? '5' : '1') }}</ion-badge>
+      </div>
+
+    </ion-item>
+  </ion-list>
+
+
+
+</ion-content>

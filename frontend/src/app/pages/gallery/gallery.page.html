@@ -1,0 +1,110 @@
+<ion-header [translucent]="true" class="ion-no-border">
+  <ion-toolbar class="gallery-toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/dashboard" text=""></ion-back-button>
+    </ion-buttons>
+    <ion-title>Nuestra Galería</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="gallery-bg">
+  <div class="gallery-header">
+    <span class="gallery-subtitle">RECUERDOS COMPARTIDOS</span>
+    <h1 class="gallery-title">Momentos Inolvidables</h1>
+  </div>
+
+  <div class="gallery-container">
+    <ion-grid>
+      <ion-row>
+        <ng-container *ngIf="!isLoading; else loadingTemplate">
+          <ion-col size="6" size-md="4" *ngFor="let memory of memories">
+            <div class="memory-item">
+              <div class="image-wrapper">
+                <img [src]="memory.image_url" [alt]="memory.description">
+                <div class="image-overlay">
+                  <p class="memory-date">{{ memory.created_at | date:'MMM yyyy' }}</p>
+                </div>
+              </div>
+              <div class="memory-info">
+                <p class="memory-text">{{ memory.description }}</p>
+              </div>
+            </div>
+          </ion-col>
+        </ng-container>
+
+        <ng-template #loadingTemplate>
+          <ion-col size="6" size-md="4" *ngFor="let i of [1,2,3,4,5,6]">
+            <div class="memory-item skeleton">
+              <ion-skeleton-text animated style="width: 100%; height: 200px; border-radius: 16px;"></ion-skeleton-text>
+            </div>
+          </ion-col>
+        </ng-template>
+      </ion-row>
+    </ion-grid>
+  </div>
+
+  <div class="empty-state" *ngIf="!isLoading && memories.length === 0">
+    <ion-icon name="images-outline"></ion-icon>
+    <h3>Aún no hay recuerdos</h3>
+    <p>Empieza a guardar vuestros momentos especiales hoy mismo.</p>
+  </div>
+
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+    <ion-fab-button class="add-fab" (click)="openAddModal()">
+      <ion-icon name="add-outline"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+
+  <!-- Modal para añadir recuerdo -->
+  <ion-modal [isOpen]="isModalOpen" (didDismiss)="closeModal()" class="add-memory-modal">
+    <ng-template>
+      <ion-header class="ion-no-border">
+        <ion-toolbar>
+          <ion-title>Añadir Recuerdo</ion-title>
+          <ion-buttons slot="end">
+            <ion-button (click)="closeModal()">
+              <ion-icon name="close-outline"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+
+      <ion-content class="ion-padding">
+        <div class="upload-area" (click)="fileInput.click()">
+          <input type="file" #fileInput (change)="onFileSelected($event)" accept="image/*" hidden>
+          
+          <ng-container *ngIf="!newMemory.imagePreview; else previewTemplate">
+            <div class="upload-placeholder">
+              <ion-icon name="camera-outline"></ion-icon>
+              <span>Seleccionar Foto</span>
+            </div>
+          </ng-container>
+          
+          <ng-template #previewTemplate>
+            <img [src]="newMemory.imagePreview" class="preview-img">
+          </ng-template>
+        </div>
+
+        <div class="form-group">
+          <ion-item lines="none" class="input-item">
+            <ion-label position="stacked">Descripción del momento</ion-label>
+            <ion-textarea 
+              [(ngModel)]="newMemory.description" 
+              placeholder="¿Qué estaba pasando en esta foto?"
+              rows="4"
+              class="custom-textarea">
+            </ion-textarea>
+          </ion-item>
+        </div>
+
+        <ion-button 
+          expand="block" 
+          class="save-btn" 
+          [disabled]="!newMemory.imageFile"
+          (click)="saveMemory()">
+          Guardar Recuerdo
+        </ion-button>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+</ion-content>

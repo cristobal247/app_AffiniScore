@@ -1,0 +1,49 @@
+.transparent-footer {
+  background: transparent !important;
+  border-top: none !important;
+  box-shadow: none !important;
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+}
+
+.transparent-footer::before {
+  display: none !important;
+}
+
+.app-tab-bar {
+  --background: #ffffff;
+  --border: 0 !important; /* Removes the thin gray line */
+  border-top-left-radius: 35px;
+  border-top-right-radius: 35px;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  margin: 0; 
+  padding: 2px 8px; /* Reduced padding to lower height */
+  height: 55px; /* Fixed smaller height */
+  box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.04); /* Softer shadow */
+  outline: none !important;
+  border: none !important;
+  justify-content: center;
+}
+
+.app-tab-bar ion-tab-button {
+  --padding-top: 4px;
+  --padding-bottom: 4px;
+  max-width: 80px; 
+}
+
+.app-tab-bar .tab-icon {
+  width: 24px; /* Smaller icons */
+  height: 24px;
+}
+
+.app-tab-bar ion-tab-button ion-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.app-tab-bar ion-tab-button ion-label {
+  margin-top: 2px;
+  text-align: center;
+}
