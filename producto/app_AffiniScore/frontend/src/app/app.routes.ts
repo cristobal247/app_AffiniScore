@@ -14,6 +14,15 @@ export const routes: Routes = [
     canActivate: [publicGuard]
   },
   {
+    path: 'forgot-password',
+    loadComponent: () => import('./forgot-password/forgot-password.page').then(m => m.ForgotPasswordPage),
+    canActivate: [publicGuard]
+  },
+  {
+    path: 'reset-password',
+    loadComponent: () => import('./reset-password/reset-password.page').then(m => m.ResetPasswordPage)
+  },
+  {
     path: 'tabs',
     loadComponent: () => import('./tabs/tabs.page').then(m => m.TabsPage),
     canActivate: [authGuard],

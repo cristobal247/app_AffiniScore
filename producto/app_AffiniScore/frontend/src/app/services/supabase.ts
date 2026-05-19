@@ -175,18 +175,20 @@ export class SupabaseService {
 
   // Iniciar sesión con Redes Sociales (Google, Apple, Facebook)
   async signInWithProvider(provider: 'google' | 'apple' | 'facebook') {
+    const origin = window.location.origin;
     return await this.supabase.auth.signInWithOAuth({
       provider: provider,
       options: {
-        redirectTo: 'http://localhost:8103/tabs/dashboard'
+        redirectTo: `${origin}/tabs/dashboard`
       }
     });
   }
 
   // Restablecer contraseña
   async resetPassword(email: string) {
+    const origin = window.location.origin;
     return await this.supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: 'http://localhost:8103/login' // O la URL a donde deba volver para actualizar
+      redirectTo: `${origin}/login` // O la URL a donde deba volver para actualizar
     });
   }
 

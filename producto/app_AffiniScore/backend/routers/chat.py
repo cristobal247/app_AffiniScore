@@ -112,6 +112,17 @@ async def process_group_chat_3_message(
             
         partnership_id = p_res.data[0]["id"]
 
+        # Asegurar que exista la sala de chat grupal (GROUP_AI)
+        room_check = supabase.table("chat_rooms").select("id").eq("id", partnership_id).execute()
+        if not room_check.data:
+            new_room = {
+                "id": str(partnership_id),
+                "partnership_id": str(partnership_id),
+                "room_type": "GROUP_AI",
+                "title": "Terapia Grupal"
+            }
+            supabase.table("chat_rooms").insert(new_room).execute()
+
         # Obtener el nombre del perfil
         profile_res = supabase.table("profiles").select("full_name").eq("id", id_usuario).execute()
         emisor_name = profile_res.data[0].get("full_name", "Usuario") if profile_res.data else "Usuario"

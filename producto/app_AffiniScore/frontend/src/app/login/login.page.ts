@@ -59,7 +59,7 @@ export class LoginPage implements OnInit {
     // Escuchar si venimos de un enlace de recuperación de contraseña
     this.supabaseSvc.onAuthStateChange(async (event, session) => {
       if (event === 'PASSWORD_RECOVERY') {
-        this.promptNewPassword();
+        this.router.navigateByUrl('/reset-password');
       }
     });
   }
@@ -142,97 +142,10 @@ export class LoginPage implements OnInit {
   }
 
   /**
-   * Olvidé mi contraseña
+   * Olvidé mi contraseña - Redirige a la página dedicada
    */
-  async forgotPassword() {
-    const alert = await this.alertCtrl.create({
-      header: 'Restablecer contraseña',
-      message: 'Ingresa tu correo electrónico y te enviaremos un enlace para crear una nueva contraseña.',
-      inputs: [
-        {
-          name: 'email',
-          type: 'email',
-          placeholder: 'tu@correo.com',
-          value: this.email // Prellenar si ya lo había escrito
-        }
-      ],
-      buttons: [
-        {
-          text: 'Cancelar',
-          role: 'cancel'
-        },
-        {
-          text: 'Enviar Enlace',
-          handler: async (data) => {
-            if (!data.email) {
-              this.showAlert('Atención', 'Debes ingresar un correo electrónico.');
-              return false;
-            }
-
-            const loading = await this.loadingCtrl.create({ message: 'Enviando enlace...' });
-            await loading.present();
-
-            const { error } = await this.supabaseSvc.resetPassword(data.email);
-            
-            await loading.dismiss();
-
-            if (error) {
-              this.showAlert('Error', 'No se pudo enviar el enlace. Verifica el correo e inténtalo de nuevo.');
-            } else {
-              this.showAlert('¡Enlace enviado!', 'Revisa tu bandeja de entrada o carpeta de spam para restablecer tu contraseña.');
-            }
-            return true;
-          }
-        }
-      ]
-    });
-
-    await alert.present();
-  }
-
-  /**
-   * Flujo de creación de nueva contraseña tras recuperar
-   */
-  async promptNewPassword() {
-    const alert = await this.alertCtrl.create({
-      header: 'Nueva Contraseña',
-      message: 'Ingresa tu nueva contraseña para acceder a la aplicación.',
-      inputs: [
-        {
-          name: 'password',
-          type: 'password',
-          placeholder: 'Nueva contraseña'
-        }
-      ],
-      buttons: [
-        {
-          text: 'Guardar',
-          handler: async (data) => {
-            if (!data.password || data.password.length < 6) {
-              this.showAlert('Atención', 'La contraseña debe tener al menos 6 caracteres.');
-              return false;
-            }
-
-            const loading = await this.loadingCtrl.create({ message: 'Actualizando...' });
-            await loading.present();
-
-            const { error } = await this.supabaseSvc.updatePassword(data.password);
-            
-            await loading.dismiss();
-
-            if (error) {
-              this.showAlert('Error', 'No se pudo actualizar la contraseña.');
-            } else {
-              this.showAlert('¡Éxito!', 'Tu contraseña ha sido actualizada. Ya puedes iniciar sesión.');
-              this.router.navigateByUrl('/tabs/dashboard');
-            }
-            return true;
-          }
-        }
-      ]
-    });
-
-    await alert.present();
+  forgotPassword() {
+    this.router.navigateByUrl('/forgot-password');
   }
 
   /**

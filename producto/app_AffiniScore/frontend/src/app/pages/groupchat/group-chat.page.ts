@@ -54,7 +54,7 @@ export class GroupChatPage implements OnInit, OnDestroy {
         this.partnershipId = partnership.id;
         this.supabaseSvc.setLastRead(this.partnershipId); // Marcar como leído
         await this.loadMessages();
-        await this.loadPartnershipProfiles();
+        await this.loadPartnershipProfiles(partnership);
         this.setupRealtime();
       } else {
         console.warn('No se encontró una vinculación activa para este usuario.');
@@ -62,11 +62,16 @@ export class GroupChatPage implements OnInit, OnDestroy {
     }
   }
 
-  async loadPartnershipProfiles() {
+  async loadPartnershipProfiles(partnership?: any) {
+    if (!partnership) {
+      partnership = await this.supabaseSvc.getActivePartnership();
+    }
+    if (!partnership) return;
+
     const { data: profiles } = await this.supabaseSvc.supabase
       .from('profiles')
       .select('id, avatar_url')
-      .eq('partnership_id', this.partnershipId);
+      .in('id', [partnership.user1_id, partnership.user2_id]);
     
     if (profiles) {
       this.partnershipAvatars = profiles
