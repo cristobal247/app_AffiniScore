@@ -12,6 +12,7 @@ import {
 } from '@ionic/angular/standalone';
 declare var mapboxgl: any;
 import { Geolocation } from '@capacitor/geolocation';
+import { Capacitor } from '@capacitor/core';
 import { SupabaseService } from '../../services/supabase';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
@@ -213,6 +214,52 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
     }
   }
 
+  private async getCoordinates(): Promise<{ latitude: number, longitude: number }> {
+    if (Capacitor.isNativePlatform()) {
+      const check = await Geolocation.checkPermissions();
+      if (check.location !== 'granted') {
+        const req = await Geolocation.requestPermissions();
+        if (req.location !== 'granted') {
+          throw new Error('Permisos de GPS denegados en el dispositivo.');
+        }
+      }
+      try {
+        console.log('Obteniendo ubicación nativa GPS de alta precisión...');
+        const pos = await Geolocation.getCurrentPosition({
+          enableHighAccuracy: true,
+          timeout: 6000
+        });
+        return { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
+      } catch (e) {
+        console.warn('GPS de alta precisión falló o demoró mucho, usando ubicación aproximada...');
+        const pos = await Geolocation.getCurrentPosition({
+          enableHighAccuracy: false,
+          timeout: 10000
+        });
+        return { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
+      }
+    } else {
+      return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+          reject(new Error('Geolocation no soportada por el navegador.'));
+        } else {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
+            (err) => {
+              console.warn('GPS web falló, intentando baja precisión...');
+              navigator.geolocation.getCurrentPosition(
+                (fallbackPos) => resolve({ latitude: fallbackPos.coords.latitude, longitude: fallbackPos.coords.longitude }),
+                (fallbackErr) => reject(fallbackErr),
+                { enableHighAccuracy: false, timeout: 10000 }
+              );
+            },
+            { enableHighAccuracy: true, timeout: 5000 }
+          );
+        }
+      });
+    }
+  }
+
   private async initMap(): Promise<void> {
     // Coordenadas por defecto (Santiago, Chile)
     let lat = -33.447487;
@@ -247,57 +294,9 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
     }
 
     try {
-      // Pedimos ubicación real con doble nivel de tolerancia (alta precisión fallback a estándar de red)
-      let coordinates: any;
-
-      const getPositionNative = (options: PositionOptions): Promise<any> => {
-        return new Promise((resolve, reject) => {
-          if (!navigator.geolocation) {
-            reject(new Error('Geolocation no soportada por el navegador.'));
-          } else {
-            navigator.geolocation.getCurrentPosition(resolve, reject, options);
-          }
-        });
-      };
-
-      try {
-        console.log('Intentando obtener ubicación de alta precisión (GPS)...');
-        if (navigator.geolocation) {
-          coordinates = await getPositionNative({
-            enableHighAccuracy: true,
-            timeout: 4000,
-            maximumAge: 0
-          });
-        } else {
-          coordinates = await Geolocation.getCurrentPosition({
-            enableHighAccuracy: true,
-            timeout: 4000,
-            maximumAge: 0
-          });
-        }
-      } catch (err) {
-        console.warn('GPS de alta precisión lento/no disponible. Usando ubicación aproximada (Red/IP)...', err);
-        try {
-          if (navigator.geolocation) {
-            coordinates = await getPositionNative({
-              enableHighAccuracy: false,
-              timeout: 8000,
-              maximumAge: 30000
-            });
-          } else {
-            coordinates = await Geolocation.getCurrentPosition({
-              enableHighAccuracy: false,
-              timeout: 8000,
-              maximumAge: 30000
-            });
-          }
-        } catch (fallbackErr: any) {
-          throw fallbackErr;
-        }
-      }
-      
-      lat = coordinates.coords.latitude;
-      lng = coordinates.coords.longitude;
+      const coords = await this.getCoordinates();
+      lat = coords.latitude;
+      lng = coords.longitude;
 
       // Actualizar marcador local y guardar en base de datos
       this.updateUserMarker(lat, lng);
@@ -330,22 +329,11 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
 
       // Rastrear en tiempo real si el usuario se mueve
       try {
-        if (navigator.geolocation) {
-          navigator.geolocation.watchPosition(
-            async (position) => {
-              const uLat = position.coords.latitude;
-              const uLng = position.coords.longitude;
-              this.updateUserMarker(uLat, uLng);
-              await this.supabaseSvc.updateUserLocation(uLat, uLng);
-            },
-            (err) => console.warn('Rastreador nativo:', err),
-            { enableHighAccuracy: false, timeout: 15000, maximumAge: 30000 }
-          );
-        } else {
+        if (Capacitor.isNativePlatform()) {
           await Geolocation.watchPosition({
-            enableHighAccuracy: false,
-            timeout: 15000,
-            maximumAge: 30000
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
           }, async (position, err) => {
             if (position) {
               const uLat = position.coords.latitude;
@@ -354,6 +342,19 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
               await this.supabaseSvc.updateUserLocation(uLat, uLng);
             }
           });
+        } else {
+          if (navigator.geolocation) {
+            navigator.geolocation.watchPosition(
+              async (position) => {
+                const uLat = position.coords.latitude;
+                const uLng = position.coords.longitude;
+                this.updateUserMarker(uLat, uLng);
+                await this.supabaseSvc.updateUserLocation(uLat, uLng);
+              },
+              (err) => console.warn('Rastreador web:', err),
+              { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+          }
         }
       } catch (watchErr) {
         console.warn('No se pudo iniciar el seguimiento en tiempo real:', watchErr);
@@ -365,12 +366,12 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
       let helpfulMsg = 'No se pudo obtener la ubicación';
       let toastColor = 'warning';
       
-      if (error && (error.code === 1 || (error.message && error.message.toLowerCase().includes('denied')))) {
-        helpfulMsg = 'Permiso denegado. Actívalo en el candado de la URL del navegador 🔒';
+      if (error && (error.code === 1 || (error.message && error.message.toLowerCase().includes('denied')) || (error.message && error.message.toLowerCase().includes('permiso')))) {
+        helpfulMsg = 'Permiso de ubicación denegado. Actívalo en la configuración de tu dispositivo 🔒';
       } else if (error && (error.code === 2 || (error.message && error.message.toLowerCase().includes('unavailable')))) {
-        helpfulMsg = 'Servicio de ubicación desactivado en tu PC (Configuración de Windows) 💻';
+        helpfulMsg = 'Servicios de GPS desactivados. Activa la ubicación en tu dispositivo 📍';
       } else if (error && error.code === 3) {
-        helpfulMsg = 'Usando ubicación de pruebas (el GPS de tu PC no respondió a tiempo) 📌';
+        helpfulMsg = 'La señal GPS tardó demasiado en responder 📌';
         toastColor = 'primary';
       } else if (error && error.message) {
         helpfulMsg = `Aviso: ${error.message}`;
