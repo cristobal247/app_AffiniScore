@@ -167,7 +167,8 @@ async def process_group_chat_3_message(
             "metadata": {"emisor": emisor_name, "canal": 3},
             "created_at": datetime.utcnow().isoformat()
         }
-        supabase.table("chat_messages").insert(user_msg_data).execute()
+        user_res = supabase.table("chat_messages").insert(user_msg_data).execute()
+        inserted_user = user_res.data[0] if (user_res.data and len(user_res.data) > 0) else user_msg_data
         
         # 3. Obtener respuesta de la IA configurada como moderadora grupal
         ai_text, was_fallback = await get_groq_ai_response(payload.message, is_group=True)
@@ -185,12 +186,13 @@ async def process_group_chat_3_message(
             },
             "created_at": datetime.utcnow().isoformat()
         }
-        supabase.table("chat_messages").insert(ai_msg_data).execute()
+        ai_res = supabase.table("chat_messages").insert(ai_msg_data).execute()
+        inserted_ai = ai_res.data[0] if (ai_res.data and len(ai_res.data) > 0) else ai_msg_data
         
         return {
             "success": True, 
-            "user_message": user_msg_data, 
-            "ai_response": ai_msg_data
+            "user_message": inserted_user, 
+            "ai_response": inserted_ai
         }
         
     except Exception as e:
@@ -217,10 +219,11 @@ async def process_chat_message(
     }
 
     try:
-        supabase.table("chat_messages").insert(user_msg_data).execute()
+        user_res = supabase.table("chat_messages").insert(user_msg_data).execute()
+        inserted_user = user_res.data[0] if (user_res.data and len(user_res.data) > 0) else user_msg_data
 
         if canal_id == 1:
-            return {"success": True, "user_message": user_msg_data}
+            return {"success": True, "user_message": inserted_user}
             
         elif canal_id in [2, 3]:
             is_group = (canal_id == 3)
@@ -237,9 +240,10 @@ async def process_chat_message(
                 },
                 "created_at": datetime.utcnow().isoformat()
             }
-            supabase.table("chat_messages").insert(ai_msg_data).execute()
+            ai_res = supabase.table("chat_messages").insert(ai_msg_data).execute()
+            inserted_ai = ai_res.data[0] if (ai_res.data and len(ai_res.data) > 0) else ai_msg_data
             
-            return {"success": True, "user_message": user_msg_data, "ai_response": ai_msg_data}
+            return {"success": True, "user_message": inserted_user, "ai_response": inserted_ai}
         else:
             raise HTTPException(status_code=400, detail="canal_id inválido")
             

@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, NgZone, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -37,7 +37,9 @@ export class GroupChatPage implements OnInit, OnDestroy {
 
   constructor(
     private supabaseSvc: SupabaseService,
-    private http: HttpClient
+    private http: HttpClient,
+    private zone: NgZone,
+    private cdr: ChangeDetectorRef
   ) {
     addIcons({ send, sparkles, ellipsisHorizontal, chevronBackOutline, person });
   }
@@ -106,8 +108,14 @@ export class GroupChatPage implements OnInit, OnDestroy {
       }, (payload: any) => {
         const newMsg = payload.new as ChatMessage;
         if (newMsg.sender_id !== this.currentUserId) {
-          this.messages.push(newMsg);
-          this.scrollToBottom();
+          this.zone.run(() => {
+            if (!this.messages.find(m => m.id === newMsg.id)) {
+              this.messages.push(newMsg);
+              this.isLoading = false;
+              this.scrollToBottom();
+              this.cdr.detectChanges();
+            }
+          });
         }
       })
       .subscribe();
@@ -147,20 +155,26 @@ export class GroupChatPage implements OnInit, OnDestroy {
     this.http.post<any>(url, { message: trimmed }).subscribe({
       next: (res) => {
         console.log('DEBUG: Respuesta recibida:', res);
-        this.isLoading = false;
-        if (res.ai_response) {
-            // Verificar si el mensaje ya está (por si Realtime ya lo insertó)
-            if (!this.messages.find(m => m.id === res.ai_response.id)) {
-                this.messages.push(res.ai_response);
-                this.scrollToBottom();
-            }
-        }
+        this.zone.run(() => {
+          this.isLoading = false;
+          if (res.ai_response) {
+              // Verificar si el mensaje ya está (por si Realtime ya lo insertó)
+              if (!this.messages.find(m => m.id === res.ai_response.id)) {
+                  this.messages.push(res.ai_response);
+                  this.scrollToBottom();
+              }
+          }
+          this.cdr.detectChanges();
+        });
       },
       error: (err) => {
         console.error('DEBUG: Error enviando mensaje grupal:', err);
-        this.isLoading = false;
-        // Eliminar el mensaje temporal si falló
-        this.messages = this.messages.filter(m => m.id !== tempMsg.id);
+        this.zone.run(() => {
+          this.isLoading = false;
+          // Eliminar el mensaje temporal si falló
+          this.messages = this.messages.filter(m => m.id !== tempMsg.id);
+          this.cdr.detectChanges();
+        });
         alert('No se pudo enviar el mensaje. Revisa tu conexión con el servidor.');
       }
     });
