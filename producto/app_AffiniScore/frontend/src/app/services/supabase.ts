@@ -781,6 +781,84 @@ export class SupabaseService {
       });
   }
 
+  // Actualizar la ubicación del usuario en tiempo real en la columna JSONB de preferences
+  async updateUserLocation(latitude: number, longitude: number) {
+    const user = await this.getCurrentUser();
+    if (!user) return { error: 'Usuario no autenticado' };
+
+    try {
+      const { data: profile } = await this.getUserProfile();
+      const currentPrefs = profile ? profile['preferences'] || {} : {};
+      
+      const updatedPrefs = {
+        ...currentPrefs,
+        location: {
+          latitude,
+          longitude,
+          updated_at: new Date().toISOString()
+        }
+      };
+
+      return await this.supabase
+        .from('profiles')
+        .update({ preferences: updatedPrefs })
+        .eq('id', user.id);
+    } catch (err) {
+      console.error('Error al actualizar ubicación en la base de datos:', err);
+      return { error: err };
+    }
+  }
+
+  // Obtener la ubicación del partner de la vinculación activa
+  async getPartnerLocation(): Promise<{ id: string, latitude: number, longitude: number, name: string, avatarUrl: string } | null> {
+    const partnership = await this.getActivePartnership();
+    if (!partnership) return null;
+
+    const user = await this.getCurrentUser();
+    if (!user) return null;
+
+    const partnerId = partnership.user1_id === user.id ? partnership.user2_id : partnership.user1_id;
+    if (!partnerId) return null;
+
+    const { data: partnerProfile, error } = await this.supabase
+      .from('profiles')
+      .select('id, full_name, avatar_url, preferences')
+      .eq('id', partnerId)
+      .single();
+
+    if (error || !partnerProfile) return null;
+
+    const loc = partnerProfile['preferences']?.location;
+    if (!loc || !loc.latitude || !loc.longitude) return null;
+
+    return {
+      id: partnerProfile.id,
+      latitude: loc.latitude,
+      longitude: loc.longitude,
+      name: partnerProfile.full_name || 'Tu pareja',
+      avatarUrl: partnerProfile.avatar_url || '/assets/images/user.png'
+    };
+  }
+
+  // Suscribirse a cambios en la ubicación del partner en tiempo real
+  subscribeToPartnerLocation(partnerId: string, callback: (location: any) => void) {
+    const channel = this.supabase
+      .channel(`partner-location:${partnerId}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${partnerId}` },
+        (payload) => {
+          const loc = payload.new ? payload.new['preferences']?.location : null;
+          if (loc) {
+            callback(loc);
+          }
+        }
+      )
+      .subscribe();
+
+    return channel;
+  }
+
   /* ========================================================================
      6. S7: RETOS DE DESCONEXION (CATALOGO + ACEPTACION CONJUNTA)
      ======================================================================== */

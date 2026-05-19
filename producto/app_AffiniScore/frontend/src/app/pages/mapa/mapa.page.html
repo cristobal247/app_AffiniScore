@@ -37,10 +37,6 @@
 
     <div class="map-card">
       <div id="map"></div>
-      <div class="map-avatar">
-        <img [src]="userAvatarUrl || '/assets/images/user.png'" alt="Tu" />
-        <span>Tu</span>
-      </div>
       <div class="map-target">
         <ion-icon src="/assets/icons/hero/outline/paper-airplane.svg"></ion-icon>
       </div>
@@ -56,11 +52,7 @@
     <div class="stats-row">
       <div class="stat-card">
         <span class="stat-label">DISTANCIA</span>
-        <span class="stat-value">2.4 <small>km</small></span>
-      </div>
-      <div class="stat-card">
-        <span class="stat-label">TIEMPO</span>
-        <span class="stat-value">12 <small>min</small></span>
+        <span class="stat-value">{{ distance }} <small>km</small></span>
       </div>
       <button 
         class="sos-button" 

@@ -3,8 +3,7 @@ from datetime import datetime
 import os
 import httpx
 
-# Set GROQ_API_KEY from .env
-os.environ["GROQ_API_KEY"] = "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"
+# El GROQ_API_KEY se carga automáticamente desde el archivo .env mediante la base de datos.
 
 def simulate_exact_chat():
     id_usuario = "7d36be0e-f826-4492-91fa-b61cbf59a381"

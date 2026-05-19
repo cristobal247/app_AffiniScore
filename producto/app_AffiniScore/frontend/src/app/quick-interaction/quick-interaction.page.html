@@ -1,0 +1,194 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar mode="ios" class="main-header-toolbar">
+    <div class="header-content-wrapper">
+      <div class="brand-group">
+        <ion-buttons slot="start">
+          <ion-button (click)="goBack()" class="back-btn">
+            <ion-icon name="chevron-back-outline" slot="icon-only"></ion-icon>
+          </ion-button>
+        </ion-buttons>
+        <h1 class="brand-title-gradient">Interacción Rápida</h1>
+      </div>
+    </div>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="quick-interaction-page">
+  <div class="page-wrapper">
+    <div class="game-intro" *ngIf="!gameStarted">
+      <div class="intro-content">
+        <div class="intro-icon">
+          <ion-icon name="play-outline"></ion-icon>
+        </div>
+        <h2 class="intro-title">¿Cuánto saben el uno del otro?</h2>
+        <p class="intro-description">
+          Responde 3 preguntas rápidas sobre tu pareja en 60 segundos.
+          ¡Obtén +10 puntos si completas la partida!
+        </p>
+        <div class="game-features">
+          <div class="feature">
+            <span class="feature-icon">⏱️</span>
+            <span class="feature-text">60 segundos</span>
+          </div>
+          <div class="feature">
+            <span class="feature-icon">❓</span>
+            <span class="feature-text">3 Preguntas</span>
+          </div>
+          <div class="feature">
+            <span class="feature-icon">⭐</span>
+            <span class="feature-text">+10 Puntos</span>
+          </div>
+        </div>
+        <ion-button
+          (click)="startGame()"
+          expand="block"
+          color="primary"
+          class="start-btn"
+          size="large">
+          <ion-icon name="play-outline" slot="start"></ion-icon>
+          ¡Juguemos!
+        </ion-button>
+      </div>
+    </div>
+
+    <div class="game-active" *ngIf="gameStarted && !gameEnded">
+      <div class="game-header">
+        <div class="timer-card">
+          <div class="timer-display" [class.warning]="timeRemaining <= 20">
+            {{ timeRemaining }}s
+          </div>
+          <ion-progress-bar
+            type="determinate"
+            [value]="timePercentage / 100"
+            class="timer-bar"
+            [color]="timeRemaining <= 20 ? 'danger' : 'primary'">
+          </ion-progress-bar>
+        </div>
+        <div class="score-display">
+          <div class="player-score">
+            <span class="player-label">Tu Score</span>
+            <span class="player-points">{{ player1Score }}</span>
+          </div>
+          <div class="vs">vs</div>
+          <div class="player-score">
+            <span class="player-label">Pareja</span>
+            <span class="player-points">{{ player2Score }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="question-progress">
+        <span class="progress-text">
+          Pregunta {{ currentQuestionIndex + 1 }} de {{ gameSession?.questions?.length || 3 }}
+        </span>
+        <ion-progress-bar
+          type="determinate"
+          [value]="questionProgress / 100"
+          class="progress-bar">
+        </ion-progress-bar>
+      </div>
+
+      <ion-card class="question-card" *ngIf="currentQuestion && isGameActive">
+        <ion-card-header class="question-header">
+          <div class="difficulty-badge" [class]="'difficulty-' + currentQuestion.difficulty">
+            {{ currentQuestion.difficulty | uppercase }}
+          </div>
+        </ion-card-header>
+        <ion-card-content class="question-content">
+          <h3 class="question-text">{{ currentQuestion.question }}</h3>
+          <div class="question-category">{{ currentQuestion.category }}</div>
+        </ion-card-content>
+      </ion-card>
+
+      <div class="answer-section" *ngIf="!isAnswered && isGameActive">
+        <div class="answer-input-wrapper">
+          <input
+            type="text"
+            [(ngModel)]="selectedAnswer"
+            placeholder="Escribe tu respuesta..."
+            class="answer-input"
+            (keyup.enter)="answerQuestion(selectedAnswer)"
+            maxlength="100" />
+        </div>
+        <div class="answer-buttons">
+          <ion-button
+            (click)="answerQuestion(selectedAnswer)"
+            [disabled]="selectedAnswer.trim().length === 0"
+            expand="block"
+            color="success"
+            class="answer-btn">
+            <ion-icon name="checkmark-circle-outline" slot="start"></ion-icon>
+            Confirmar
+          </ion-button>
+          <ion-button
+            (click)="skipQuestion()"
+            expand="block"
+            color="medium"
+            class="skip-btn">
+            <ion-icon name="close-circle-outline" slot="start"></ion-icon>
+            Saltar
+          </ion-button>
+        </div>
+      </div>
+
+      <div class="waiting-section" *ngIf="isAnswered && isGameActive">
+        <div class="waiting-message">
+          <ion-icon name="checkmark-circle-outline" class="check-icon"></ion-icon>
+          <p>{{ selectedAnswer }}</p>
+          <p class="next-question-text">Siguiente pregunta en breve...</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="game-over" *ngIf="gameEnded">
+      <div class="result-card">
+        <div class="result-icon">
+          <ion-icon name="checkmark-circle-outline"></ion-icon>
+        </div>
+        <h2 class="result-title">¡Partida Completada!</h2>
+
+        <div class="final-scores">
+          <div class="score-box">
+            <span class="score-label">Tu Puntuación</span>
+            <span class="score-value">{{ player1Score }}</span>
+          </div>
+          <div class="vs-box">vs</div>
+          <div class="score-box">
+            <span class="score-label">Pareja</span>
+            <span class="score-value">{{ player2Score }}</span>
+          </div>
+        </div>
+
+        <div class="reward-box" *ngIf="player1Score > 0 || player2Score > 0">
+          <p class="reward-text">¡Ganaste +10 Affini Points!</p>
+          <div class="reward-badge">⭐ +10</div>
+        </div>
+
+        <div class="result-message">
+          <p *ngIf="player1Score > player2Score">¡Ganaste esta ronda! 🏆</p>
+          <p *ngIf="player1Score === player2Score">¡Empate perfecto! 🤝</p>
+          <p *ngIf="player1Score < player2Score">¡Tu pareja ganó! 💪</p>
+        </div>
+
+        <div class="result-buttons">
+          <ion-button
+            (click)="playAgain()"
+            expand="block"
+            color="primary"
+            class="play-again-btn"
+            size="large">
+            <ion-icon name="play-outline" slot="start"></ion-icon>
+            Jugar de Nuevo
+          </ion-button>
+          <ion-button
+            (click)="goBack()"
+            expand="block"
+            color="medium"
+            class="back-btn">
+            Volver
+          </ion-button>
+        </div>
+      </div>
+    </div>
+  </div>
+</ion-content>

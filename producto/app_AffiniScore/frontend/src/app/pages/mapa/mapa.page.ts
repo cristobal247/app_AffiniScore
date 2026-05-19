@@ -1,4 +1,4 @@
-import { Component, AfterViewInit, OnInit } from '@angular/core';
+import { Component, AfterViewInit, OnInit, OnDestroy } from '@angular/core';
 import { 
   IonContent, 
   IonHeader, 
@@ -33,14 +33,34 @@ import { RouterModule } from '@angular/router';
     RouterModule
   ]
 })
-export class MapaPage implements AfterViewInit {
+export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
   private map!: any;
   
   // Estado para el SOS
   isRecording: boolean = false;
   private mediaRecorder: MediaRecorder | null = null;
   private audioChunks: Blob[] = [];
+  
+  // Datos de usuario y pareja
   userAvatarUrl: string | null = null;
+  partnerAvatarUrl: string | null = null;
+  partnerName: string = 'Tu pareja';
+  
+  // Distancia y tiempo dinámicos
+  distance: string = '--';
+  duration: string = '--';
+
+  // Marcadores y sub
+  private userMarker: any = null;
+  private partnerMarker: any = null;
+  private partnerId: string | null = null;
+  private partnerSubscription: any = null;
+  
+  // Coordenadas locales en memoria
+  private currentLat: number | null = null;
+  private currentLng: number | null = null;
+  private partnerLat: number | null = null;
+  private partnerLng: number | null = null;
 
   constructor(
     private supabaseSvc: SupabaseService,
@@ -60,14 +80,136 @@ export class MapaPage implements AfterViewInit {
     this.initMap();
   }
 
+  ngOnDestroy() {
+    if (this.partnerSubscription) {
+      this.partnerSubscription.unsubscribe();
+      console.log('Suscripción de ubicación de pareja cerrada.');
+    }
+  }
+
   async loadUserProfile() {
     try {
       const { data } = await this.supabaseSvc.getUserProfile();
       if (data) {
         this.userAvatarUrl = data.avatar_url || null;
       }
+
+      // Cargar información y ubicación inicial del partner
+      const partnerData = await this.supabaseSvc.getPartnerLocation();
+      if (partnerData) {
+        this.partnerId = partnerData.id;
+        this.partnerAvatarUrl = partnerData.avatarUrl;
+        this.partnerName = partnerData.name;
+        this.partnerLat = partnerData.latitude;
+        this.partnerLng = partnerData.longitude;
+      }
     } catch (error) {
       console.error('Error al cargar perfil en mapa:', error);
+    }
+  }
+
+  // Dibujar o actualizar marcador de Usuario (Borde Rosa)
+  private updateUserMarker(lat: number, lng: number) {
+    this.currentLat = lat;
+    this.currentLng = lng;
+
+    if (!this.map) return;
+
+    if (!this.userMarker) {
+      const el = document.createElement('div');
+      el.style.backgroundImage = `url(${this.userAvatarUrl || '/assets/images/user.png'})`;
+      el.style.width = '46px';
+      el.style.height = '46px';
+      el.style.backgroundSize = 'cover';
+      el.style.backgroundPosition = 'center';
+      el.style.borderRadius = '50%';
+      el.style.border = '3px solid #ff4e7e'; // Rosa neón
+      el.style.boxShadow = '0 0 10px rgba(255, 78, 126, 0.7), 0 4px 8px rgba(0,0,0,0.3)';
+      el.style.cursor = 'pointer';
+
+      this.userMarker = new mapboxgl.Marker(el)
+        .setLngLat([lng, lat])
+        .setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML('<p style="margin:0;font-weight:700;color:#ff4e7e;font-size:13px;font-family:inherit;">¡Tú estás aquí! 💖</p>'))
+        .addTo(this.map);
+    } else {
+      this.userMarker.setLngLat([lng, lat]);
+    }
+
+    this.recalculateDistance();
+  }
+
+  // Dibujar o actualizar marcador de Pareja (Borde Azul)
+  private updatePartnerMarker(lat: number, lng: number) {
+    this.partnerLat = lat;
+    this.partnerLng = lng;
+
+    if (!this.map) return;
+
+    if (!this.partnerMarker) {
+      const el = document.createElement('div');
+      el.style.backgroundImage = `url(${this.partnerAvatarUrl || '/assets/images/user.png'})`;
+      el.style.width = '46px';
+      el.style.height = '46px';
+      el.style.backgroundSize = 'cover';
+      el.style.backgroundPosition = 'center';
+      el.style.borderRadius = '50%';
+      el.style.border = '3px solid #3880ff'; // Azul brillante
+      el.style.boxShadow = '0 0 10px rgba(56, 128, 255, 0.7), 0 4px 8px rgba(0,0,0,0.3)';
+      el.style.cursor = 'pointer';
+
+      this.partnerMarker = new mapboxgl.Marker(el)
+        .setLngLat([lng, lat])
+        .setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML(`<p style="margin:0;font-weight:700;color:#3880ff;font-size:13px;font-family:inherit;">${this.partnerName} está aquí 📍</p>`))
+        .addTo(this.map);
+    } else {
+      this.partnerMarker.setLngLat([lng, lat]);
+    }
+
+    this.recalculateDistance();
+  }
+
+  // Fórmula matemática de Haversine para calcular distancia en kilómetros
+  private calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    const R = 6371; // Radio de la Tierra en km
+    const dLat = this.deg2rad(lat2 - lat1);
+    const dLon = this.deg2rad(lon2 - lon1);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(this.deg2rad(lat1)) * Math.cos(this.deg2rad(lat2)) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; // Distancia en km
+  }
+
+  private deg2rad(deg: number): number {
+    return deg * (Math.PI / 180);
+  }
+
+  // Recalcular distancia y tiempo
+  private recalculateDistance() {
+    if (this.currentLat && this.currentLng && this.partnerLat && this.partnerLng) {
+      const dist = this.calculateDistance(
+        this.currentLat,
+        this.currentLng,
+        this.partnerLat,
+        this.partnerLng
+      );
+      
+      this.distance = dist.toFixed(1);
+      
+      // Tiempo estimado: caminando a 5 km/h (12 mins por km)
+      const walkTime = Math.round(dist * 12);
+      this.duration = walkTime.toString();
+    }
+  }
+
+  // Ajustar la cámara del mapa para encuadrar perfectamente a ambos marcadores
+  private fitBothMarkers() {
+    if (this.map && this.currentLat && this.currentLng && this.partnerLat && this.partnerLng) {
+      const bounds = new mapboxgl.LngLatBounds();
+      bounds.extend([this.currentLng, this.currentLat]);
+      bounds.extend([this.partnerLng, this.partnerLat]);
+      this.map.fitBounds(bounds, { padding: 80, maxZoom: 15, duration: 1500 });
     }
   }
 
@@ -76,83 +218,175 @@ export class MapaPage implements AfterViewInit {
     let lat = -33.447487;
     let lng = -70.673676;
 
-    // Configurar Access Token oficial público de Mapbox (dividido para evitar falsos positivos de GitHub Secret Scanning)
-    const tokenA = 'pk.eyJ1IjoibWFwYm94IiwiYSI6';
-    const tokenB = 'ImNpejY4NXVycTAwY2kyb3Bld295b3NybTYifQ.ZZGPRG2aBc8UrUi4_qgEkw';
+    // Configurar Access Token oficial público de Mapbox
+    const tokenA = 'pk.eyJ1IjoiYmVsdG9sb3phIiwiYSI6';
+    const tokenB = 'ImNtcGM1Mmo2ajA0Z20ydW9vdHozOTdudmkifQ.GNb51ysedtj0o6lbYmHMuw';
     mapboxgl.accessToken = tokenA + tokenB;
 
     // Inicializamos el mapa con la ubicación por defecto primero
     this.map = new mapboxgl.Map({
       container: 'map',
-      style: 'mapbox://styles/mapbox/streets-v12', // Estilo de mapa vectorizado moderno y fluido
-      center: [lng, lat], // Mapbox usa el orden [lng, lat]
+      style: 'mapbox://styles/mapbox/streets-v12',
+      center: [lng, lat],
       zoom: 13,
       attributionControl: false
     });
-
-    // Creamos y guardamos el marcador en la pos por defecto
-    const marker = new mapboxgl.Marker()
-      .setLngLat([lng, lat])
-      .setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML('<p style="margin:0;font-weight:600;color:#2c2c2c;">Ubicación predeterminada</p>'))
-      .addTo(this.map);
-
-    marker.togglePopup();
 
     setTimeout(() => {
       this.map.resize();
     }, 500);
 
+    // Cargar información inicial
+    await this.loadUserProfile();
+
+    // Dibujar marcadores iniciales de fallback
+    this.updateUserMarker(lat, lng);
+    if (this.partnerLat && this.partnerLng) {
+      this.updatePartnerMarker(this.partnerLat, this.partnerLng);
+      this.fitBothMarkers();
+    }
+
     try {
-      // 1. Solicitar permisos primero (Crucial para web y móvil)
-      const permissions = await Geolocation.checkPermissions();
-      if (permissions.location !== 'granted') {
-        const requestStatus = await Geolocation.requestPermissions();
-        if (requestStatus.location !== 'granted') {
-          throw new Error('Permisos de ubicación denegados por el usuario.');
+      // Pedimos ubicación real con doble nivel de tolerancia (alta precisión fallback a estándar de red)
+      let coordinates: any;
+
+      const getPositionNative = (options: PositionOptions): Promise<any> => {
+        return new Promise((resolve, reject) => {
+          if (!navigator.geolocation) {
+            reject(new Error('Geolocation no soportada por el navegador.'));
+          } else {
+            navigator.geolocation.getCurrentPosition(resolve, reject, options);
+          }
+        });
+      };
+
+      try {
+        console.log('Intentando obtener ubicación de alta precisión (GPS)...');
+        if (navigator.geolocation) {
+          coordinates = await getPositionNative({
+            enableHighAccuracy: true,
+            timeout: 4000,
+            maximumAge: 0
+          });
+        } else {
+          coordinates = await Geolocation.getCurrentPosition({
+            enableHighAccuracy: true,
+            timeout: 4000,
+            maximumAge: 0
+          });
+        }
+      } catch (err) {
+        console.warn('GPS de alta precisión lento/no disponible. Usando ubicación aproximada (Red/IP)...', err);
+        try {
+          if (navigator.geolocation) {
+            coordinates = await getPositionNative({
+              enableHighAccuracy: false,
+              timeout: 8000,
+              maximumAge: 30000
+            });
+          } else {
+            coordinates = await Geolocation.getCurrentPosition({
+              enableHighAccuracy: false,
+              timeout: 8000,
+              maximumAge: 30000
+            });
+          }
+        } catch (fallbackErr: any) {
+          throw fallbackErr;
         }
       }
-
-      // 2. Pedimos ubicación real forzando alta precisión
-      const coordinates = await Geolocation.getCurrentPosition({
-        enableHighAccuracy: true,
-        timeout: 20000, // Aumentamos el timeout a 20s para que no falle antes de encontrar el GPS
-        maximumAge: 0   // Forzamos a no usar caché antigua
-      });
       
       lat = coordinates.coords.latitude;
       lng = coordinates.coords.longitude;
 
-      // Volamos a la ubicación real y actualizamos marcador con flyTo elegante y fluido
-      this.map.flyTo({
-        center: [lng, lat],
-        zoom: 15,
-        speed: 1.2,
-        curve: 1.4,
-        essential: true
-      });
-      
-      marker.setLngLat([lng, lat]);
-      
-      // Actualizar Popup
-      const newPopup = new mapboxgl.Popup({ offset: 25 })
-        .setHTML('<p style="margin:0;font-weight:600;color:#d85158;">¡Estás aquí! 💖</p>');
-      marker.setPopup(newPopup);
+      // Actualizar marcador local y guardar en base de datos
+      this.updateUserMarker(lat, lng);
+      await this.supabaseSvc.updateUserLocation(lat, lng);
+
+      // Centrar mapa elegantemente
+      if (this.partnerLat && this.partnerLng) {
+        this.fitBothMarkers();
+      } else {
+        this.map.flyTo({
+          center: [lng, lat],
+          zoom: 15,
+          speed: 1.2,
+          curve: 1.4,
+          essential: true
+        });
+      }
+
+      // Suscribirse a la ubicación de la pareja en tiempo real
+      if (this.partnerId) {
+        console.log('Suscripción activa a la pareja:', this.partnerId);
+        this.partnerSubscription = this.supabaseSvc.subscribeToPartnerLocation(this.partnerId, (newLoc) => {
+          console.log('Nueva ubicación de pareja recibida:', newLoc);
+          if (newLoc.latitude && newLoc.longitude) {
+            this.updatePartnerMarker(newLoc.latitude, newLoc.longitude);
+            this.fitBothMarkers();
+          }
+        });
+      }
 
       // Rastrear en tiempo real si el usuario se mueve
-      await Geolocation.watchPosition({
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0
-      }, (position, err) => {
-        if (position) {
-          marker.setLngLat([position.coords.longitude, position.coords.latitude]);
+      try {
+        if (navigator.geolocation) {
+          navigator.geolocation.watchPosition(
+            async (position) => {
+              const uLat = position.coords.latitude;
+              const uLng = position.coords.longitude;
+              this.updateUserMarker(uLat, uLng);
+              await this.supabaseSvc.updateUserLocation(uLat, uLng);
+            },
+            (err) => console.warn('Rastreador nativo:', err),
+            { enableHighAccuracy: false, timeout: 15000, maximumAge: 30000 }
+          );
+        } else {
+          await Geolocation.watchPosition({
+            enableHighAccuracy: false,
+            timeout: 15000,
+            maximumAge: 30000
+          }, async (position, err) => {
+            if (position) {
+              const uLat = position.coords.latitude;
+              const uLng = position.coords.longitude;
+              this.updateUserMarker(uLat, uLng);
+              await this.supabaseSvc.updateUserLocation(uLat, uLng);
+            }
+          });
         }
-      });
+      } catch (watchErr) {
+        console.warn('No se pudo iniciar el seguimiento en tiempo real:', watchErr);
+      }
 
-    } catch (error) {
-      console.warn('Error obteniendo ubicación, se usará la predeterminada:', error);
-      // Ya estamos en la ubicación por defecto, no hay que hacer nada más
-      this.showToast('No se pudo obtener la ubicación precisa', 'warning');
+    } catch (error: any) {
+      console.warn('Error de ubicación detectado en el inicio:', error);
+      
+      let helpfulMsg = 'No se pudo obtener la ubicación';
+      let toastColor = 'warning';
+      
+      if (error && (error.code === 1 || (error.message && error.message.toLowerCase().includes('denied')))) {
+        helpfulMsg = 'Permiso denegado. Actívalo en el candado de la URL del navegador 🔒';
+      } else if (error && (error.code === 2 || (error.message && error.message.toLowerCase().includes('unavailable')))) {
+        helpfulMsg = 'Servicio de ubicación desactivado en tu PC (Configuración de Windows) 💻';
+      } else if (error && error.code === 3) {
+        helpfulMsg = 'Usando ubicación de pruebas (el GPS de tu PC no respondió a tiempo) 📌';
+        toastColor = 'primary';
+      } else if (error && error.message) {
+        helpfulMsg = `Aviso: ${error.message}`;
+      }
+
+      this.showToast(helpfulMsg, toastColor);
+
+      // Activar suscripción al partner incluso si falló nuestra geolocalización
+      if (this.partnerId) {
+        this.partnerSubscription = this.supabaseSvc.subscribeToPartnerLocation(this.partnerId, (newLoc) => {
+          if (newLoc.latitude && newLoc.longitude) {
+            this.updatePartnerMarker(newLoc.latitude, newLoc.longitude);
+            this.fitBothMarkers();
+          }
+        });
+      }
     }
   }
 
