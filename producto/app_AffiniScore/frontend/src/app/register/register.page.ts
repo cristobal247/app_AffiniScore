@@ -139,7 +139,7 @@ export class RegisterPage {
 
       await loading.dismiss();
       this.isLoading = false;
-      this.showToast('Cuenta creada con éxito');
+      this.showToast('Cuenta creada con éxito. Por favor, revisa tu correo para confirmar tu cuenta.');
       this.router.navigate(['/login']);
     } catch (error: any) {
       await loading.dismiss();
