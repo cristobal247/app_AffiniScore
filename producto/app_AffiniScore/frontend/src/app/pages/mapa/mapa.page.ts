@@ -415,9 +415,10 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
       this.isRecording = true;
       
       this.showToast('Grabando audio SOS... Vuelve a tocar para enviar', 'danger');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error al acceder al micrófono:', err);
-      this.showToast('No se pudo acceder al micrófono', 'warning');
+      const errMsg = err?.name ? `${err.name}: ${err.message}` : err;
+      this.showToast(`No se pudo acceder al micrófono: ${errMsg}`, 'warning');
     }
   }
 
