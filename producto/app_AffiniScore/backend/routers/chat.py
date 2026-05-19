@@ -60,11 +60,11 @@ def get_fallback_therapist_response(user_message: str, is_group: bool) -> str:
     ]
     return random.choice(generic_responses)
 
-async def get_groq_ai_response(user_message: str, is_group: bool) -> str:
+async def get_groq_ai_response(user_message: str, is_group: bool) -> tuple[str, bool]:
     groq_api_key = os.environ.get("GROQ_API_KEY", "")
     if not groq_api_key:
         print("GROQ_API_KEY no encontrada en entorno, usando fallback terapéutico inteligente offline.")
-        return get_fallback_therapist_response(user_message, is_group)
+        return get_fallback_therapist_response(user_message, is_group), True
         
     base_prompt = (
         "Eres AffiniCoach, un terapeuta de parejas de élite con más de 15 años de experiencia clínica. "
@@ -120,10 +120,10 @@ async def get_groq_ai_response(user_message: str, is_group: bool) -> str:
             )
             response.raise_for_status()
             data = response.json()
-            return data["choices"][0]["message"]["content"]
+            return data["choices"][0]["message"]["content"], False
     except Exception as e:
         print(f"Error comunicándose con Groq: {e}. Usando fallback terapéutico inteligente offline.")
-        return get_fallback_therapist_response(user_message, is_group)
+        return get_fallback_therapist_response(user_message, is_group), True
 
 @router.post("/api/chat/3/{id_usuario}")
 async def process_group_chat_3_message(
@@ -170,7 +170,7 @@ async def process_group_chat_3_message(
         supabase.table("chat_messages").insert(user_msg_data).execute()
         
         # 3. Obtener respuesta de la IA configurada como moderadora grupal
-        ai_text = await get_groq_ai_response(payload.message, is_group=True)
+        ai_text, was_fallback = await get_groq_ai_response(payload.message, is_group=True)
         
         # 4. Guardar respuesta de la IA
         ai_msg_data = {
@@ -178,7 +178,11 @@ async def process_group_chat_3_message(
             "sender_id": None,
             "sender_type": "AI",
             "message": ai_text,
-            "metadata": {"emisor": "AffiniCoach IA", "canal": 3},
+            "metadata": {
+                "emisor": "AffiniCoach IA", 
+                "canal": 3,
+                "fuente": "Fallback Local" if was_fallback else "Groq Llama 3.3"
+            },
             "created_at": datetime.utcnow().isoformat()
         }
         supabase.table("chat_messages").insert(ai_msg_data).execute()
@@ -220,14 +224,17 @@ async def process_chat_message(
             
         elif canal_id in [2, 3]:
             is_group = (canal_id == 3)
-            ai_text = await get_groq_ai_response(payload.message, is_group)
+            ai_text, was_fallback = await get_groq_ai_response(payload.message, is_group)
             
             ai_msg_data = {
                 "room_id": room_id,
                 "sender_id": None,
                 "sender_type": "AI",
                 "message": ai_text,
-                "metadata": {"emisor": "AffiniCoach IA"},
+                "metadata": {
+                    "emisor": "AffiniCoach IA",
+                    "fuente": "Fallback Local" if was_fallback else "Groq Llama 3.3"
+                },
                 "created_at": datetime.utcnow().isoformat()
             }
             supabase.table("chat_messages").insert(ai_msg_data).execute()

@@ -46,8 +46,8 @@ ion-header {
   }
 }
 
-.mine .message-bubble {
-  background: linear-gradient(135deg, #df5b61 0%, #bd343a 100%);
+.message-wrapper.mine .message-bubble {
+  background: linear-gradient(135deg, #df5b61 0%, #bd343a 100%) !important;
   color: #ffffff !important;
   border-radius: 20px 20px 4px 20px;
   box-shadow: 0 4px 10px rgba(189, 52, 58, 0.2);
@@ -56,13 +56,14 @@ ion-header {
   .message-time { color: rgba(255, 255, 255, 0.8) !important; }
 }
 
-:not(.mine) .message-bubble {
-  background: #ffffff;
-  color: #3a3a3a;
+.message-wrapper:not(.mine) .message-bubble {
+  background: #ffffff !important;
+  color: #3a3a3a !important;
   border-radius: 20px 20px 20px 4px;
   box-shadow: 0 4px 14px rgba(0,0,0,0.04);
   border: 1px solid rgba(0,0,0,0.02);
   
+  p { color: #3a3a3a !important; }
   .message-time { color: #999999; }
 }
 
