@@ -1,19 +1,16 @@
 <ion-header class="ion-no-border">
   <ion-toolbar mode="ios" class="main-header-toolbar">
     <div class="header-content-wrapper">
-      <div class="brand-group">
-        <ion-buttons slot="start">
-          <ion-button (click)="goBack()" class="back-btn">
-            <ion-icon name="chevron-back-outline" slot="icon-only"></ion-icon>
-          </ion-button>
-        </ion-buttons>
-        <h1 class="brand-title-gradient">Interacción Rápida</h1>
-      </div>
+      <ion-buttons slot="start">
+        <ion-button (click)="goBack()" class="back-btn">
+          <ion-icon name="chevron-back-outline" slot="icon-only"></ion-icon>
+        </ion-button>
+      </ion-buttons>
     </div>
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="quick-interaction-page">
+<ion-content [fullscreen]="true" class="dashboard-bg">
   <div class="page-wrapper">
     <div class="game-intro" *ngIf="!gameStarted">
       <div class="intro-content">

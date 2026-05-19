@@ -2,7 +2,7 @@
   <ion-router-outlet [animated]="true"></ion-router-outlet>
 </ion-content>
 
-<ion-footer class="ion-no-border">
+<ion-footer class="ion-no-border" *ngIf="shouldShowTabBar()">
   <ion-tab-bar mode="ios" class="app-tab-bar">
     <ion-tab-button (click)="navigate('/tabs/dashboard')" [class.tab-selected]="isActive('/tabs/dashboard')">
       <span class="tab-icon">

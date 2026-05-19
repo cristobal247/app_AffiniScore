@@ -781,6 +781,22 @@ export class SupabaseService {
       });
   }
 
+  // Suscribirse a alertas SOS en tiempo real
+  subscribeToSosAlerts(callback: (payload: any) => void) {
+    const channel = this.supabase
+      .channel('sos-alerts-realtime')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'sos_alerts' },
+        (payload) => {
+          callback(payload.new);
+        }
+      )
+      .subscribe();
+
+    return channel;
+  }
+
   // Actualizar la ubicación del usuario en tiempo real en la columna JSONB de preferences
   async updateUserLocation(latitude: number, longitude: number) {
     const user = await this.getCurrentUser();

@@ -3,11 +3,11 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
   IonContent, IonHeader, IonTitle, IonToolbar, IonButtons,
-  IonBackButton, IonIcon, IonButton, LoadingController, ToastController,
-  IonCard, IonCardContent, IonCardHeader
+  IonIcon, IonButton, LoadingController, ToastController,
+  IonSpinner, NavController
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { arrowBack } from 'ionicons/icons';
+import { chevronBackOutline, checkmarkCircle, alertCircleOutline } from 'ionicons/icons';
 import { BingoCard, BingoCellTask, BingoProgress, BingoService } from './bingo.service';
 
 @Component({
@@ -17,8 +17,7 @@ import { BingoCard, BingoCellTask, BingoProgress, BingoService } from './bingo.s
   standalone: true,
   imports: [
     IonContent, IonHeader, IonTitle, IonToolbar, IonButtons,
-    IonBackButton, IonIcon, IonButton, IonCard, IonCardContent, IonCardHeader,
-    CommonModule, FormsModule
+    IonIcon, IonButton, IonSpinner, CommonModule, FormsModule
   ]
 })
 export class BingoPage implements OnInit {
@@ -32,13 +31,18 @@ export class BingoPage implements OnInit {
   constructor(
     private bingoService: BingoService,
     private loadingCtrl: LoadingController,
-    private toastCtrl: ToastController
+    private toastCtrl: ToastController,
+    private navCtrl: NavController
   ) {
-    addIcons({ arrowBack });
+    addIcons({ chevronBackOutline, checkmarkCircle, alertCircleOutline });
   }
 
   async ngOnInit() {
     await this.loadBingo();
+  }
+
+  goBack() {
+    this.navCtrl.navigateBack('/tabs/dashboard');
   }
 
   async loadBingo() {

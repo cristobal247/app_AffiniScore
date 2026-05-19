@@ -59,6 +59,24 @@ export class BingoService {
       return { data: null, error: 'Usuario no autenticado' };
     }
 
+    try {
+      // Ensure the 9 cells exist in the activity_catalog table
+      const cellsToInsert = this.defaultBingoCard.cells.map(cell => ({
+        id: `bingo-${this.defaultBingoCard.id}-${cell.id}`,
+        name: `Bingo: ${cell.title}`,
+        category: 'BINGO',
+        default_points: cell.points,
+        activity_type: 'CHALLENGE',
+        description: cell.description || ''
+      }));
+
+      await this.supabase
+        .from('activity_catalog')
+        .upsert(cellsToInsert, { onConflict: 'id' });
+    } catch (e) {
+      console.warn('Could not upsert bingo cells to catalog:', e);
+    }
+
     return { data: this.defaultBingoCard, error: null };
   }
 
@@ -70,7 +88,7 @@ export class BingoService {
 
     const { data: partnership } = await this.supabase
       .from('partnerships')
-      .select('id')
+      .select('*')
       .or(`user1_id.eq.${user.user.id},user2_id.eq.${user.user.id}`)
       .eq('status', 'active')
       .single();
@@ -79,12 +97,31 @@ export class BingoService {
       return { data: null, error: 'No partnership found' };
     }
 
-    return await this.supabase
-      .from('bingo_progress')
-      .select('*')
-      .eq('partnership_id', partnership.id)
-      .eq('card_id', cardId)
-      .single();
+    // Query all logs in user_actions_log for this card
+    const partnerIds = [partnership.user1_id, partnership.user2_id];
+    const { data: logs, error: logsError } = await this.supabase
+      .from('user_actions_log')
+      .select('action_id, points_earned')
+      .in('user_id', partnerIds)
+      .eq('status', 'CONFIRMED')
+      .like('action_id', `bingo-${cardId}-%`);
+
+    if (logsError) {
+      return { data: null, error: logsError };
+    }
+
+    const completedCells = (logs || []).map(log => log.action_id.replace(`bingo-${cardId}-`, ''));
+    const pointsEarned = (logs || []).reduce((sum, log) => sum + (log.points_earned || 0), 0);
+
+    const progress: BingoProgress = {
+      id: `progress-${partnership.id}-${cardId}`,
+      partnership_id: partnership.id,
+      card_id: cardId,
+      completed_cells: completedCells,
+      points_earned: pointsEarned
+    };
+
+    return { data: progress, error: null };
   }
 
   async markBingoCellComplete(cardId: string, cellId: string): Promise<{ error: any }> {
@@ -95,7 +132,7 @@ export class BingoService {
 
     const { data: partnership } = await this.supabase
       .from('partnerships')
-      .select('id')
+      .select('*')
       .or(`user1_id.eq.${user.user.id},user2_id.eq.${user.user.id}`)
       .eq('status', 'active')
       .single();
@@ -104,32 +141,80 @@ export class BingoService {
       return { error: 'No partnership found' };
     }
 
-    const { data: progress } = await this.supabase
-      .from('bingo_progress')
+    const partnerIds = [partnership.user1_id, partnership.user2_id];
+    const actionId = `bingo-${cardId}-${cellId}`;
+
+    // Check if cell is already completed
+    const { data: existingLogs } = await this.supabase
+      .from('user_actions_log')
       .select('*')
-      .eq('partnership_id', partnership.id)
-      .eq('card_id', cardId)
-      .single();
+      .in('user_id', partnerIds)
+      .eq('action_id', actionId)
+      .eq('status', 'CONFIRMED');
 
-    const completedCells = progress?.completed_cells || [];
-    if (!completedCells.includes(cellId)) {
-      completedCells.push(cellId);
+    const cellTask = this.defaultBingoCard.cells.find(c => c.id === cellId);
+    const points = cellTask ? cellTask.points : 10;
+
+    if (existingLogs && existingLogs.length > 0) {
+      // Toggle off: Delete existing log
+      const logToDelete = existingLogs[0];
+      const { error: deleteError } = await this.supabase
+        .from('user_actions_log')
+        .delete()
+        .eq('id', logToDelete.id);
+
+      if (deleteError) return { error: deleteError };
+
+      // Subtract points from the profile of the user who registered it
+      const { data: ownerProfile } = await this.supabase
+        .from('profiles')
+        .select('total_points')
+        .eq('id', logToDelete.user_id)
+        .single();
+
+      const currentPoints = ownerProfile?.total_points || 0;
+      const newTotal = Math.max(0, currentPoints - points);
+
+      await this.supabase
+        .from('profiles')
+        .update({ total_points: newTotal, updated_at: new Date() })
+        .eq('id', logToDelete.user_id);
+
+      this.supabaseSvc.pointsUpdated.next();
+      return { error: null };
+    } else {
+      // Toggle on: Create new log
+      const { data: insertedLog, error: insertError } = await this.supabase
+        .from('user_actions_log')
+        .insert({
+          user_id: user.user.id,
+          action_id: actionId,
+          points_earned: points,
+          status: 'CONFIRMED'
+        })
+        .select()
+        .single();
+
+      if (insertError) return { error: insertError };
+
+      // Add points to the current user's profile
+      const { data: profile } = await this.supabase
+        .from('profiles')
+        .select('total_points')
+        .eq('id', user.user.id)
+        .single();
+
+      const currentPoints = profile?.total_points || 0;
+      const newTotal = currentPoints + points;
+
+      await this.supabase
+        .from('profiles')
+        .update({ total_points: newTotal, updated_at: new Date() })
+        .eq('id', user.user.id);
+
+      this.supabaseSvc.pointsUpdated.next();
+      return { error: null };
     }
-
-    const pointsEarned = completedCells.length * 10;
-
-    return await this.supabase
-      .from('bingo_progress')
-      .upsert(
-        {
-          partnership_id: partnership.id,
-          card_id: cardId,
-          completed_cells: completedCells,
-          points_earned: pointsEarned,
-          updated_at: new Date().toISOString()
-        },
-        { onConflict: 'partnership_id,card_id' }
-      );
   }
 
   checkBingoWin(completedCells: string[]): boolean {

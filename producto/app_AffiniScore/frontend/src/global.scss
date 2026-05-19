@@ -197,3 +197,52 @@ body:has(app-group-chat) ion-tab-bar {
   display: none !important;
 }
 
+/* Custom SOS Alert Styling */
+.custom-alert-sos {
+  --background: #fff5f5 !important;
+  --color: #c62828 !important;
+
+  .alert-wrapper {
+    background: #fff5f5 !important;
+    border-radius: 20px !important;
+    border: 3px solid #e53935 !important;
+    box-shadow: 0 10px 40px rgba(229, 57, 53, 0.3) !important;
+  }
+
+  .alert-title {
+    color: #e53935 !important;
+    font-weight: 900 !important;
+    font-size: 22px !important;
+    text-align: center;
+    animation: sos-blink 1s infinite alternate;
+  }
+
+  .alert-sub-title {
+    color: #c62828 !important;
+    font-weight: 700 !important;
+    text-align: center;
+  }
+
+  .alert-message {
+    color: #333333 !important;
+    font-size: 15px !important;
+    text-align: center;
+    padding-top: 10px !important;
+  }
+
+  .alert-button {
+    color: #e53935 !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+  }
+
+  .alert-button-role-cancel {
+    color: #666666 !important;
+  }
+}
+
+@keyframes sos-blink {
+  0% { opacity: 0.6; }
+  100% { opacity: 1; }
+}
+

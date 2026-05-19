@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
+import { CommonModule } from '@angular/common';
 import {
   IonRouterOutlet,
   IonContent,
@@ -18,7 +19,16 @@ import { locationOutline, location } from 'ionicons/icons';
   templateUrl: './tabs.page.html',
   styleUrls: ['./tabs.page.scss'],
   standalone: true,
-  imports: [IonRouterOutlet, IonContent, IonFooter, IonTabBar, IonTabButton, IonIcon, IonLabel]
+  imports: [
+    CommonModule,
+    IonRouterOutlet,
+    IonContent,
+    IonFooter,
+    IonTabBar,
+    IonTabButton,
+    IonIcon,
+    IonLabel
+  ]
 })
 export class TabsPage {
   constructor(private navCtrl: NavController, private router: Router) {
@@ -33,5 +43,10 @@ export class TabsPage {
 
   isActive(path: string): boolean {
     return this.router.url.includes(path);
+  }
+
+  shouldShowTabBar(): boolean {
+    const hiddenRoutes = ['/tabs/bingo', '/tabs/quick-interaction'];
+    return !hiddenRoutes.some(route => this.router.url.includes(route));
   }
 }

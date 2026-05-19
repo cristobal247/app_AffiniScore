@@ -93,8 +93,9 @@ export class ResetPasswordPage implements OnInit {
       if (error) {
         this.showToast('Error al actualizar contraseña: ' + error.message, 'danger');
       } else {
-        this.showToast('¡Éxito! Tu contraseña ha sido actualizada.', 'success');
-        this.router.navigateByUrl('/tabs/dashboard', { replaceUrl: true });
+        await this.supabaseSvc.signOut();
+        this.showToast('¡Éxito! Tu contraseña ha sido actualizada. Por favor, inicia sesión.', 'success');
+        this.router.navigateByUrl('/login', { replaceUrl: true });
       }
     } catch (err) {
       await loading.dismiss();

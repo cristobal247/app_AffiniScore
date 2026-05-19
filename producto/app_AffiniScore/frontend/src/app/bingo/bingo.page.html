@@ -1,86 +1,109 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-buttons slot="start">
-      <ion-back-button defaultHref="/tabs/dashboard"></ion-back-button>
-    </ion-buttons>
-    <ion-title>Bingo de Conexión</ion-title>
+<ion-header class="ion-no-border">
+  <ion-toolbar mode="ios" class="main-header-toolbar">
+    <div class="header-content-wrapper">
+      <ion-buttons slot="start">
+        <ion-button (click)="goBack()" class="back-btn">
+          <ion-icon name="chevron-back-outline" slot="icon-only"></ion-icon>
+        </ion-button>
+      </ion-buttons>
+    </div>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
+<ion-content [fullscreen]="true" class="dashboard-bg">
   <div *ngIf="isLoading" class="loading-container">
-    <ion-card>
-      <ion-card-header>
-        <ion-title>Cargando...</ion-title>
-      </ion-card-header>
-    </ion-card>
+    <div class="loading-card">
+      <ion-spinner name="crescent" color="primary"></ion-spinner>
+      <p>Cargando tablero...</p>
+    </div>
   </div>
 
-  <div *ngIf="!isLoading && bingoCard" class="bingo-container">
-    <ion-card class="info-card">
-      <ion-card-header>
-        <ion-title>{{ bingoCard.title }}</ion-title>
-      </ion-card-header>
-      <ion-card-content>
-        <p><strong>Dificultad:</strong> {{ bingoCard.difficulty }}</p>
-        <p><strong>Puntos:</strong> {{ getTotalPoints() }} pts</p>
-        <p><strong>Completadas:</strong> {{ completedCellIds.size }}/9</p>
-      </ion-card-content>
-    </ion-card>
+  <div *ngIf="!isLoading && bingoCard" class="bingo-wrapper">
+    <!-- Panel Resumen / Stats -->
+    <div class="stats-card">
+      <div class="stats-header">
+        <div class="title-section">
+          <h2>{{ bingoCard.title }}</h2>
+          <span class="difficulty-tag" [class]="bingoCard.difficulty.toLowerCase()">
+            {{ bingoCard.difficulty }}
+          </span>
+        </div>
+        <div class="progress-badge">
+          <span>{{ completedCellIds.size }}/9 celdas</span>
+        </div>
+      </div>
 
-    <ion-card *ngIf="hasWon" class="victory-card">
-      <ion-card-content>
-        <h2>🎉 ¡¡¡GANARON!!! 🎉</h2>
-        <p>Completaron una línea entera. ¡Ese es el espíritu!</p>
-      </ion-card-content>
-    </ion-card>
-
-    <div class="bingo-grid">
-      <div
-        *ngFor="let cell of bingoCard.cells; let i = index"
-        class="bingo-cell"
-        [class.completed]="isCellCompleted(cell)"
-        (click)="toggleCell(cell)"
-      >
-        <ion-icon
-          *ngIf="isCellCompleted(cell)"
-          name="checkmark-circle"
-          class="check-icon"
-        ></ion-icon>
-
-        <div class="cell-content">
-          <h3>{{ cell.title }}</h3>
-          <p *ngIf="cell.description">{{ cell.description }}</p>
-          <span class="points">+{{ cell.points }} pts</span>
+      <div class="stats-row">
+        <div class="stat-item">
+          <span class="stat-label">Puntos ganados</span>
+          <span class="stat-value">{{ getTotalPoints() }} pts</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Tu racha</span>
+          <span class="stat-value">🔥 Activa</span>
         </div>
       </div>
     </div>
 
-    <ion-card class="instructions-card">
-      <ion-card-header>
-        <ion-title>Cómo Jugar</ion-title>
-      </ion-card-header>
-      <ion-card-content>
-        <ol>
-          <li>Toca una celda para marcarla como completada</li>
-          <li>Completa una línea entera (horizontal, vertical o diagonal)</li>
-          <li>¡Gana puntos y disfruten tiempo de calidad juntos!</li>
-        </ol>
-      </ion-card-content>
-    </ion-card>
+    <!-- Victory Banner -->
+    <div *ngIf="hasWon" class="victory-banner bounce-animation">
+      <div class="victory-icon">🎉</div>
+      <div class="victory-text">
+        <h3>¡LÍNEA COMPLETADA!</h3>
+        <p>Han formado una línea en el Bingo de Conexión. ¡Sigan así!</p>
+      </div>
+    </div>
+
+    <!-- Grid de Bingo -->
+    <div class="bingo-grid-wrapper">
+      <div class="bingo-grid">
+        <div
+          *ngFor="let cell of bingoCard.cells"
+          class="bingo-cell-premium"
+          [class.completed]="isCellCompleted(cell)"
+          (click)="toggleCell(cell)"
+        >
+          <div class="completed-overlay" *ngIf="isCellCompleted(cell)">
+            <ion-icon name="checkmark-circle" class="check-icon"></ion-icon>
+          </div>
+          
+          <div class="cell-content">
+            <h3 class="cell-title">{{ cell.title }}</h3>
+            <p class="cell-desc" *ngIf="cell.description">{{ cell.description }}</p>
+            <span class="cell-points">+{{ cell.points }} pts</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Instrucciones -->
+    <div class="instructions-section">
+      <h3>¿Cómo jugar?</h3>
+      <ul class="instructions-list">
+        <li>
+          <span class="step-num">1</span>
+          <p>Realicen juntos las actividades descritas en cada casilla.</p>
+        </li>
+        <li>
+          <span class="step-num">2</span>
+          <p>Pulsen sobre una casilla para marcarla como completada y sumar puntos al instante.</p>
+        </li>
+        <li>
+          <span class="step-num">3</span>
+          <p>Completen una fila, columna o diagonal entera para ganar el Bingo de Conexión.</p>
+        </li>
+      </ul>
+    </div>
   </div>
 
   <div *ngIf="!isLoading && !bingoCard" class="error-container">
-    <ion-card>
-      <ion-card-header>
-        <ion-title>Error</ion-title>
-      </ion-card-header>
-      <ion-card-content>
-        <p>No se pudo cargar el bingo. Intenta de nuevo.</p>
-        <ion-button (click)="loadBingo()" expand="block">
-          Reintentar
-        </ion-button>
-      </ion-card-content>
-    </ion-card>
+    <div class="error-card">
+      <ion-icon name="alert-circle-outline" class="error-icon"></ion-icon>
+      <h2>No se pudo cargar el tablero</h2>
+      <p>Verifica tu conexión e inténtalo de nuevo.</p>
+      <ion-button (click)="loadBingo()" expand="block" class="btn-retry">
+        Reintentar
+      </ion-button>
+    </div>
   </div>
 </ion-content>
