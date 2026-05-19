@@ -48,52 +48,6 @@ async def get_groq_ai_response(user_message: str, is_group: bool) -> str:
         print(f"Error comunicándose con Groq: {e}")
         return "Lo siento, tuve un problema procesando tu mensaje."
 
-@router.post("/api/chat/{room_id}/{emisor}")
-async def process_chat_message(
-    payload: ChatMessagePayload,
-    room_id: str = Path(..., description="ID de la sala (UUID)"),
-    emisor: str = Path(..., description="Nombre del usuario"),
-    canal_id: int = Query(1, description="1: Pareja, 2: Indiv+IA, 3: Grupal+IA")
-):
-    timestamp = datetime.utcnow().isoformat()
-    
-    user_msg_data = {
-        "room_id": room_id,
-        "sender_id": payload.sender_id,
-        "sender_type": "USER",
-        "message": payload.message,
-        "metadata": {"emisor": emisor, "image_url": payload.image_url},
-        "created_at": timestamp
-    }
-
-    try:
-        supabase.table("chat_messages").insert(user_msg_data).execute()
-
-        if canal_id == 1:
-            return {"success": True, "user_message": user_msg_data}
-            
-        elif canal_id in [2, 3]:
-            is_group = (canal_id == 3)
-            ai_text = await get_groq_ai_response(payload.message, is_group)
-            
-            ai_msg_data = {
-                "room_id": room_id,
-                "sender_id": None,
-                "sender_type": "AI",
-                "message": ai_text,
-                "metadata": {"emisor": "AffiniCoach IA"},
-                "created_at": datetime.utcnow().isoformat()
-            }
-            supabase.table("chat_messages").insert(ai_msg_data).execute()
-            
-            return {"success": True, "user_message": user_msg_data, "ai_response": ai_msg_data}
-        else:
-            raise HTTPException(status_code=400, detail="canal_id inválido")
-            
-    except Exception as e:
-        print(e)
-        raise HTTPException(status_code=500, detail=str(e))
-
 @router.post("/api/chat/3/{id_usuario}")
 async def process_group_chat_3_message(
     payload: ChatMessagePayload,
@@ -161,4 +115,50 @@ async def process_group_chat_3_message(
     except Exception as e:
         print(f"Error en endpoint chat canal 3: {e}")
         if isinstance(e, HTTPException): raise e
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/api/chat/{room_id}/{emisor}")
+async def process_chat_message(
+    payload: ChatMessagePayload,
+    room_id: str = Path(..., description="ID de la sala (UUID)"),
+    emisor: str = Path(..., description="Nombre del usuario"),
+    canal_id: int = Query(1, description="1: Pareja, 2: Indiv+IA, 3: Grupal+IA")
+):
+    timestamp = datetime.utcnow().isoformat()
+    
+    user_msg_data = {
+        "room_id": room_id,
+        "sender_id": payload.sender_id,
+        "sender_type": "USER",
+        "message": payload.message,
+        "metadata": {"emisor": emisor, "image_url": payload.image_url},
+        "created_at": timestamp
+    }
+
+    try:
+        supabase.table("chat_messages").insert(user_msg_data).execute()
+
+        if canal_id == 1:
+            return {"success": True, "user_message": user_msg_data}
+            
+        elif canal_id in [2, 3]:
+            is_group = (canal_id == 3)
+            ai_text = await get_groq_ai_response(payload.message, is_group)
+            
+            ai_msg_data = {
+                "room_id": room_id,
+                "sender_id": None,
+                "sender_type": "AI",
+                "message": ai_text,
+                "metadata": {"emisor": "AffiniCoach IA"},
+                "created_at": datetime.utcnow().isoformat()
+            }
+            supabase.table("chat_messages").insert(ai_msg_data).execute()
+            
+            return {"success": True, "user_message": user_msg_data, "ai_response": ai_msg_data}
+        else:
+            raise HTTPException(status_code=400, detail="canal_id inválido")
+            
+    except Exception as e:
+        print(e)
         raise HTTPException(status_code=500, detail=str(e))
