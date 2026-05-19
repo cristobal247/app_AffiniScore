@@ -187,3 +187,41 @@ async def send_push_notification(request: NotificationRequest):
     except Exception as e:
         print(f"Error enviando push: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+class SosNotificationRequest(BaseModel):
+    partner_id: str
+    sender_name: str
+
+@app.post("/api/v1/notifications/sos")
+async def send_sos_push_notification(request: SosNotificationRequest):
+    try:
+        profile_res = supabase.table("profiles").select("fcm_token").eq("id", request.partner_id).execute()
+        
+        if not profile_res.data or not profile_res.data[0].get("fcm_token"):
+            raise HTTPException(status_code=400, detail="La pareja no tiene notificaciones activadas")
+            
+        token = profile_res.data[0]["fcm_token"]
+        
+        message = messaging.Message(
+            notification=messaging.Notification(
+                title="🚨 ¡ALERTA SOS URGENTE! 🚨",
+                body=f"Tu pareja {request.sender_name} necesita ayuda urgente. Abre la app."
+            ),
+            android=messaging.AndroidConfig(
+                priority="high",
+                notification=messaging.AndroidNotification(
+                    sound="default"
+                )
+            ),
+            data={
+                "type": "sos_alert",
+                "sender_name": request.sender_name
+            },
+            token=token,
+        )
+        
+        response = messaging.send(message)
+        return {"success": True, "message_id": response}
+    except Exception as e:
+        print(f"Error enviando push SOS: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

@@ -771,7 +771,7 @@ export class SupabaseService {
     const user = await this.getCurrentUser();
     if (!user) return { error: 'Usuario no autenticado' };
 
-    return await this.supabase
+    const result = await this.supabase
       .from('sos_alerts')
       .insert({
         user_id: user.id,
@@ -779,6 +779,44 @@ export class SupabaseService {
         longitude,
         audio_url: audioUrl
       });
+
+    if (!result.error) {
+      try {
+        const { data: userProfile } = await this.getUserProfile();
+        if (userProfile && userProfile.partnership_id) {
+          const { data: partnership } = await this.supabase
+            .from('partnerships')
+            .select('*')
+            .eq('id', userProfile.partnership_id)
+            .single();
+
+          if (partnership) {
+            const partnerId = partnership.user1_id === user.id ? partnership.user2_id : partnership.user1_id;
+            if (partnerId) {
+              const { data: session } = await this.supabase.auth.getSession();
+              const tokenHeader = session?.session?.access_token || '';
+
+              await firstValueFrom(
+                this.http.post<any>(`${this.apiUrl}/api/v1/notifications/sos`, {
+                  partner_id: partnerId,
+                  sender_name: userProfile.name || 'Tu pareja'
+                }, { 
+                  headers: {
+                    'Authorization': `Bearer ${tokenHeader}`,
+                    'Content-Type': 'application/json'
+                  } 
+                })
+              );
+              console.log('Notificación push SOS enviada con éxito');
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Error enviando notificación push de SOS:', e);
+      }
+    }
+
+    return result;
   }
 
   // Suscribirse a alertas SOS en tiempo real
