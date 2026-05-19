@@ -18,3 +18,4 @@ build_output.log
 # API Keys and Environments
 **/environments/environment.ts
 **/environments/environment.prod.ts
+**/firebase-key.json
