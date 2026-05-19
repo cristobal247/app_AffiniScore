@@ -18,7 +18,9 @@ import {
   starOutline,
   location,
   imagesOutline,
-  sparkles
+  sparkles,
+  gridOutline,
+  timeOutline
 } from 'ionicons/icons';
 import { SupabaseService } from '../../services/supabase'; // Ajusta la ruta si es necesario
 
@@ -60,7 +62,9 @@ export class HomePage implements OnInit {
       starOutline,
       location,
       imagesOutline,
-      sparkles
+      sparkles,
+      gridOutline,
+      timeOutline
     });
   }
 

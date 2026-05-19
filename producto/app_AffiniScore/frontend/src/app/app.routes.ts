@@ -57,6 +57,14 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/groupchat/group-chat.page').then(m => m.GroupChatPage)
       },
       {
+        path: 'bingo',
+        loadComponent: () => import('./bingo/bingo.page').then(m => m.BingoPage)
+      },
+      {
+        path: 'quick-interaction',
+        loadComponent: () => import('./quick-interaction/quick-interaction.page').then(m => m.QuickInteractionPage)
+      },
+      {
         path: 'retos',
         redirectTo: 'actions',
         pathMatch: 'full'
@@ -106,6 +114,16 @@ export const routes: Routes = [
   {
     path: 'chat',
     redirectTo: 'tabs/chat',
+    pathMatch: 'full'
+  },
+  {
+    path: 'bingo',
+    redirectTo: 'tabs/bingo',
+    pathMatch: 'full'
+  },
+  {
+    path: 'quick-interaction',
+    redirectTo: 'tabs/quick-interaction',
     pathMatch: 'full'
   },
   {

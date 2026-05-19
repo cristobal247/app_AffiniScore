@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { environment } from './environment.sample';
+import { SupabaseService } from '../services/supabase';
 
 export interface BingoCellTask {
   id: string;
@@ -31,7 +30,6 @@ export interface BingoProgress {
   providedIn: 'root'
 })
 export class BingoService {
-  private readonly supabase: SupabaseClient;
   private readonly defaultBingoCard: BingoCard = {
     id: 'default-bingo-1',
     title: 'Bingo de Conexión',
@@ -49,8 +47,10 @@ export class BingoService {
     ]
   };
 
-  constructor() {
-    this.supabase = createClient(environment.supabaseUrl, environment.supabaseKey);
+  constructor(private supabaseSvc: SupabaseService) {}
+
+  private get supabase() {
+    return this.supabaseSvc.supabase;
   }
 
   async getBingoCard(): Promise<{ data: BingoCard | null; error: any }> {
