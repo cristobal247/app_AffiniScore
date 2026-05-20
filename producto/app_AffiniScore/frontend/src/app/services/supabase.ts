@@ -50,16 +50,48 @@ export interface DisconnectChallenge {
 })
 export class SupabaseService {
   public supabase: SupabaseClient;
+  private supabaseEnabled = false;
   private apiUrl: string;
   public pointsUpdated = new BehaviorSubject<void>(undefined);
+  // Modo de desarrollo: autentificación simulada cuando environment.devAuth = true
+  private _devMode = false;
+  private _devUser: any = null;
+  private _devSessionToken: string | null = null;
 
   constructor(private http: HttpClient) {
-    this.supabase = createClient(
-      environment.supabaseUrl,
-      environment.supabaseKey
-    );
+    const url = environment.supabaseUrl || '';
+    const key = environment.supabaseKey || '';
+    const isValidUrl = url.startsWith('http://') || url.startsWith('https://');
+    const dummyUrl = 'https://example.com';
+
+    const clientUrl = isValidUrl && !url.includes('YOUR_SUPABASE_URL') ? url : dummyUrl;
+    const clientKey = key || 'invalid';
+    this.supabase = createClient(clientUrl, clientKey);
+
+    if (isValidUrl && key && !url.includes('YOUR_SUPABASE_URL') && !key.includes('YOUR_SUPABASE_ANON_KEY')) {
+      this.supabaseEnabled = true;
+    } else {
+      console.warn('Supabase no está configurado correctamente. El frontend se iniciará en modo sin conexión.', {
+        supabaseUrl: url,
+        supabaseKey: key ? '***' : '(vacío)'
+      });
+      this.supabaseEnabled = false;
+    }
+
     // Usamos el environment o un predeterminado de FastAPI local
     this.apiUrl = (environment as any).apiUrl || 'http://localhost:8000';
+
+    // Inicializar modo devAuth solo cuando no hay credenciales válidas de Supabase
+    if ((environment as any).devAuth && !this.supabaseEnabled) {
+      this._devMode = true;
+      this._devUser = {
+        id: 'dev-user',
+        email: (environment as any).devAuthEmail || 'dev@local',
+        user_metadata: { full_name: 'Usuario Dev' }
+      };
+      this._devSessionToken = 'dev-token';
+      console.info('SupabaseService: devAuth activado. Login simulado disponible.');
+    }
   }
 
   /* ========================================================================
@@ -167,6 +199,39 @@ export class SupabaseService {
 
   // Iniciar sesión con Email
   async signIn(email: string, password: string) {
+    // Modo de desarrollo: aceptar credenciales del environment o cualquier credencial si devAuth activa
+    if (this._devMode) {
+      const devEmail = (environment as any).devAuthEmail;
+      const devPass = (environment as any).devAuthPassword;
+      if (!devEmail || !devPass || email === devEmail) {
+        // Simulamos sesión
+        this._devUser = {
+          id: this._devUser?.id || 'dev-user',
+          email,
+          user_metadata: { full_name: 'Usuario Dev' }
+        };
+        this._devSessionToken = 'dev-token';
+        return {
+          data: {
+            user: this._devUser,
+            session: { access_token: this._devSessionToken }
+          },
+          error: null
+        } as any;
+      }
+
+      return { data: null, error: { message: 'Credenciales dev no válidas' } } as any;
+    }
+
+    if (!this.supabaseEnabled) {
+      return {
+        data: null,
+        error: {
+          message: 'Supabase no está configurado. Revisa src/environments/environment.ts y agrega SUPABASE_URL / SUPABASE_KEY.',
+        },
+      } as any;
+    }
+
     return await this.supabase.auth.signInWithPassword({
       email,
       password,
@@ -175,6 +240,15 @@ export class SupabaseService {
 
   // Iniciar sesión con Redes Sociales (Google, Apple, Facebook)
   async signInWithProvider(provider: 'google' | 'apple' | 'facebook') {
+    if (!this.supabaseEnabled) {
+      return {
+        data: null,
+        error: {
+          message: 'Supabase no está configurado. Revisa src/environments/environment.ts y agrega SUPABASE_URL / SUPABASE_KEY.',
+        },
+      } as any;
+    }
+
     const origin = window.location.origin;
     return await this.supabase.auth.signInWithOAuth({
       provider: provider,
@@ -199,17 +273,54 @@ export class SupabaseService {
 
   // Cerrar sesión
   async signOut() {
+    if (this._devMode) {
+      this._devUser = null;
+      this._devSessionToken = null;
+      return { data: null, error: null } as any;
+    }
+
+    if (!this.supabaseEnabled) {
+      return { data: null, error: null } as any;
+    }
     return await this.supabase.auth.signOut();
   }
 
   // Obtener el usuario que está logueado actualmente
   async getCurrentUser() {
-    const { data: { user } } = await this.supabase.auth.getUser();
-    return user;
+    if (this._devMode) {
+      return this._devUser;
+    }
+
+    if (!this.supabaseEnabled || !this.supabase) {
+      return null;
+    }
+
+    try {
+      const { data: { user } } = await this.supabase.auth.getUser();
+      return user;
+    } catch (error) {
+      console.warn('getCurrentUser falló en modo sin Supabase:', error);
+      return null;
+    }
   }
 
   // Escuchar cambios de estado de autenticación (login, logout, expiración)
   onAuthStateChange(callback: (event: string, session: any) => void) {
+    if (this._devMode) {
+      // Llamamos inmediatamente con estado simulado
+      setTimeout(() => callback('SIGNED_IN', { session: { access_token: this._devSessionToken } }), 10);
+      return {
+        unsubscribe: () => { /* no-op para dev */ }
+      } as any;
+    }
+
+    if (!this.supabaseEnabled || !this.supabase) {
+      return {
+        unsubscribe: () => {
+          /* no-op en modo sin Supabase */
+        }
+      } as any;
+    }
     return this.supabase.auth.onAuthStateChange(callback);
   }
 
@@ -221,6 +332,20 @@ export class SupabaseService {
   async getUserProfile() {
     const user = await this.getCurrentUser();
     if (!user) return { data: null, error: 'No user' };
+    if (this._devMode) {
+      return {
+        data: {
+          id: user.id,
+          full_name: user.user_metadata?.full_name || 'Usuario Dev',
+          email: user.email,
+          points_total: 999,
+          partnership_id: null
+        },
+        error: null
+      };
+    }
+
+    if (!this.supabaseEnabled || !this.supabase) return { data: null, error: 'Supabase no configurado' };
 
     const { data, error } = await this.supabase
       .from('profiles')
@@ -400,6 +525,132 @@ export class SupabaseService {
       this.pointsUpdated.next();
     }
     return res;
+  }
+
+  /* ========================================================================
+     6. GESTIÓN MENSUAL DE AFINIDAD Y RECUERDOS
+     ======================================================================== */
+
+  // Actualiza un snapshot del porcentaje actual en el perfil para luego rotarlo al final de mes
+  async updateMonthlySnapshot(percentage: number) {
+    const user = await this.getCurrentUser();
+    if (!user) return { error: 'Usuario no autenticado' };
+
+    // Guardamos el porcentaje actual y la fecha del snapshot
+    const now = new Date().toISOString();
+    const res = await this.supabase
+      .from('profiles')
+      .update({ current_month_percentage: percentage, current_month_snapshot_at: now })
+      .eq('id', user.id);
+
+    if (!res.error) this.pointsUpdated.next();
+    return res;
+  }
+
+  // Comprueba si ya cambió el mes y, si es así, rota el registro mensual: guarda el último porcentaje y reinicia el snapshot
+  async checkAndRotateMonthlyAffinity() {
+    const user = await this.getCurrentUser();
+    if (!user) return { error: 'Usuario no autenticado' };
+
+    const { data: profile } = await this.getUserProfile();
+    if (!profile) return { error: 'Perfil no encontrado' };
+
+    const lastRecordedMonth = profile.last_recorded_month; // campo opcional en profiles
+    const currentMonth = new Date().getMonth() + 1; // 1-12
+    const currentYear = new Date().getFullYear();
+
+    // Si lastRecordedMonth no existe inicializamos
+    if (!lastRecordedMonth) {
+      await this.supabase
+        .from('profiles')
+        .update({ last_recorded_month: currentMonth, last_recorded_year: currentYear })
+        .eq('id', user.id);
+      return { rotated: false };
+    }
+
+    // Si ya cambió el mes (diferente al guardado), guardamos el porcentaje anterior en la tabla monthly_affinity
+    if (lastRecordedMonth !== currentMonth) {
+      const monthToSave = lastRecordedMonth;
+      const yearToSave = profile.last_recorded_year || currentYear;
+      const percentageToSave = profile.current_month_percentage || 0;
+
+      try {
+        // Intentamos insertar en monthly_affinity (si la tabla existe)
+        await this.supabase
+          .from('monthly_affinity')
+          .insert([{
+            partnership_id: profile.partnership_id || null,
+            user_id: user.id,
+            year: yearToSave,
+            month: monthToSave,
+            percentage: percentageToSave,
+            created_at: new Date().toISOString()
+          }]);
+      } catch (e) {
+        console.warn('No se pudo insertar en monthly_affinity (tabla ausente?):', e);
+      }
+
+      // Reiniciamos el snapshot y actualizamos el mes grabado
+      await this.supabase
+        .from('profiles')
+        .update({ current_month_percentage: 0, last_recorded_month: currentMonth, last_recorded_year: currentYear })
+        .eq('id', user.id);
+
+      this.pointsUpdated.next();
+      return { rotated: true };
+    }
+
+    return { rotated: false };
+  }
+
+  // Recupera los registros de afinidad de un año para la pareja (month 1..12)
+  async getYearlyAffinity(partnershipId: string, year: number) {
+    return await this.supabase
+      .from('monthly_affinity')
+      .select('*')
+      .eq('partnership_id', partnershipId)
+      .eq('year', year)
+      .order('month', { ascending: true });
+  }
+
+  // Subir una imagen de recuerdo al bucket 'memories' y registrar metadatos en tabla 'memories'
+  async uploadMemory(file: File | Blob, filename?: string) {
+    const user = await this.getCurrentUser();
+    if (!user) return { error: 'Usuario no autenticado' };
+
+    const fileExt = (file instanceof File) ? file.name.split('.').pop() : 'jpg';
+    const name = filename || `${user.id}_${new Date().getTime()}.${fileExt}`;
+
+    const { error: uploadError } = await this.supabase.storage
+      .from('memories')
+      .upload(name, file, { upsert: true });
+
+    if (uploadError) return { error: uploadError };
+
+    const { data: { publicUrl } } = this.supabase.storage.from('memories').getPublicUrl(name);
+
+    // Intentar registrar metadatos
+    try {
+      await this.supabase.from('memories').insert([{ user_id: user.id, public_url: publicUrl, file_name: name, created_at: new Date().toISOString() }]);
+    } catch (e) {
+      console.warn('No se pudo insertar metadatos en tabla memories (si existe):', e);
+    }
+
+    return { publicUrl };
+  }
+
+  // Listar imágenes públicas del bucket 'memories' (simple list pública)
+  async listMemoriesPublic() {
+    try {
+      const { data } = await this.supabase.storage.from('memories').list('');
+      const urls = (data || []).map((f: any) => {
+        const { data: urlData } = this.supabase.storage.from('memories').getPublicUrl(f.name);
+        return { name: f.name, publicUrl: urlData.publicUrl };
+      });
+      return { data: urls };
+    } catch (e) {
+      return { data: [], error: e };
+    }
   }
 
   // Subir imagen de avatar al Storage (bucket 'avatars')
@@ -694,19 +945,25 @@ export class SupabaseService {
   }
 
   // Enviar un nuevo mensaje (guardar en la base de datos directamente)
-  async sendMessage(canalId: string, message: string, senderType: 'USER' | 'AI' = 'USER') {
+  async sendMessage(canalId: string, message: string, senderType: 'USER' | 'AI' = 'USER', imageUrl?: string) {
     const user = await this.getCurrentUser();
     if (!user) return { error: 'Usuario no autenticado' };
 
     try {
+      const payload: any = {
+        room_id: canalId,
+        sender_id: user.id, // Siempre usamos el ID del usuario para evitar conflictos de llave foránea (UUID)
+        sender_type: senderType,
+        message: message
+      };
+
+      if (imageUrl) {
+        payload.metadata = { image_url: imageUrl };
+      }
+
       const { data, error } = await this.supabase
         .from('chat_messages')
-        .insert({
-          room_id: canalId,
-          sender_id: user.id, // Siempre usamos el ID del usuario para evitar conflictos de llave foránea (UUID)
-          sender_type: senderType,
-          message: message
-        })
+        .insert(payload)
         .select('*')
         .single();
 
@@ -717,6 +974,33 @@ export class SupabaseService {
       console.error('Error al guardar mensaje en Supabase:', err);
       return { data: null, error: err.message };
     }
+  }
+
+  // Subir imagen para el chat al Storage
+  async uploadChatImage(file: File | Blob): Promise<{ url: string | null, error: any }> {
+    const user = await this.getCurrentUser();
+    if (!user) return { url: null, error: 'Usuario no autenticado' };
+
+    const fileExt = (file instanceof File) ? file.name.split('.').pop() : 'jpg';
+    const fileName = `${user.id}_${new Date().getTime()}.${fileExt}`;
+
+    const { data, error } = await this.supabase.storage
+      .from('chat_images') // IMPORTANTE: Debes crear un bucket público llamado "chat_images" en Supabase
+      .upload(fileName, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (error) {
+      console.error('Error subiendo imagen de chat:', error);
+      return { url: null, error };
+    }
+
+    const { data: { publicUrl } } = this.supabase.storage
+      .from('chat_images')
+      .getPublicUrl(fileName);
+
+    return { url: publicUrl, error: null };
   }
 
   // Suscribirse a nuevos mensajes en tiempo real

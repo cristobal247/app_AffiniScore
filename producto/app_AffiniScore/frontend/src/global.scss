@@ -197,6 +197,16 @@ body:has(app-group-chat) ion-tab-bar {
   display: none !important;
 }
 
+/* Ocultar definitivamente cualquier botón de chat en la barra inferior (Tab) */
+ion-tab-button[tab*="chat"],
+ion-tab-button[tab*="Chat"],
+ion-tab-button[tab*="mensaje"],
+ion-tab-button[tab="chat-list"] {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
 /* Custom SOS Alert Styling */
 .custom-alert-sos {
   --background: #fff5f5 !important;
@@ -245,4 +255,3 @@ body:has(app-group-chat) ion-tab-bar {
   0% { opacity: 0.6; }
   100% { opacity: 1; }
 }
-

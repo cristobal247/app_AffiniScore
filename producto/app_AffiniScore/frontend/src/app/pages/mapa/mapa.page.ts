@@ -1,4 +1,5 @@
 import { Component, AfterViewInit, OnInit, OnDestroy } from '@angular/core';
+import * as L from 'leaflet';
 import { 
   IonContent, 
   IonHeader, 
@@ -10,10 +11,9 @@ import {
   ToastController,
   LoadingController
 } from '@ionic/angular/standalone';
-declare var mapboxgl: any;
-import { Geolocation } from '@capacitor/geolocation';
-import { Capacitor } from '@capacitor/core';
 import { SupabaseService } from '../../services/supabase';
+import { GeolocationService } from '../../services/geolocation.service';
+import { Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 
@@ -62,9 +62,14 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
   private currentLng: number | null = null;
   private partnerLat: number | null = null;
   private partnerLng: number | null = null;
+  // Variable para controlar el centro automático sin pelear con el usuario
+  private isFirstLocationLock: boolean = false;
+  private geoPositionSubscription: Subscription | null = null;
+  private geoErrorSubscription: Subscription | null = null;
 
   constructor(
     private supabaseSvc: SupabaseService,
+    private geolocationService: GeolocationService,
     private toastCtrl: ToastController,
     private loadingCtrl: LoadingController
   ) {}
@@ -86,6 +91,13 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
       this.partnerSubscription.unsubscribe();
       console.log('Suscripción de ubicación de pareja cerrada.');
     }
+    if (this.geoPositionSubscription) {
+      this.geoPositionSubscription.unsubscribe();
+    }
+    if (this.geoErrorSubscription) {
+      this.geoErrorSubscription.unsubscribe();
+    }
+    this.geolocationService.stopTracking().catch((err) => console.warn('Error al detener el seguimiento de ubicación:', err));
   }
 
   async loadUserProfile() {
@@ -116,24 +128,21 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
 
     if (!this.map) return;
 
-    if (!this.userMarker) {
-      const el = document.createElement('div');
-      el.style.backgroundImage = `url(${this.userAvatarUrl || '/assets/images/user.png'})`;
-      el.style.width = '46px';
-      el.style.height = '46px';
-      el.style.backgroundSize = 'cover';
-      el.style.backgroundPosition = 'center';
-      el.style.borderRadius = '50%';
-      el.style.border = '3px solid #ff4e7e'; // Rosa neón
-      el.style.boxShadow = '0 0 10px rgba(255, 78, 126, 0.7), 0 4px 8px rgba(0,0,0,0.3)';
-      el.style.cursor = 'pointer';
+    const html = `
+      <div style="background-image: url(${this.userAvatarUrl || '/assets/images/user.png'}); width:46px; height:46px; background-size:cover; background-position:center; border-radius:50%; border:3px solid #ff4e7e; box-shadow: 0 0 10px rgba(255, 78, 126, 0.7), 0 4px 8px rgba(0,0,0,0.3);"></div>
+    `;
 
-      this.userMarker = new mapboxgl.Marker(el)
-        .setLngLat([lng, lat])
-        .setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML('<p style="margin:0;font-weight:700;color:#ff4e7e;font-size:13px;font-family:inherit;">¡Tú estás aquí! 💖</p>'))
-        .addTo(this.map);
+    if (!this.userMarker) {
+      this.userMarker = L.marker([lat, lng], {
+        icon: L.divIcon({
+          html,
+          className: '',
+          iconSize: [46, 46],
+          iconAnchor: [23, 23]
+        })
+      }).addTo(this.map).bindPopup('<p style="margin:0;font-weight:700;color:#ff4e7e;font-size:13px;font-family:inherit;">¡Tú estás aquí! 💖</p>');
     } else {
-      this.userMarker.setLngLat([lng, lat]);
+      this.userMarker.setLatLng([lat, lng]);
     }
 
     this.recalculateDistance();
@@ -146,24 +155,21 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
 
     if (!this.map) return;
 
-    if (!this.partnerMarker) {
-      const el = document.createElement('div');
-      el.style.backgroundImage = `url(${this.partnerAvatarUrl || '/assets/images/user.png'})`;
-      el.style.width = '46px';
-      el.style.height = '46px';
-      el.style.backgroundSize = 'cover';
-      el.style.backgroundPosition = 'center';
-      el.style.borderRadius = '50%';
-      el.style.border = '3px solid #3880ff'; // Azul brillante
-      el.style.boxShadow = '0 0 10px rgba(56, 128, 255, 0.7), 0 4px 8px rgba(0,0,0,0.3)';
-      el.style.cursor = 'pointer';
+    const html = `
+      <div style="background-image: url(${this.partnerAvatarUrl || '/assets/images/user.png'}); width:46px; height:46px; background-size:cover; background-position:center; border-radius:50%; border:3px solid #3880ff; box-shadow: 0 0 10px rgba(56, 128, 255, 0.7), 0 4px 8px rgba(0,0,0,0.3);"></div>
+    `;
 
-      this.partnerMarker = new mapboxgl.Marker(el)
-        .setLngLat([lng, lat])
-        .setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML(`<p style="margin:0;font-weight:700;color:#3880ff;font-size:13px;font-family:inherit;">${this.partnerName} está aquí 📍</p>`))
-        .addTo(this.map);
+    if (!this.partnerMarker) {
+      this.partnerMarker = L.marker([lat, lng], {
+        icon: L.divIcon({
+          html,
+          className: '',
+          iconSize: [46, 46],
+          iconAnchor: [23, 23]
+        })
+      }).addTo(this.map).bindPopup(`<p style="margin:0;font-weight:700;color:#3880ff;font-size:13px;font-family:inherit;">${this.partnerName} está aquí 📍</p>`);
     } else {
-      this.partnerMarker.setLngLat([lng, lat]);
+      this.partnerMarker.setLatLng([lat, lng]);
     }
 
     this.recalculateDistance();
@@ -207,57 +213,20 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
   // Ajustar la cámara del mapa para encuadrar perfectamente a ambos marcadores
   private fitBothMarkers() {
     if (this.map && this.currentLat && this.currentLng && this.partnerLat && this.partnerLng) {
-      const bounds = new mapboxgl.LngLatBounds();
-      bounds.extend([this.currentLng, this.currentLat]);
-      bounds.extend([this.partnerLng, this.partnerLat]);
-      this.map.fitBounds(bounds, { padding: 80, maxZoom: 15, duration: 1500 });
+      const bounds = L.latLngBounds([
+        [this.currentLat, this.currentLng],
+        [this.partnerLat, this.partnerLng]
+      ]);
+      this.map.fitBounds(bounds, { padding: [80, 80], maxZoom: 15, animate: true, duration: 1.5 });
     }
   }
 
-  private async getCoordinates(): Promise<{ latitude: number, longitude: number }> {
-    if (Capacitor.isNativePlatform()) {
-      const check = await Geolocation.checkPermissions();
-      if (check.location !== 'granted') {
-        const req = await Geolocation.requestPermissions();
-        if (req.location !== 'granted') {
-          throw new Error('Permisos de GPS denegados en el dispositivo.');
-        }
-      }
-      try {
-        console.log('Obteniendo ubicación nativa GPS de alta precisión...');
-        const pos = await Geolocation.getCurrentPosition({
-          enableHighAccuracy: true,
-          timeout: 6000
-        });
-        return { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
-      } catch (e) {
-        console.warn('GPS de alta precisión falló o demoró mucho, usando ubicación aproximada...');
-        const pos = await Geolocation.getCurrentPosition({
-          enableHighAccuracy: false,
-          timeout: 10000
-        });
-        return { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
-      }
-    } else {
-      return new Promise((resolve, reject) => {
-        if (!navigator.geolocation) {
-          reject(new Error('Geolocation no soportada por el navegador.'));
-        } else {
-          navigator.geolocation.getCurrentPosition(
-            (pos) => resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
-            (err) => {
-              console.warn('GPS web falló, intentando baja precisión...');
-              navigator.geolocation.getCurrentPosition(
-                (fallbackPos) => resolve({ latitude: fallbackPos.coords.latitude, longitude: fallbackPos.coords.longitude }),
-                (fallbackErr) => reject(fallbackErr),
-                { enableHighAccuracy: false, timeout: 10000 }
-              );
-            },
-            { enableHighAccuracy: true, timeout: 5000 }
-          );
-        }
-      });
+  private centerMapOnUser(lat: number, lng: number) {
+    if (!this.map) {
+      return;
     }
+      // panTo es mucho más estable y natural para el tracking continuo que flyTo
+      this.map.panTo(new L.LatLng(lat, lng), { animate: true, duration: 0.5 });
   }
 
   private async initMap(): Promise<void> {
@@ -265,22 +234,22 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
     let lat = -33.447487;
     let lng = -70.673676;
 
-    // Configurar Access Token oficial público de Mapbox
-    const tokenA = 'pk.eyJ1IjoiYmVsdG9sb3phIiwiYSI6';
-    const tokenB = 'ImNtcGM1Mmo2ajA0Z20ydW9vdHozOTdudmkifQ.GNb51ysedtj0o6lbYmHMuw';
-    mapboxgl.accessToken = tokenA + tokenB;
-
-    // Inicializamos el mapa con la ubicación por defecto primero
-    this.map = new mapboxgl.Map({
-      container: 'map',
-      style: 'mapbox://styles/mapbox/streets-v12',
-      center: [lng, lat],
+    // Inicializamos el mapa con la ubicación por defecto primero usando Leaflet y OpenStreetMap tiles
+    this.map = L.map('map', {
+      center: [lat, lng],
       zoom: 13,
-      attributionControl: false
+      zoomControl: false,
+      attributionControl: true
     });
 
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors',
+      maxZoom: 19,
+      tileSize: 256
+    }).addTo(this.map);
+
     setTimeout(() => {
-      this.map.resize();
+      this.map.invalidateSize();
     }, 500);
 
     // Cargar información inicial
@@ -293,10 +262,48 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
       this.fitBothMarkers();
     }
 
+    // 1. Configuramos las suscripciones de tracking y eventos ANTES de pedir la ubicación
+    this.geoErrorSubscription = this.geolocationService.error$.subscribe((message) => {
+      if (message) {
+        this.showToast(message, 'warning');
+      }
+    });
+
+    this.geoPositionSubscription = this.geolocationService.position$.subscribe(async (position) => {
+      if (!position) {
+        return;
+      }
+
+      this.updateUserMarker(position.latitude, position.longitude);
+      
+      // Centramos automáticamente de forma fluida
+      if (!this.isFirstLocationLock) {
+        this.map.flyTo([position.latitude, position.longitude], 17, { duration: 1.0 });
+        this.isFirstLocationLock = true;
+      } else {
+        this.centerMapOnUser(position.latitude, position.longitude);
+      }
+      
+      await this.supabaseSvc.updateUserLocation(position.latitude, position.longitude);
+    });
+
+    // 2. Suscribirse a la ubicación de la pareja en tiempo real
+    if (this.partnerId) {
+      console.log('Suscripción activa a la pareja:', this.partnerId);
+      this.partnerSubscription = this.supabaseSvc.subscribeToPartnerLocation(this.partnerId, (newLoc) => {
+        console.log('Nueva ubicación de pareja recibida:', newLoc);
+        if (newLoc.latitude && newLoc.longitude) {
+          this.updatePartnerMarker(newLoc.latitude, newLoc.longitude);
+          this.fitBothMarkers();
+        }
+      });
+    }
+
+    // 3. Intentamos obtener la posición inicial rápidamente
     try {
-      const coords = await this.getCoordinates();
-      lat = coords.latitude;
-      lng = coords.longitude;
+      const currentPosition = await this.geolocationService.getCurrentPosition();
+      lat = currentPosition.latitude;
+      lng = currentPosition.longitude;
 
       // Actualizar marcador local y guardar en base de datos
       this.updateUserMarker(lat, lng);
@@ -306,58 +313,7 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
       if (this.partnerLat && this.partnerLng) {
         this.fitBothMarkers();
       } else {
-        this.map.flyTo({
-          center: [lng, lat],
-          zoom: 15,
-          speed: 1.2,
-          curve: 1.4,
-          essential: true
-        });
-      }
-
-      // Suscribirse a la ubicación de la pareja en tiempo real
-      if (this.partnerId) {
-        console.log('Suscripción activa a la pareja:', this.partnerId);
-        this.partnerSubscription = this.supabaseSvc.subscribeToPartnerLocation(this.partnerId, (newLoc) => {
-          console.log('Nueva ubicación de pareja recibida:', newLoc);
-          if (newLoc.latitude && newLoc.longitude) {
-            this.updatePartnerMarker(newLoc.latitude, newLoc.longitude);
-            this.fitBothMarkers();
-          }
-        });
-      }
-
-      // Rastrear en tiempo real si el usuario se mueve
-      try {
-        if (Capacitor.isNativePlatform()) {
-          await Geolocation.watchPosition({
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 0
-          }, async (position, err) => {
-            if (position) {
-              const uLat = position.coords.latitude;
-              const uLng = position.coords.longitude;
-              this.updateUserMarker(uLat, uLng);
-              await this.supabaseSvc.updateUserLocation(uLat, uLng);
-            }
-          });
-        } else {
-          if (navigator.geolocation) {
-            navigator.geolocation.watchPosition(
-              async (position) => {
-                const uLat = position.coords.latitude;
-                const uLng = position.coords.longitude;
-                this.updateUserMarker(uLat, uLng);
-                await this.supabaseSvc.updateUserLocation(uLat, uLng);
-              },
-              (err) => console.warn('Rastreador web:', err),
-              { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-            );
-          }
-        }
-      } catch (watchErr) {
-        console.warn('No se pudo iniciar el seguimiento en tiempo real:', watchErr);
+        this.map.flyTo([lat, lng], 15, { duration: 1.2 });
       }
 
     } catch (error: any) {
@@ -378,16 +334,13 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
       }
 
       this.showToast(helpfulMsg, toastColor);
+    }
 
-      // Activar suscripción al partner incluso si falló nuestra geolocalización
-      if (this.partnerId) {
-        this.partnerSubscription = this.supabaseSvc.subscribeToPartnerLocation(this.partnerId, (newLoc) => {
-          if (newLoc.latitude && newLoc.longitude) {
-            this.updatePartnerMarker(newLoc.latitude, newLoc.longitude);
-            this.fitBothMarkers();
-          }
-        });
-      }
+    // 4. Iniciar seguimiento continuo SIEMPRE (incluso si la petición inicial falló)
+    try {
+      await this.geolocationService.startTracking();
+    } catch (err) {
+      console.warn('No se pudo iniciar el tracking constante:', err);
     }
   }
 
@@ -439,13 +392,9 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
         const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
         
         // 1. Obtener coordenadas actuales
-        const coordinates = await Geolocation.getCurrentPosition({
-          enableHighAccuracy: true,
-          timeout: 20000,
-          maximumAge: 0
-        });
-        const lat = coordinates.coords.latitude;
-        const lng = coordinates.coords.longitude;
+        const currentLocation = await this.geolocationService.getCurrentPosition();
+        const lat = currentLocation.latitude;
+        const lng = currentLocation.longitude;
 
         // Convertir el audio a Base64 para mandarlo al backend
         const base64Audio = await new Promise<string>((resolve, reject) => {

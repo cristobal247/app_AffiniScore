@@ -1,0 +1,31 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Recuerdos & Galería</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div style="padding: 16px;">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+      <ion-icon name="images-outline"></ion-icon>
+      <h3 style="margin:0;">Galería de Recuerdos</h3>
+      <div style="flex:1"></div>
+      <label style="display:inline-flex; align-items:center; gap:8px; cursor:pointer;">
+        <input type="file" accept="image/*" (change)="onFileSelected($event)" style="display:none" />
+        <ion-button size="small">
+          <ion-icon name="cloud-upload-outline"></ion-icon>
+          Subir imagen
+        </ion-button>
+      </label>
+    </div>
+
+    <div class="grid">
+      <div *ngIf="images.length === 0" style="color: #7e7e7e;">No hay recuerdos disponibles.</div>
+      <div class="grid-item" *ngFor="let img of images">
+        <ion-card>
+          <img [src]="img.publicUrl" alt="recuerdo" />
+        </ion-card>
+      </div>
+    </div>
+  </div>
+</ion-content>

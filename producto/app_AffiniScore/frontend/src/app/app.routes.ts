@@ -82,6 +82,11 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'memories',
+    loadComponent: () => import('./pages/memories/memories.page').then(m => m.MemoriesPage),
+    canActivate: [authGuard]
+  },
+  {
     path: '',
     redirectTo: 'welcome',
     pathMatch: 'full',

@@ -73,6 +73,13 @@ export class HomePage implements OnInit {
 
   async ngOnInit() {
     await this.cargarDatosAfinidad();
+
+    // Revisar si cambió el mes al iniciar la app y rotar registros si aplica
+    try {
+      await this.supabaseSvc.checkAndRotateMonthlyAffinity();
+    } catch (e) {
+      console.warn('Error al chequear rotación mensual:', e);
+    }
     
     // Suscribirse a los cambios de puntos locales
     this.pointsSub = this.supabaseSvc.pointsUpdated.subscribe(() => {
@@ -141,6 +148,12 @@ export class HomePage implements OnInit {
         
         // Progreso hacia la meta SEMANAL
         this.porcentajeAfinidad = Math.min(100, Math.round((this.puntosSemanales / this.metaSemanal) * 100));
+        // Guardamos snapshot en el perfil para uso en rotación mensual
+        try {
+          await this.supabaseSvc.updateMonthlySnapshot(this.porcentajeAfinidad);
+        } catch (e) {
+          console.warn('Error guardando snapshot mensual:', e);
+        }
         
         this.userAvatarUrl = data.avatar_url || null;
       }
