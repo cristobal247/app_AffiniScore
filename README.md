@@ -39,3 +39,42 @@ Para dar cumplimiento a las normativas de auditoría, este repositorio se divide
 * **3. Módulo de Gestión y Reportería (CRUD):** Login, vinculación de cuentas por código QR, panel de dashboard con el índice de afinidad y exportación de reportes de la relación.
 * **4. Módulo de Mapa y Seguridad:** Integración de Mapbox para ubicación en tiempo real, botón de pánico S.O.S y activación de geofencing para detectar "Tiempo de Calidad" al estar físicamente juntos.
 * **5. Validación Multimedia IA:** Lógica para asignar puntos de forma automática al analizar el nivel de bienestar en fotos o evidencias de salidas de la pareja.
+
+## ⚙️ Ejecución local completa
+
+### Requisitos previos
+* Windows 10/11
+* Python 3.11+ / 3.13
+* Node.js 18+ y npm
+* Git
+
+### 1) Arrancar backend
+```powershell
+cd producto\app_AffiniScore\backend
+.venv\Scripts\activate.bat
+python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
+
+### 2) Arrancar frontend
+```powershell
+cd producto\app_AffiniScore\frontend
+npm install
+npm run start -- --no-open --port 4201
+```
+
+### 3) Ejecutar todo con un solo script
+Desde la raíz del repositorio, ejecuta:
+```powershell
+start_local.bat
+```
+Esto abrirá una ventana para el backend y otra para el frontend.
+
+### 4) Credenciales de Supabase
+El archivo local de configuración `producto/app_AffiniScore/frontend/src/environments/environment.ts` está en `.gitignore`, por lo que no se sube a GitHub.
+El script `start_local.bat` escribe automáticamente las credenciales de Supabase en ese archivo local antes de iniciar el frontend.
+
+### URL de acceso
+* Frontend: `http://localhost:4201`
+* Backend: `http://localhost:8000`
+
+---
