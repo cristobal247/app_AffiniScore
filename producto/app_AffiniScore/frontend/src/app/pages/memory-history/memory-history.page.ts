@@ -118,7 +118,7 @@ export class MemoryHistoryPage implements OnInit, OnDestroy {
     this.partnershipId = partnership.id;
     this.roundKey = this.buildRoundKey();
 
-    this.channel = this.supabaseSvc.createHistoricMemoryChannel(this.partnershipId)
+    this.channel = this.supabaseSvc.createHistoricMemoryChannel(partnership.id)
       .on('broadcast', { event: 'memory-selected' }, ({ payload }: { payload: HistoricMemoryRound }) => {
         if (payload?.memory) {
           this.syncRound(payload, false);
@@ -131,7 +131,7 @@ export class MemoryHistoryPage implements OnInit, OnDestroy {
       })
       .subscribe();
 
-    const roundRes = await this.supabaseSvc.getHistoricMemoryRound(this.partnershipId, this.roundKey);
+    const roundRes = await this.supabaseSvc.getHistoricMemoryRound(partnership.id, this.roundKey);
     if (roundRes.data) {
       this.syncRound(roundRes.data, true);
     } else {

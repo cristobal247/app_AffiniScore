@@ -41,7 +41,7 @@ export class ChatPage implements OnDestroy {
     private groqSvc: GroqService,
     private menuCtrl: MenuController
   ) {
-    addIcons({ sendOutline, arrowBackOutline, videocam, call, ellipsisVertical, happyOutline, cameraOutline, send, sparkles, ellipsisHorizontal, chevronBackOutline, person, addCircleOutline: 'add-circle-outline', chatbubbleOutline: 'chatbubble-outline' });
+    addIcons({ sendOutline, arrowBackOutline, videocam, call, ellipsisVertical, happyOutline, cameraOutline, 'camera-outline': cameraOutline, send, sparkles, ellipsisHorizontal, chevronBackOutline, person, addCircleOutline: 'add-circle-outline', chatbubbleOutline: 'chatbubble-outline' });
   }
 
   userAvatarUrl: string | null = null;
@@ -116,9 +116,27 @@ export class ChatPage implements OnDestroy {
     // Limpiar suscripciones si las hubiera
   }
 
-  async sendMessage() {
+  async onFileSelected(event: any) {
+    const file = event.target?.files?.[0];
+    if (!file) return;
+
+    this.isLoading = true;
+    const res = await this.supabaseSvc.uploadChatImage(file);
+    this.isLoading = false;
+
+    if (res.url) {
+      await this.sendMessage(res.url);
+    } else {
+      console.error('Error al subir la imagen:', res.error);
+      alert('No se pudo subir la foto. Inténtalo de nuevo.');
+    }
+  }
+
+  async sendMessage(imageUrl?: string) {
     const trimmed = this.newMessage.trim();
-    if (!trimmed) return;
+    if (!trimmed && !imageUrl) return;
+
+    const displayMsg = trimmed || '📷 Foto';
 
     // UI optimista
     const tempMsg: ChatMessage = {
@@ -126,7 +144,8 @@ export class ChatPage implements OnDestroy {
       room_id: this.roomId,
       sender_id: this.currentUserId,
       sender_type: 'USER',
-      message: trimmed,
+      message: displayMsg,
+      metadata: imageUrl ? { image_url: imageUrl } : undefined,
       created_at: new Date().toISOString()
     };
     
@@ -137,11 +156,11 @@ export class ChatPage implements OnDestroy {
     this.isLoading = true;
     
     // Guardar el mensaje del usuario en Supabase de forma asíncrona (no bloquea UI)
-    const sendUserMsgPromise = this.supabaseSvc.sendMessage(this.roomId, trimmed, 'USER');
+    const sendUserMsgPromise = this.supabaseSvc.sendMessage(this.roomId, displayMsg, 'USER', imageUrl);
 
-    // Auto-título si es el primer mensaje real del usuario (solo tenemos 2 mensajes en memoria: welcome + este)
+    // Auto-título si es el primer mensaje real del usuario
     if (this.messages.length === 2) {
-      this.groqSvc.generateTitle(trimmed).then(async (title) => {
+      this.groqSvc.generateTitle(displayMsg).then(async (title) => {
         await this.supabaseSvc.updateSessionTitle(this.roomId, title);
         // Recargar la lista de la barra lateral para ver el nuevo título
         const listRes = await this.supabaseSvc.getAiSessions();
@@ -150,7 +169,13 @@ export class ChatPage implements OnDestroy {
     }
     
     // Enviamos a Groq con el nombre del usuario
-    const botResponseText = await this.groqSvc.sendMessage(trimmed, this.currentUserName);
+    let groqPrompt = displayMsg;
+    if (imageUrl) {
+      groqPrompt = trimmed 
+        ? `[El usuario ha adjuntado una foto] ${trimmed}`
+        : 'He compartido una foto contigo.';
+    }
+    const botResponseText = await this.groqSvc.sendMessage(groqPrompt, this.currentUserName);
     
     const botMsg: ChatMessage = {
       id: Math.random().toString(),

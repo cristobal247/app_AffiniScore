@@ -159,12 +159,16 @@ async def process_group_chat_3_message(
         emisor_name = profile_res.data[0].get("full_name", "Usuario") if profile_res.data else "Usuario"
         
         # 2. Guardar mensaje del usuario
+        user_metadata = {"emisor": emisor_name, "canal": 3}
+        if payload.image_url:
+            user_metadata["image_url"] = payload.image_url
+
         user_msg_data = {
             "room_id": str(partnership_id),
             "sender_id": id_usuario,
             "sender_type": "USER",
             "message": payload.message,
-            "metadata": {"emisor": emisor_name, "canal": 3},
+            "metadata": user_metadata,
             "created_at": datetime.utcnow().isoformat()
         }
         user_res = supabase.table("chat_messages").insert(user_msg_data).execute()

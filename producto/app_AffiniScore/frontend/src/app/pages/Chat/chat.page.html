@@ -55,7 +55,8 @@
       </div>
 
       <div class="message-bubble">
-        <p>{{ msg.message }}</p>
+        <img *ngIf="msg.metadata?.image_url" [src]="msg.metadata.image_url" style="max-width: 100%; max-height: 250px; border-radius: 12px; margin-bottom: 8px; display: block; object-fit: cover;" />
+        <p *ngIf="msg.message !== '📷 Foto'">{{ msg.message }}</p>
         <span class="message-time">{{ msg.created_at | date:'shortTime' }}</span>
       </div>
 
@@ -75,7 +76,7 @@
     </div>
   </div>
 </ion-content>
-
+ 
 <ion-footer class="ion-no-border">
   <ion-toolbar style="--background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); --border-width: 0; padding-bottom: 12px; padding-top: 8px;">
     <div class="input-wrapper-container" style="display: flex; align-items: flex-end; gap: 10px; width: 100%; padding: 0 16px;">
@@ -88,6 +89,12 @@
           (keyup.enter)="sendMessage()"
           style="--background: transparent; --padding-start: 0; font-size: 15px; --color: #3a3a3a; font-weight: 500;"
         ></ion-input>
+        <!-- File Input -->
+        <input type="file" #fileInput (change)="onFileSelected($event)" accept="image/*" style="display: none;" />
+        <!-- Camera Button -->
+        <ion-button fill="clear" size="small" (click)="fileInput.click()" style="margin: 0; --padding-start: 4px; --padding-end: 4px; --color: #7e7e7e; height: 36px;">
+          <ion-icon name="camera-outline" style="font-size: 22px;"></ion-icon>
+        </ion-button>
       </div>
       <div class="send-btn-container" (click)="sendMessage()" style="background: linear-gradient(135deg, #df5b61 0%, #bd343a 100%); border-radius: 50%; width: 44px; height: 44px; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 10px rgba(189, 52, 58, 0.3); flex-shrink: 0;">
         <ion-icon name="send" style="color: white; font-size: 20px;"></ion-icon>

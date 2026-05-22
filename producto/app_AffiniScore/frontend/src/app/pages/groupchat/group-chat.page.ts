@@ -10,7 +10,7 @@ import {
 import { SupabaseService, ChatMessage } from '../../services/supabase';
 import { environment } from '../../../environments/environment';
 import { addIcons } from 'ionicons';
-import { send, sparkles, ellipsisHorizontal, chevronBackOutline, person } from 'ionicons/icons';
+import { send, sparkles, ellipsisHorizontal, chevronBackOutline, person, cameraOutline } from 'ionicons/icons';
 
 @Component({
   selector: 'app-group-chat',
@@ -41,7 +41,7 @@ export class GroupChatPage implements OnInit, OnDestroy {
     private zone: NgZone,
     private cdr: ChangeDetectorRef
   ) {
-    addIcons({ send, sparkles, ellipsisHorizontal, chevronBackOutline, person });
+    addIcons({ send, sparkles, ellipsisHorizontal, chevronBackOutline, person, 'camera-outline': cameraOutline });
   }
 
   async ngOnInit() {
@@ -127,18 +127,39 @@ export class GroupChatPage implements OnInit, OnDestroy {
     }
   }
 
-  async sendMessage() {
+  async onFileSelected(event: any) {
+    const file = event.target?.files?.[0];
+    if (!file) return;
+
+    this.isLoading = true;
+    const res = await this.supabaseSvc.uploadChatImage(file);
+    this.isLoading = false;
+
+    if (res.url) {
+      await this.sendMessage(res.url);
+    } else {
+      console.error('Error al subir la imagen:', res.error);
+      alert('No se pudo subir la foto. Inténtalo de nuevo.');
+    }
+  }
+
+  async sendMessage(imageUrl?: string) {
     const trimmed = this.newMessage.trim();
-    if (!trimmed || !this.partnershipId) return;
+    if (!trimmed && !imageUrl) return;
+
+    const displayMsg = trimmed || '📷 Foto';
 
     const tempMsg: ChatMessage = {
       id: Math.random().toString(),
       room_id: this.partnershipId,
       sender_id: this.currentUserId,
       sender_type: 'USER',
-      message: trimmed,
+      message: displayMsg,
       created_at: new Date().toISOString(),
-      metadata: { emisor: 'Tú' }
+      metadata: { 
+        emisor: 'Tú',
+        image_url: imageUrl || undefined
+      }
     };
     
     this.messages.push(tempMsg);
@@ -152,7 +173,12 @@ export class GroupChatPage implements OnInit, OnDestroy {
     console.log('DEBUG: Enviando mensaje a URL:', url);
     console.log('DEBUG: Partnership ID:', this.partnershipId);
 
-    this.http.post<any>(url, { message: trimmed }).subscribe({
+    const payload = { 
+      message: displayMsg,
+      image_url: imageUrl || null
+    };
+
+    this.http.post<any>(url, payload).subscribe({
       next: (res) => {
         console.log('DEBUG: Respuesta recibida:', res);
         this.zone.run(() => {
