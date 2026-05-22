@@ -65,6 +65,10 @@ export const routes: Routes = [
         loadComponent: () => import('./quick-interaction/quick-interaction.page').then(m => m.QuickInteractionPage)
       },
       {
+        path: 'memory-history',
+        loadComponent: () => import('./pages/memory-history/memory-history.page').then(m => m.MemoryHistoryPage)
+      },
+      {
         path: 'retos',
         redirectTo: 'actions',
         pathMatch: 'full'
@@ -129,6 +133,11 @@ export const routes: Routes = [
   {
     path: 'quick-interaction',
     redirectTo: 'tabs/quick-interaction',
+    pathMatch: 'full'
+  },
+  {
+    path: 'memory-history',
+    redirectTo: 'tabs/memory-history',
     pathMatch: 'full'
   },
   {

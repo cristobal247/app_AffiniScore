@@ -45,6 +45,36 @@ export interface DisconnectChallenge {
   image?: string;
 }
 
+export interface HistoricMemoryImage {
+  id: string;
+  image_url: string;
+  location_name?: string;
+  created_at?: string;
+  emotional_score?: number;
+  partnership_id?: string;
+  user_id?: string;
+  file_name?: string;
+}
+
+export interface HistoricMemoryRound {
+  partnership_id: string;
+  round_key: string;
+  started_at: string;
+  memory: HistoricMemoryImage;
+  count: number;
+}
+
+export interface CollageMemoryItem {
+  id: string;
+  image_url: string;
+  location_name?: string;
+  created_at?: string;
+  emotional_score?: number;
+  partnership_id?: string;
+  user_id?: string;
+  title?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -651,6 +681,107 @@ export class SupabaseService {
     } catch (e) {
       return { data: [], error: e };
     }
+  }
+
+  async getCollageMemories(partnershipId: string): Promise<{ data: CollageMemoryItem[]; error?: any }> {
+    const user = await this.getCurrentUser();
+    if (!user) return { data: [], error: 'Usuario no autenticado' };
+
+    const { data: memoriesData, error } = await this.supabase
+      .from('memories')
+      .select('*')
+      .or(`partnership_id.eq.${partnershipId},user_id.eq.${user.id}`);
+
+    const items: CollageMemoryItem[] = [];
+
+    if (memoriesData) {
+      for (const row of memoriesData as any[]) {
+        const imageUrl = row.public_url || row.image_url || row.url || '';
+        const emotionalScore = typeof row.emotional_score === 'number' ? row.emotional_score : null;
+        const wasChallengeValidated = Boolean(row.challenge_completed || row.challenge_id || row.ai_validated);
+
+        if (!imageUrl) continue;
+        if (!(emotionalScore !== null && emotionalScore > 0) && !wasChallengeValidated) continue;
+
+        items.push({
+          id: row.id || row.file_name || imageUrl,
+          image_url: imageUrl,
+          location_name: row.location_name,
+          created_at: row.created_at,
+          emotional_score: row.emotional_score,
+          partnership_id: row.partnership_id,
+          user_id: row.user_id,
+          title: row.location_name || 'Recuerdo validado',
+        });
+      }
+    }
+
+    items.sort((left, right) => {
+      const leftDate = left.created_at ? new Date(left.created_at).getTime() : 0;
+      const rightDate = right.created_at ? new Date(right.created_at).getTime() : 0;
+      return rightDate - leftDate;
+    });
+
+    return { data: items, error };
+  }
+
+  async getHistoricMemoryRound(partnershipId: string, roundKey?: string): Promise<{ data?: HistoricMemoryRound; error?: any }> {
+    const user = await this.getCurrentUser();
+    if (!user) return { error: 'Usuario no autenticado' };
+
+    const { data: session } = await this.supabase.auth.getSession();
+    const tokenHeader = session?.session?.access_token || '';
+
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${tokenHeader}`,
+      'Content-Type': 'application/json'
+    });
+
+    try {
+      const response = await firstValueFrom(
+        this.http.post<HistoricMemoryRound>(`${this.apiUrl}/api/v1/memory-games/round`, {
+          partnership_id: partnershipId,
+          user_id: user.id,
+          round_key: roundKey
+        }, { headers })
+      );
+
+      return { data: response };
+    } catch (err: any) {
+      return { error: err.error?.detail || err.message || 'No se pudo obtener un recuerdo aleatorio' };
+    }
+  }
+
+  async completeHistoricMemoryRound(partnershipId: string, memoryId: string): Promise<{ success: boolean; error?: any }> {
+    const user = await this.getCurrentUser();
+    if (!user) return { success: false, error: 'Usuario no autenticado' };
+
+    try {
+      const { data: session } = await this.supabase.auth.getSession();
+      const tokenHeader = session?.session?.access_token || '';
+
+      const headers = new HttpHeaders({
+        'Authorization': `Bearer ${tokenHeader}`,
+        'Content-Type': 'application/json'
+      });
+
+      await firstValueFrom(
+        this.http.post<any>(`${this.apiUrl}/api/v1/memory-games/complete`, {
+          partnership_id: partnershipId,
+          user_id: user.id,
+          memory_id: memoryId
+        }, { headers })
+      );
+
+      this.pointsUpdated.next();
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err.error?.detail || err.message || 'No se pudo completar el recuerdo' };
+    }
+  }
+
+  createHistoricMemoryChannel(partnershipId: string) {
+    return this.supabase.channel(`memory-history-${partnershipId}`);
   }
 
   // Subir imagen de avatar al Storage (bucket 'avatars')
