@@ -1,6 +1,7 @@
+<!-- El mapa que ocupa toda la pantalla (fuera de ion-content para evitar conflictos de renderizado) -->
+<div id="map"></div>
+
 <ion-content class="map-page" [forceOverscroll]="false">
-  <!-- El mapa que ocupa toda la pantalla -->
-  <div id="map"></div>
 
   <!-- Capas flotantes sobre el mapa -->
   
@@ -33,9 +34,9 @@
       class="sos-floating-btn" 
       [class.recording]="isRecording"
       type="button"
-      (click)="handleSOS()">
-      <ion-icon name="warning-outline" *ngIf="!isRecording"></ion-icon>
-      <span>{{ isRecording ? '🛑' : 'SOS' }}</span>
+      (click)="handleSOS()"
+      title="Alerta SOS">
+      <ion-icon [name]="isRecording ? 'square' : 'warning-outline'"></ion-icon>
     </button>
   </div>
 
@@ -50,11 +51,143 @@
     <div class="avatar-pill-btn partner-avatar-pill" (click)="centrarEnPareja()" title="Centrar en mi pareja">
       <img [src]="partnerAvatarUrl || '/assets/images/user.png'" alt="Pareja" />
     </div>
-    
-    <!-- Icono decorativo / acción de chispa en el pill -->
-    <div class="pill-spark-icon">
-      <ion-icon name="sparkles-outline"></ion-icon>
-    </div>
   </div>
+
+  <!-- Modal de Registro de Lugar Especial con Autocompletado de Mapbox -->
+  <ion-modal [isOpen]="isModalOpen" (didDismiss)="onModalDismiss()" [initialBreakpoint]="0.75" [breakpoints]="[0, 0.5, 0.75, 1.0]" class="premium-search-modal">
+    <ng-template>
+      <ion-header class="ion-no-border">
+        <ion-toolbar class="modal-toolbar">
+          <ion-title style="color: #ff4e7e; font-weight: 700; text-align: center;">Lugares Especiales 💖</ion-title>
+          <ion-buttons slot="end">
+            <ion-button (click)="closeModal()" style="font-weight: 600; color: #666; --color: #666;">Cerrar</ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+        <ion-segment [value]="activeSegment" (ionChange)="activeSegment = $any($event).detail.value" class="premium-segment">
+          <ion-segment-button value="registrar">
+            <ion-label>Registrar</ion-label>
+          </ion-segment-button>
+          <ion-segment-button value="historial">
+            <ion-label>Nuestros Recuerdos</ion-label>
+          </ion-segment-button>
+        </ion-segment>
+      </ion-header>
+      
+      <ion-content class="modal-content ion-padding">
+        <div class="modal-body-wrapper">
+          <!-- Segmento de Registro -->
+          <div *ngIf="activeSegment === 'registrar'">
+            <!-- Input para el nombre del lugar -->
+            <div class="input-group">
+              <label class="input-label">Nombre del lugar especial</label>
+              <ion-input 
+                placeholder="Ej. Primera cita, Cafetería favorita, Nuestro parque" 
+                [(ngModel)]="nuevoLugarNombre"
+                class="premium-input">
+              </ion-input>
+            </div>
+
+            <!-- Sugerencias de lugares predefinidos -->
+            <div class="suggestions-chips-container">
+              <span class="suggestions-chips-title">¿No se acuerdan? Sugerencias:</span>
+              <div class="chips-flex">
+                <div 
+                  *ngFor="let preset of predefinidos" 
+                  class="suggestion-chip" 
+                  (click)="seleccionarPredefinido(preset)">
+                  {{ preset }}
+                </div>
+              </div>
+            </div>
+
+            <!-- Searchbar para autocompletado de Mapbox -->
+            <div class="input-group" style="margin-top: 16px;">
+              <label class="input-label">Busca la dirección exacta en el mapa</label>
+              <ion-searchbar 
+                placeholder="Escribe una dirección..." 
+                (ionInput)="buscarDireccion($event)" 
+                [value]="searchQuery"
+                debounce="400"
+                class="premium-searchbar"
+                cancel-button-icon="close-outline"
+                show-cancel-button="focus">
+              </ion-searchbar>
+            </div>
+
+            <!-- Spinner de Carga -->
+            <div *ngIf="isLoadingSuggestions" class="spinner-container">
+              <ion-spinner name="crescent" color="primary"></ion-spinner>
+              <p>Buscando direcciones...</p>
+            </div>
+
+            <!-- Lista de sugerencias devueltas por Mapbox -->
+            <ion-list *ngIf="suggestions.length > 0 && !isLoadingSuggestions" class="suggestions-list">
+              <ion-item *ngFor="let suggestion of suggestions" (click)="seleccionarSugerencia(suggestion)" button detail="false" class="suggestion-item">
+                <ion-icon name="location-outline" slot="start" class="suggestion-icon"></ion-icon>
+                <ion-label>
+                  <h2>{{ suggestion.text }}</h2>
+                  <p style="color: #666;">{{ suggestion.place_name }}</p>
+                </ion-label>
+              </ion-item>
+            </ion-list>
+
+            <!-- Dirección seleccionada actualmente -->
+            <div *ngIf="direccionSeleccionada" class="selected-address-box">
+              <ion-icon name="checkmark-circle-outline" color="success"></ion-icon>
+              <div class="address-details">
+                <strong>Dirección Seleccionada:</strong>
+                <p>{{ direccionSeleccionada }}</p>
+              </div>
+            </div>
+
+            <!-- Botón de Confirmación -->
+            <div class="modal-actions-container">
+              <ion-button 
+                expand="block" 
+                class="btn-registrar-lugar" 
+                [disabled]="!nuevoLugarNombre || !selectedCoordinates"
+                (click)="confirmarRegistroLugar()">
+                Registrar Lugar Especial
+              </ion-button>
+            </div>
+          </div>
+
+          <!-- Segmento de Recuerdos / Historial -->
+          <div *ngIf="activeSegment === 'historial'">
+            <div *ngIf="registeredGeozones.length === 0" class="no-memories-container">
+              <p class="no-memories-text">Aún no tienen recuerdos registrados.<br>¡Registren su primer lugar especial en la otra pestaña! 💖</p>
+            </div>
+
+            <div *ngIf="registeredGeozones.length > 0" class="memories-grid">
+              <div *ngFor="let zone of registeredGeozones" class="geozone-history-card">
+                <!-- Mini mapa estático de Mapbox -->
+                <div class="geozone-map-snapshot" (click)="verGeozonaEnMapa(zone)">
+                  <img [src]="getStaticMapUrl(zone.longitude, zone.latitude)" alt="{{ zone.name }}" />
+                  <div class="heart-badge">💖</div>
+                </div>
+                <!-- Información del lugar -->
+                <div class="geozone-card-details">
+                  <h3 class="geozone-card-title">{{ zone.name }}</h3>
+                  <p class="geozone-card-coords">
+                    <ion-icon name="location-outline"></ion-icon>
+                    Lat: {{ zone.latitude | number:'1.4-4' }}, Lng: {{ zone.longitude | number:'1.4-4' }}
+                  </p>
+                </div>
+                <!-- Acciones -->
+                <div class="geozone-card-actions">
+                  <ion-button fill="clear" size="small" class="btn-ver-mapa" (click)="verGeozonaEnMapa(zone)">
+                    Ver en mapa
+                  </ion-button>
+                  <ion-button fill="clear" size="small" color="danger" class="btn-eliminar-geozone" (click)="eliminarGeozona(zone)">
+                    <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+                  </ion-button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
 
 </ion-content>

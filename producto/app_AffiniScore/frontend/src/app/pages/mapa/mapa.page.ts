@@ -1,5 +1,4 @@
 import { Component, AfterViewInit, OnInit, OnDestroy } from '@angular/core';
-import * as L from 'leaflet';
 import { 
   IonContent, 
   IonHeader, 
@@ -10,7 +9,17 @@ import {
   IonIcon,
   ToastController,
   LoadingController,
-  AlertController
+  AlertController,
+  IonModal,
+  IonSearchbar,
+  IonList,
+  IonItem,
+  IonLabel,
+  IonSpinner,
+  IonInput,
+  IonTitle,
+  IonSegment,
+  IonSegmentButton
 } from '@ionic/angular/standalone';
 import { SupabaseService } from '../../services/supabase';
 import { GeolocationService } from '../../services/geolocation.service';
@@ -18,7 +27,11 @@ import { Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { addIcons } from 'ionicons';
-import { addCircleOutline, cogOutline, warningOutline, sparklesOutline } from 'ionicons/icons';
+import { addCircleOutline, cogOutline, warningOutline, square, locationOutline, checkmarkCircleOutline, closeOutline, trashOutline } from 'ionicons/icons';
+import { environment } from '../../../environments/environment';
+import { FormsModule } from '@angular/forms';
+
+declare var mapboxgl: any;
 
 @Component({
   selector: 'app-mapa',
@@ -33,8 +46,19 @@ import { addCircleOutline, cogOutline, warningOutline, sparklesOutline } from 'i
     IonAvatar,
     IonButton,
     IonIcon,
+    IonModal,
+    IonSearchbar,
+    IonList,
+    IonItem,
+    IonLabel,
+    IonSpinner,
+    IonInput,
+    IonTitle,
+    IonSegment,
+    IonSegmentButton,
     CommonModule,
-    RouterModule
+    RouterModule,
+    FormsModule
   ]
 })
 export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
@@ -70,6 +94,28 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
   private geoPositionSubscription: Subscription | null = null;
   private geoErrorSubscription: Subscription | null = null;
 
+  // Variables para Modal de Geocodificación Mapbox Autocomplete
+  isModalOpen: boolean = false;
+  nuevoLugarNombre: string = '';
+  searchQuery: string = '';
+  suggestions: any[] = [];
+  isLoadingSuggestions: boolean = false;
+  direccionSeleccionada: string = '';
+  selectedCoordinates: [number, number] | null = null; // [lng, lat]
+
+  // Nuevas variables para "Lugares Especiales" (Recuerdos)
+  activeSegment: 'registrar' | 'historial' = 'registrar';
+  predefinidos: string[] = [
+    'Lugar del primer beso 💋',
+    'Donde nos conocimos 🤝',
+    'Primera cita ☕',
+    'Propuesta de noviazgo 💍',
+    'Cena especial 🍷',
+    'Nuestra cafetería 🥞'
+  ];
+  registeredGeozones: any[] = [];
+  private geozoneMarkers: Map<string, any> = new Map();
+
   constructor(
     private supabaseSvc: SupabaseService,
     private geolocationService: GeolocationService,
@@ -77,7 +123,16 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
     private loadingCtrl: LoadingController,
     private alertCtrl: AlertController
   ) {
-    addIcons({ addCircleOutline, cogOutline, warningOutline, sparklesOutline });
+    addIcons({ 
+      addCircleOutline, 
+      cogOutline, 
+      warningOutline, 
+      square, 
+      locationOutline, 
+      checkmarkCircleOutline, 
+      closeOutline,
+      trashOutline
+    });
   }
 
   async ngOnInit() {
@@ -86,6 +141,12 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
 
   async ionViewWillEnter() {
     await this.loadUserProfile();
+  }
+
+  ionViewDidEnter() {
+    if (this.map) {
+      this.map.resize();
+    }
   }
 
   ngAfterViewInit() {
@@ -134,21 +195,26 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
 
     if (!this.map) return;
 
-    const html = `
-      <div style="background-image: url(${this.userAvatarUrl || '/assets/images/user.png'}); width:46px; height:46px; background-size:cover; background-position:center; border-radius:50%; border:3px solid #ff4e7e; box-shadow: 0 0 10px rgba(255, 78, 126, 0.7), 0 4px 8px rgba(0,0,0,0.3);"></div>
-    `;
-
     if (!this.userMarker) {
-      this.userMarker = L.marker([lat, lng], {
-        icon: L.divIcon({
-          html,
-          className: '',
-          iconSize: [46, 46],
-          iconAnchor: [23, 23]
-        })
-      }).addTo(this.map).bindPopup('<p style="margin:0;font-weight:700;color:#ff4e7e;font-size:13px;font-family:inherit;">¡Tú estás aquí! 💖</p>');
+      const el = document.createElement('div');
+      el.style.backgroundImage = `url(${this.userAvatarUrl || '/assets/images/user.png'})`;
+      el.style.width = '46px';
+      el.style.height = '46px';
+      el.style.backgroundSize = 'cover';
+      el.style.backgroundPosition = 'center';
+      el.style.borderRadius = '50%';
+      el.style.border = '3px solid #ff4e7e';
+      el.style.boxShadow = '0 0 10px rgba(255, 78, 126, 0.7), 0 4px 8px rgba(0,0,0,0.3)';
+      el.style.cursor = 'pointer';
+
+      const popup = new mapboxgl.Popup({ offset: 25 }).setHTML('<p style="margin:0;font-weight:700;color:#ff4e7e;font-size:13px;font-family:inherit;text-align:center;">¡Tú estás aquí! 💖</p>');
+
+      this.userMarker = new mapboxgl.Marker(el)
+        .setLngLat([lng, lat])
+        .setPopup(popup)
+        .addTo(this.map);
     } else {
-      this.userMarker.setLatLng([lat, lng]);
+      this.userMarker.setLngLat([lng, lat]);
     }
 
     this.recalculateDistance();
@@ -161,21 +227,26 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
 
     if (!this.map) return;
 
-    const html = `
-      <div style="background-image: url(${this.partnerAvatarUrl || '/assets/images/user.png'}); width:46px; height:46px; background-size:cover; background-position:center; border-radius:50%; border:3px solid #3880ff; box-shadow: 0 0 10px rgba(56, 128, 255, 0.7), 0 4px 8px rgba(0,0,0,0.3);"></div>
-    `;
-
     if (!this.partnerMarker) {
-      this.partnerMarker = L.marker([lat, lng], {
-        icon: L.divIcon({
-          html,
-          className: '',
-          iconSize: [46, 46],
-          iconAnchor: [23, 23]
-        })
-      }).addTo(this.map).bindPopup(`<p style="margin:0;font-weight:700;color:#3880ff;font-size:13px;font-family:inherit;">${this.partnerName} está aquí 📍</p>`);
+      const el = document.createElement('div');
+      el.style.backgroundImage = `url(${this.partnerAvatarUrl || '/assets/images/user.png'})`;
+      el.style.width = '46px';
+      el.style.height = '46px';
+      el.style.backgroundSize = 'cover';
+      el.style.backgroundPosition = 'center';
+      el.style.borderRadius = '50%';
+      el.style.border = '3px solid #3880ff';
+      el.style.boxShadow = '0 0 10px rgba(56, 128, 255, 0.7), 0 4px 8px rgba(0,0,0,0.3)';
+      el.style.cursor = 'pointer';
+
+      const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`<p style="margin:0;font-weight:700;color:#3880ff;font-size:13px;font-family:inherit;text-align:center;">${this.partnerName} está aquí 📍</p>`);
+
+      this.partnerMarker = new mapboxgl.Marker(el)
+        .setLngLat([lng, lat])
+        .setPopup(popup)
+        .addTo(this.map);
     } else {
-      this.partnerMarker.setLatLng([lat, lng]);
+      this.partnerMarker.setLngLat([lng, lat]);
     }
 
     this.recalculateDistance();
@@ -219,11 +290,10 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
   // Ajustar la cámara del mapa para encuadrar perfectamente a ambos marcadores
   private fitBothMarkers() {
     if (this.map && this.currentLat && this.currentLng && this.partnerLat && this.partnerLng) {
-      const bounds = L.latLngBounds([
-        [this.currentLat, this.currentLng],
-        [this.partnerLat, this.partnerLng]
-      ]);
-      this.map.fitBounds(bounds, { padding: [80, 80], maxZoom: 15, animate: true, duration: 1.5 });
+      const bounds = new mapboxgl.LngLatBounds();
+      bounds.extend([this.currentLng, this.currentLat]);
+      bounds.extend([this.partnerLng, this.partnerLat]);
+      this.map.fitBounds(bounds, { padding: 80, maxZoom: 15, duration: 1500 });
     }
   }
 
@@ -231,8 +301,7 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
     if (!this.map) {
       return;
     }
-      // panTo es mucho más estable y natural para el tracking continuo que flyTo
-      this.map.panTo(new L.LatLng(lat, lng), { animate: true, duration: 0.5 });
+    this.map.panTo([lng, lat], { duration: 500 });
   }
 
   private async initMap(): Promise<void> {
@@ -240,22 +309,20 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
     let lat = -33.447487;
     let lng = -70.673676;
 
-    // Inicializamos el mapa con la ubicación por defecto primero usando Leaflet y OpenStreetMap tiles
-    this.map = L.map('map', {
-      center: [lat, lng],
+    // Inicializamos el mapa con la ubicación por defecto usando Mapbox GL JS
+    mapboxgl.accessToken = environment.mapboxToken;
+    this.map = new mapboxgl.Map({
+      container: 'map',
+      style: 'mapbox://styles/mapbox/streets-v12',
+      center: [lng, lat],
       zoom: 13,
-      zoomControl: false,
       attributionControl: true
     });
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors',
-      maxZoom: 19,
-      tileSize: 256
-    }).addTo(this.map);
-
     setTimeout(() => {
-      this.map.invalidateSize();
+      if (this.map) {
+        this.map.resize();
+      }
     }, 500);
 
     // Cargar información inicial
@@ -284,7 +351,9 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
       
       // Centramos automáticamente de forma fluida
       if (!this.isFirstLocationLock) {
-        this.map.flyTo([position.latitude, position.longitude], 17, { duration: 1.0 });
+        if (this.map) {
+          this.map.flyTo({ center: [position.longitude, position.latitude], zoom: 17, duration: 1000 });
+        }
         this.isFirstLocationLock = true;
       } else {
         this.centerMapOnUser(position.latitude, position.longitude);
@@ -319,7 +388,9 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
       if (this.partnerLat && this.partnerLng) {
         this.fitBothMarkers();
       } else {
-        this.map.flyTo([lat, lng], 15, { duration: 1.2 });
+        if (this.map) {
+          this.map.flyTo({ center: [lng, lat], zoom: 15, duration: 1200 });
+        }
       }
 
     } catch (error: any) {
@@ -347,6 +418,13 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
       await this.geolocationService.startTracking();
     } catch (err) {
       console.warn('No se pudo iniciar el tracking constante:', err);
+    }
+
+    // 5. Cargar lugares especiales en el mapa
+    try {
+      await this.cargarLugaresEspeciales();
+    } catch (err) {
+      console.warn('Error al cargar lugares especiales:', err);
     }
   }
 
@@ -449,7 +527,7 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
   centrarEnUsuario() {
     if (this.currentLat && this.currentLng) {
       if (this.map) {
-        this.map.flyTo([this.currentLat, this.currentLng], 17, { duration: 1.2 });
+        this.map.flyTo({ center: [this.currentLng, this.currentLat], zoom: 17, duration: 1200 });
       }
     } else {
       this.showToast('Tu ubicación no está disponible todavía.', 'warning');
@@ -459,7 +537,7 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
   centrarEnPareja() {
     if (this.partnerLat && this.partnerLng) {
       if (this.map) {
-        this.map.flyTo([this.partnerLat, this.partnerLng], 17, { duration: 1.2 });
+        this.map.flyTo({ center: [this.partnerLng, this.partnerLat], zoom: 17, duration: 1200 });
       }
     } else {
       this.showToast('La ubicación de tu pareja no está disponible.', 'warning');
@@ -467,107 +545,197 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
   }
 
   async abrirRegistrarLugar() {
-    const alert = await this.alertCtrl.create({
-      header: 'Lugar Especial 💖',
-      subHeader: 'Registra un lugar visitado para geofencing',
-      inputs: [
-        {
-          name: 'nombre',
-          type: 'text',
-          placeholder: 'Nombre (ej: Primera cita, Cafetería)'
-        },
-        {
-          name: 'direccion',
-          type: 'text',
-          placeholder: 'Dirección (ej: Av. Providencia 123)'
-        }
-      ],
-      buttons: [
-        {
-          text: 'Cancelar',
-          role: 'cancel'
-        },
-        {
-          text: 'Registrar',
-          handler: async (data) => {
-            if (!data.nombre || !data.direccion) {
-              this.showToast('Por favor, completa todos los campos.', 'warning');
-              return false; // Evita cerrar el alert
-            }
-            await this.registrarLugarSimulado(data.nombre, data.direccion);
-            return true;
-          }
-        }
-      ],
-      mode: 'ios'
-    });
+    this.nuevoLugarNombre = '';
+    this.searchQuery = '';
+    this.suggestions = [];
+    this.direccionSeleccionada = '';
+    this.selectedCoordinates = null;
+    this.activeSegment = 'registrar';
+    this.isModalOpen = true;
 
-    await alert.present();
+    // Cargar los lugares especiales actuales en memoria
+    await this.cargarLugaresEspeciales();
   }
 
-  private async registrarLugarSimulado(nombre: string, direccion: string) {
+  closeModal() {
+    this.isModalOpen = false;
+  }
+
+  onModalDismiss() {
+    this.isModalOpen = false;
+  }
+
+  // Pre-rellenar el nombre del lugar especial usando las sugerencias de la app
+  seleccionarPredefinido(presetName: string) {
+    this.nuevoLugarNombre = presetName;
+  }
+
+  // Cargar geozonas de Supabase y agregarlas como marcadores interactivos en Mapbox
+  async cargarLugaresEspeciales() {
+    // 1. Limpiar marcadores viejos para evitar duplicados
+    this.geozoneMarkers.forEach((marker: any) => marker.remove());
+    this.geozoneMarkers.clear();
+
+    // 2. Cargar de Supabase
+    this.registeredGeozones = await this.supabaseSvc.getGeozones();
+
+    // 3. Agregar marcadores Mapbox
+    if (!this.map) return;
+
+    this.registeredGeozones.forEach((zone: any) => {
+      const el = document.createElement('div');
+      el.className = 'special-place-marker';
+      el.style.background = '#ff4e7e';
+      el.style.color = 'white';
+      el.style.width = '38px';
+      el.style.height = '38px';
+      el.style.borderRadius = '50%';
+      el.style.display = 'flex';
+      el.style.alignItems = 'center';
+      el.style.justifyContent = 'center';
+      el.style.boxShadow = '0 4px 12px rgba(255, 78, 126, 0.5)';
+      el.style.border = '2px solid white';
+      el.style.fontSize = '16px';
+      el.style.cursor = 'pointer';
+      el.innerText = '💖';
+
+      const popupHtml = `
+        <div style="font-family: inherit; text-align: center; padding: 4px;">
+          <h4 style="margin: 0 0 4px; color: #ff4e7e; font-weight: 700; font-size: 14px;">${zone.name}</h4>
+          <span style="font-size: 10px; background: #ffebee; color: #ff4e7e; padding: 2px 6px; border-radius: 10px; font-weight: 600;">Zona de Geofencing Activa</span>
+        </div>
+      `;
+
+      const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(popupHtml);
+
+      const marker = new mapboxgl.Marker(el)
+        .setLngLat([zone.longitude, zone.latitude])
+        .setPopup(popup)
+        .addTo(this.map);
+
+      this.geozoneMarkers.set(zone.id, marker);
+    });
+  }
+
+  // Genera un mapa estático de Mapbox centrado en la geocerca con un pin en forma de corazón
+  getStaticMapUrl(longitude: number, latitude: number): string {
+    return `https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s-heart+ff4e7e(${longitude},${latitude})/${longitude},${latitude},14.5/350x180@2x?access_token=${environment.mapboxToken}`;
+  }
+
+  // Centra la cámara principal de la app en la geocerca seleccionada y abre su popup descriptivo
+  verGeozonaEnMapa(zone: any) {
+    this.isModalOpen = false;
+    
+    if (this.map) {
+      this.map.flyTo({ center: [zone.longitude, zone.latitude], zoom: 16, duration: 1200 });
+      
+      // Abrir el popup del marcador si existe
+      const marker = this.geozoneMarkers.get(zone.id);
+      if (marker) {
+        setTimeout(() => {
+          marker.togglePopup();
+        }, 1200);
+      }
+    }
+  }
+
+  // Eliminar la geozona seleccionada tanto de Supabase como de la vista interactiva
+  async eliminarGeozona(zone: any) {
+    const confirm = window.confirm(`¿Estás seguro de que deseas eliminar "${zone.name}" de tus recuerdos especiales?`);
+    if (!confirm) return;
+
     const loading = await this.loadingCtrl.create({
-      message: 'Geolocalizando dirección...',
+      message: 'Eliminando lugar...',
       spinner: 'crescent'
     });
     await loading.present();
 
-    // Simular retraso de red / geocodificación de 1.5s
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    try {
+      const { error } = await this.supabaseSvc.deleteGeozone(zone.id);
+      if (error) throw error;
 
-    await loading.dismiss();
+      this.showToast(`Lugar "${zone.name}" eliminado con éxito.`, 'success');
+      // Recargar lista y marcadores en mapa
+      await this.cargarLugaresEspeciales();
+    } catch (err) {
+      console.error('Error al eliminar geozona:', err);
+      this.showToast('No se pudo eliminar el lugar especial.', 'warning');
+    } finally {
+      await loading.dismiss();
+    }
+  }
 
-    // Generar una ubicación cercana a la del usuario (o de fallback si no hay ubicación)
-    const baseLat = this.currentLat || -33.447487;
-    const baseLng = this.currentLng || -70.673676;
-    
-    // Desplazamiento aleatorio para simular que está en una dirección real cercana
-    const randomOffsetLat = (Math.random() - 0.5) * 0.006;
-    const randomOffsetLng = (Math.random() - 0.5) * 0.006;
-    
-    const placeLat = baseLat + randomOffsetLat;
-    const placeLng = baseLng + randomOffsetLng;
+  async buscarDireccion(event: any) {
+    const query = event.target.value;
+    if (!query || query.trim().length < 3) {
+      this.suggestions = [];
+      return;
+    }
 
-    // Crear marcador Leaflet para el lugar especial
-    const placeMarkerHtml = `
-      <div class="special-place-marker" style="
-        background: #ff4e7e;
-        color: white;
-        width: 38px;
-        height: 38px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 4px 12px rgba(255, 78, 126, 0.5);
-        border: 2px solid white;
-        font-size: 16px;
-      ">
-        💖
-      </div>
-    `;
+    this.isLoadingSuggestions = true;
+    try {
+      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${environment.mapboxToken}&limit=5&language=es`;
+      const res = await fetch(url);
+      const data = await res.json();
+      this.suggestions = (data.features || []).map((f: any) => ({
+        text: f.text,
+        place_name: f.place_name,
+        coordinates: f.geometry.coordinates // [lng, lat]
+      }));
+    } catch (err) {
+      console.error('Error al consultar geocoding de Mapbox:', err);
+    } finally {
+      this.isLoadingSuggestions = false;
+    }
+  }
 
-    const marker = L.marker([placeLat, placeLng], {
-      icon: L.divIcon({
-        html: placeMarkerHtml,
-        className: '',
-        iconSize: [38, 38],
-        iconAnchor: [19, 19]
-      })
-    }).addTo(this.map);
+  seleccionarSugerencia(suggestion: any) {
+    this.direccionSeleccionada = suggestion.place_name;
+    this.selectedCoordinates = suggestion.coordinates; // [lng, lat]
+    this.searchQuery = suggestion.text;
+    this.suggestions = [];
+  }
 
-    marker.bindPopup(`
-      <div style="font-family: inherit; text-align: center; padding: 4px;">
-        <h4 style="margin: 0 0 4px; color: #ff4e7e; font-weight: 700; font-size: 14px;">${nombre}</h4>
-        <p style="margin: 0 0 6px; font-size: 12px; color: #666;">${direccion}</p>
-        <span style="font-size: 10px; background: #ffebee; color: #ff4e7e; padding: 2px 6px; border-radius: 10px; font-weight: 600;">Zona de Geofencing Activa</span>
-      </div>
-    `).openPopup();
+  async confirmarRegistroLugar() {
+    if (!this.nuevoLugarNombre || !this.selectedCoordinates) {
+      return;
+    }
 
-    // Centrar mapa en el nuevo lugar
-    this.map.flyTo([placeLat, placeLng], 16, { duration: 1.2 });
+    const [lng, lat] = this.selectedCoordinates;
+    this.isModalOpen = false;
 
-    this.showToast(`¡Lugar "${nombre}" registrado con éxito para Geofencing!`, 'success');
+    const loading = await this.loadingCtrl.create({
+      message: 'Registrando lugar en base de datos...',
+      spinner: 'crescent'
+    });
+    await loading.present();
+
+    try {
+      // Guardar en la base de datos de Supabase
+      const { data, error } = await this.supabaseSvc.createGeozone(this.nuevoLugarNombre, lat, lng);
+      if (error) throw error;
+
+      this.showToast(`¡Lugar "${this.nuevoLugarNombre}" registrado con éxito!`, 'success');
+      
+      // Recargar geozonas para redibujar el mapa y actualizar el historial
+      await this.cargarLugaresEspeciales();
+
+      // Centrar el mapa en la nueva geocerca
+      if (this.map) {
+        this.map.flyTo({ center: [lng, lat], zoom: 16, duration: 1200 });
+        
+        // Abrir el popup del nuevo marcador
+        setTimeout(() => {
+          const marker = this.geozoneMarkers.get(data.id);
+          if (marker) marker.togglePopup();
+        }, 1200);
+      }
+    } catch (err) {
+      console.error('Error al guardar geozona:', err);
+      this.showToast('No se pudo guardar el lugar especial en la base de datos.', 'warning');
+    } finally {
+      await loading.dismiss();
+    }
   }
 
 }

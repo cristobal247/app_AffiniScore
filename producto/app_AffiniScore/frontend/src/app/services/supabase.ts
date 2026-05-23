@@ -1328,6 +1328,68 @@ export class SupabaseService {
     return channel;
   }
 
+  // Obtener todos los lugares especiales (geozonas) de la pareja
+  async getGeozones(): Promise<any[]> {
+    try {
+      const partnership = await this.getActivePartnership();
+      if (!partnership) return [];
+
+      const { data, error } = await this.supabase
+        .from('geozones')
+        .select('*')
+        .eq('partnership_id', partnership.id)
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    } catch (err) {
+      console.error('Error al obtener geozonas:', err);
+      return [];
+    }
+  }
+
+  // Crear un lugar especial (geozone)
+  async createGeozone(name: string, latitude: number, longitude: number, radius: number = 50): Promise<any> {
+    try {
+      const partnership = await this.getActivePartnership();
+      if (!partnership) throw new Error('No hay vinculación activa');
+
+      const { data, error } = await this.supabase
+        .from('geozones')
+        .insert({
+          partnership_id: partnership.id,
+          name,
+          latitude,
+          longitude,
+          radius
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return { data, error: null };
+    } catch (err) {
+      console.error('Error al crear geozona:', err);
+      return { data: null, error: err };
+    }
+  }
+
+  // Eliminar un lugar especial (geozone)
+  async deleteGeozone(id: string): Promise<any> {
+    try {
+      const { error } = await this.supabase
+        .from('geozones')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      return { error: null };
+    } catch (err) {
+      console.error('Error al eliminar geozona:', err);
+      return { error: err };
+    }
+  }
+
   /* ========================================================================
      6. S7: RETOS DE DESCONEXION (CATALOGO + ACEPTACION CONJUNTA)
      ======================================================================== */
