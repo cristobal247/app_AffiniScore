@@ -8,63 +8,25 @@ import random
 from database import supabase
 
 router = APIRouter()
+from fastapi import APIRouter, HTTPException, Path, Query
+from pydantic import BaseModel
+from typing import Optional
+from datetime import datetime
+import os
+import httpx
+from database import supabase
+
+router = APIRouter()
 
 class ChatMessagePayload(BaseModel):
     message: str
     image_url: Optional[str] = None
     sender_id: Optional[str] = None
 
-def get_fallback_therapist_response(user_message: str, is_group: bool) -> str:
-    msg = user_message.lower()
-    
-    # 1. Temáticas de tristeza / enojo / conflicto
-    if any(word in msg for word in ["triste", "mal", "pelea", "discusión", "enojado", "molesto", "distante", "frío", "separados", "celos", "llorar"]):
-        responses = [
-            "Lamento mucho que estén pasando por un momento difícil. Es completamente natural que surjan tensiones en la pareja. Como su AffiniCoach, les sugiero que respiren profundo y traten de expresar sus sentimientos desde la empatía, usando frases como 'Yo me siento...' en lugar de culpar. ¿Les gustaría compartir qué detonó este sentimiento?",
-            "Entiendo el dolor o la frustración en tus palabras. Los desacuerdos son oportunidades ocultas para reconstruir la complicidad. Invito a ambos a escucharse sin interrumpir por 2 minutos. ¿Qué sienten que necesita el otro en este preciso momento?",
-            "Es valioso que expreses esto aquí. Cuando nos sentimos distantes, el primer paso es reconocerlo juntos sin juzgar. ¿Qué pequeño gesto de afecto o validación creen que podría aliviar la tensión hoy?"
-        ]
-        return random.choice(responses)
-        
-    # 2. Temáticas positivas / amor / felicidad
-    elif any(word in msg for word in ["feliz", "bien", "contento", "alegre", "te amo", "gracias", "lindo", "amor", "disfrutando", "gustó", "bello", "hermoso"]):
-        responses = [
-            "¡Qué alegría me da leer esto! Celebrar los momentos de conexión, gratitud y complicidad es el alimento diario de una relación saludable y fuerte. Sigan compartiendo estos sentimientos tan hermosos.",
-            "Me encanta ver esta energía tan positiva entre ustedes. Validar el afecto públicamente fortalece enormemente el vínculo emocional. ¿Qué es lo que más valoran de este momento juntos?",
-            "¡Excelente! Momentos como este son los que construyen una base sólida para el futuro. Les animo a seguir cultivando estos instantes de felicidad."
-        ]
-        return random.choice(responses)
-        
-    # 3. Temáticas de intimidad física
-    elif any(word in msg for word in ["sexo", "intimidad", "cama", "abrazo", "beso", "pasión", "deseo", "dormir"]):
-        responses = [
-            "La intimidad física y emocional están profundamente conectadas. Hablar abiertamente de sus deseos, límites y necesidades con ternura y sin presiones es clave para mantener viva la chispa. ¿Cómo se sienten respecto a su nivel de conexión íntima actual?",
-            "El contacto físico (los abrazos de 20 segundos, los besos sinceros) libera oxitocina y reduce el estrés de inmediato. Les sugiero planear un momento exclusivo para conectar a solas esta semana."
-        ]
-        return random.choice(responses)
-
-    # 4. Solicitud de ayuda / consejos / ejercicios
-    elif any(word in msg for word in ["ayuda", "consejo", "guía", "cómo", "hacer", "ejercicio", "actividad"]):
-        responses = [
-            "Como su AffiniCoach, mi mejor consejo hoy es practicar la 'pausa consciente'. Antes de reaccionar a algo que diga tu pareja, detente, respira y pregúntate: '¿Cómo puedo responder con amor en lugar de defensa?'. ¿Les gustaría probar este ejercicio?",
-            "Para fortalecer la relación, les recomiendo establecer un 'ritual de apreciación diario': al final del día, compartan una pequeña cosa que agradezcan del otro. Ayuda muchísimo a cambiar el foco hacia lo positivo."
-        ]
-        return random.choice(responses)
-
-    # 5. Respuestas terapéuticas profesionales genéricas
-    generic_responses = [
-        "Gracias por compartir eso. Como su terapeuta de parejas AffiniCoach, veo mucha valentía en abrir estos canales de comunicación. ¿Qué opina tu pareja sobre esto que acabas de mencionar? Me encantaría escuchar la perspectiva de ambos.",
-        "Es una reflexión sumamente interesante. La comunicación abierta y honesta es la base de todo crecimiento mutuo. ¿Cómo se sienten ambos respecto a este tema en su vida cotidiana?",
-        "Entendido. A veces, poner en palabras lo que pensamos nos ayuda a procesarlo mejor. Para profundizar un poco, ¿podrían intentar expresar cómo les afecta esta situación individualmente a cada uno?",
-        "Eso es muy valioso. Les propongo un pequeño ejercicio: que cada uno resuma lo que entendió de la intervención del otro antes de dar su propia opinión. Esto asegura que ambos se sientan verdaderamente escuchados."
-    ]
-    return random.choice(generic_responses)
-
-async def get_groq_ai_response(user_message: str, is_group: bool, image_url: Optional[str] = None) -> tuple[str, bool]:
+async def get_groq_ai_response(user_message: str, is_group: bool, image_url: Optional[str] = None) -> str:
     groq_api_key = os.environ.get("GROQ_API_KEY", "")
     if not groq_api_key:
-        print("GROQ_API_KEY no encontrada en entorno, usando fallback terapéutico inteligente offline.")
-        return get_fallback_therapist_response(user_message, is_group), True
+        raise HTTPException(status_code=500, detail="GROQ_API_KEY no encontrada en el entorno del servidor.")
         
     model = "llama-3.2-11b-vision-preview" if image_url else "llama-3.3-70b-versatile"
 
@@ -130,10 +92,10 @@ async def get_groq_ai_response(user_message: str, is_group: bool, image_url: Opt
             )
             response.raise_for_status()
             data = response.json()
-            return data["choices"][0]["message"]["content"], False
+            return data["choices"][0]["message"]["content"]
     except Exception as e:
-        print(f"Error comunicándose con Groq: {e}. Usando fallback terapéutico inteligente offline.")
-        return get_fallback_therapist_response(user_message, is_group), True
+        print(f"Error llamando a la API de Groq: {e}")
+        raise HTTPException(status_code=502, detail=f"Error al conectar con el servicio de IA: {str(e)}")
 
 @router.post("/api/chat/3/{id_usuario}")
 async def process_group_chat_3_message(
@@ -185,7 +147,7 @@ async def process_group_chat_3_message(
         inserted_user = user_res.data[0] if (user_res.data and len(user_res.data) > 0) else user_msg_data
         
         # 3. Obtener respuesta de la IA configurada como moderadora grupal
-        ai_text, was_fallback = await get_groq_ai_response(payload.message, is_group=True, image_url=payload.image_url)
+        ai_text = await get_groq_ai_response(payload.message, is_group=True, image_url=payload.image_url)
         
         # 4. Guardar respuesta de la IA
         ai_msg_data = {
@@ -196,7 +158,7 @@ async def process_group_chat_3_message(
             "metadata": {
                 "emisor": "AffiniCoach IA", 
                 "canal": 3,
-                "fuente": "Fallback Local" if was_fallback else "Groq Llama 3.3"
+                "fuente": "Groq API"
             },
             "created_at": datetime.utcnow().isoformat()
         }
@@ -241,7 +203,7 @@ async def process_chat_message(
             
         elif canal_id in [2, 3]:
             is_group = (canal_id == 3)
-            ai_text, was_fallback = await get_groq_ai_response(payload.message, is_group, payload.image_url)
+            ai_text = await get_groq_ai_response(payload.message, is_group, payload.image_url)
             
             ai_msg_data = {
                 "room_id": room_id,
@@ -250,7 +212,7 @@ async def process_chat_message(
                 "message": ai_text,
                 "metadata": {
                     "emisor": "AffiniCoach IA",
-                    "fuente": "Fallback Local" if was_fallback else "Groq Llama 3.3"
+                    "fuente": "Groq API"
                 },
                 "created_at": datetime.utcnow().isoformat()
             }
@@ -262,5 +224,6 @@ async def process_chat_message(
             raise HTTPException(status_code=400, detail="canal_id inválido")
             
     except Exception as e:
-        print(e)
+        print(f"Error en endpoint chat: {e}")
+        if isinstance(e, HTTPException): raise e
         raise HTTPException(status_code=500, detail=str(e))
