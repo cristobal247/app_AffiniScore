@@ -9,13 +9,16 @@ import {
   IonButton,
   IonIcon,
   ToastController,
-  LoadingController
+  LoadingController,
+  AlertController
 } from '@ionic/angular/standalone';
 import { SupabaseService } from '../../services/supabase';
 import { GeolocationService } from '../../services/geolocation.service';
 import { Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { addIcons } from 'ionicons';
+import { addCircleOutline, cogOutline, warningOutline, sparklesOutline } from 'ionicons/icons';
 
 @Component({
   selector: 'app-mapa',
@@ -71,8 +74,11 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
     private supabaseSvc: SupabaseService,
     private geolocationService: GeolocationService,
     private toastCtrl: ToastController,
-    private loadingCtrl: LoadingController
-  ) {}
+    private loadingCtrl: LoadingController,
+    private alertCtrl: AlertController
+  ) {
+    addIcons({ addCircleOutline, cogOutline, warningOutline, sparklesOutline });
+  }
 
   async ngOnInit() {
     await this.loadUserProfile();
@@ -438,6 +444,130 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
       position: 'top'
     });
     toast.present();
+  }
+
+  centrarEnUsuario() {
+    if (this.currentLat && this.currentLng) {
+      if (this.map) {
+        this.map.flyTo([this.currentLat, this.currentLng], 17, { duration: 1.2 });
+      }
+    } else {
+      this.showToast('Tu ubicación no está disponible todavía.', 'warning');
+    }
+  }
+
+  centrarEnPareja() {
+    if (this.partnerLat && this.partnerLng) {
+      if (this.map) {
+        this.map.flyTo([this.partnerLat, this.partnerLng], 17, { duration: 1.2 });
+      }
+    } else {
+      this.showToast('La ubicación de tu pareja no está disponible.', 'warning');
+    }
+  }
+
+  async abrirRegistrarLugar() {
+    const alert = await this.alertCtrl.create({
+      header: 'Lugar Especial 💖',
+      subHeader: 'Registra un lugar visitado para geofencing',
+      inputs: [
+        {
+          name: 'nombre',
+          type: 'text',
+          placeholder: 'Nombre (ej: Primera cita, Cafetería)'
+        },
+        {
+          name: 'direccion',
+          type: 'text',
+          placeholder: 'Dirección (ej: Av. Providencia 123)'
+        }
+      ],
+      buttons: [
+        {
+          text: 'Cancelar',
+          role: 'cancel'
+        },
+        {
+          text: 'Registrar',
+          handler: async (data) => {
+            if (!data.nombre || !data.direccion) {
+              this.showToast('Por favor, completa todos los campos.', 'warning');
+              return false; // Evita cerrar el alert
+            }
+            await this.registrarLugarSimulado(data.nombre, data.direccion);
+            return true;
+          }
+        }
+      ],
+      mode: 'ios'
+    });
+
+    await alert.present();
+  }
+
+  private async registrarLugarSimulado(nombre: string, direccion: string) {
+    const loading = await this.loadingCtrl.create({
+      message: 'Geolocalizando dirección...',
+      spinner: 'crescent'
+    });
+    await loading.present();
+
+    // Simular retraso de red / geocodificación de 1.5s
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    await loading.dismiss();
+
+    // Generar una ubicación cercana a la del usuario (o de fallback si no hay ubicación)
+    const baseLat = this.currentLat || -33.447487;
+    const baseLng = this.currentLng || -70.673676;
+    
+    // Desplazamiento aleatorio para simular que está en una dirección real cercana
+    const randomOffsetLat = (Math.random() - 0.5) * 0.006;
+    const randomOffsetLng = (Math.random() - 0.5) * 0.006;
+    
+    const placeLat = baseLat + randomOffsetLat;
+    const placeLng = baseLng + randomOffsetLng;
+
+    // Crear marcador Leaflet para el lugar especial
+    const placeMarkerHtml = `
+      <div class="special-place-marker" style="
+        background: #ff4e7e;
+        color: white;
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(255, 78, 126, 0.5);
+        border: 2px solid white;
+        font-size: 16px;
+      ">
+        💖
+      </div>
+    `;
+
+    const marker = L.marker([placeLat, placeLng], {
+      icon: L.divIcon({
+        html: placeMarkerHtml,
+        className: '',
+        iconSize: [38, 38],
+        iconAnchor: [19, 19]
+      })
+    }).addTo(this.map);
+
+    marker.bindPopup(`
+      <div style="font-family: inherit; text-align: center; padding: 4px;">
+        <h4 style="margin: 0 0 4px; color: #ff4e7e; font-weight: 700; font-size: 14px;">${nombre}</h4>
+        <p style="margin: 0 0 6px; font-size: 12px; color: #666;">${direccion}</p>
+        <span style="font-size: 10px; background: #ffebee; color: #ff4e7e; padding: 2px 6px; border-radius: 10px; font-weight: 600;">Zona de Geofencing Activa</span>
+      </div>
+    `).openPopup();
+
+    // Centrar mapa en el nuevo lugar
+    this.map.flyTo([placeLat, placeLng], 16, { duration: 1.2 });
+
+    this.showToast(`¡Lugar "${nombre}" registrado con éxito para Geofencing!`, 'success');
   }
 
 }

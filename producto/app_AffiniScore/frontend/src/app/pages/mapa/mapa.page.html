@@ -1,66 +1,60 @@
-<ion-content class="map-page">
+<ion-content class="map-page" [forceOverscroll]="false">
+  <!-- El mapa que ocupa toda la pantalla -->
+  <div id="map"></div>
+
+  <!-- Capas flotantes sobre el mapa -->
   
-  <!-- Header que se desplaza con el contenido -->
-  <div class="scrolling-header-container">
-    <div class="header-content-wrapper">
-      <ion-buttons>
-        <ion-button class="profile-avatar-btn" routerLink="/profile">
-          <ion-avatar class="user-avatar-top">
-            <img [src]="userAvatarUrl || '/assets/images/user.png'" alt="Perfil" />
-          </ion-avatar>
-        </ion-button>
-      </ion-buttons>
+  <!-- 1. Botones Flotantes Superiores -->
+  <div class="top-floating-container">
+    <!-- Lado Izquierdo: Botón de Perfil -->
+    <button class="profile-floating-btn" routerLink="/profile">
+      <div class="user-avatar-circle">
+        <img [src]="userAvatarUrl || '/assets/images/user.png'" alt="Perfil" />
+      </div>
+    </button>
+
+    <!-- Lado Derecho: Acciones (Agregar lugar especial, ajustes) -->
+    <div class="actions-floating-group">
+      <!-- Botón de ingresar dirección del lugar visitado -->
+      <button class="action-floating-btn" (click)="abrirRegistrarLugar()" title="Registrar lugar de primera cita">
+        <ion-icon name="add-circle-outline"></ion-icon>
+      </button>
       
-      <div class="brand-group">
-      </div>
-      
-      <ion-buttons>
-        <ion-button class="btn-settings">
-          <ion-icon src="/assets/icons/hero/outline/cog-6-tooth.svg"></ion-icon>
-        </ion-button>
-      </ion-buttons>
-    </div>
-  </div>
-
-  <div class="page-wrapper">
-    <h2 class="page-title">Mapa de Conexión</h2>
-
-    <div class="tip-card">
-      <div class="tip-icon">
-        <ion-icon src="/assets/icons/hero/outline/map-pin.svg"></ion-icon>
-      </div>
-      <div class="tip-copy">
-        <p>Están cerca del lugar de su primera cita. Vayan para ganar 100 Affini Points</p>
-      </div>
-      <ion-button size="small" class="tip-cta">Ver ruta</ion-button>
-    </div>
-
-    <div class="map-card">
-      <div id="map"></div>
-      <div class="map-target">
-        <ion-icon src="/assets/icons/hero/outline/paper-airplane.svg"></ion-icon>
-      </div>
-      <div class="map-favorite">
-        <ion-icon src="/assets/icons/hero/outline/heart.svg"></ion-icon>
-      </div>
-      <div class="map-tag">
-        <p class="tag-title">DESTINO ESPECIAL</p>
-        <p class="tag-sub">Café del Corazón</p>
-      </div>
-    </div>
-
-    <div class="stats-row">
-      <div class="stat-card">
-        <span class="stat-label">DISTANCIA</span>
-        <span class="stat-value">{{ distance }} <small>km</small></span>
-      </div>
-      <button 
-        class="sos-button" 
-        [class.recording]="isRecording"
-        type="button" 
-        (click)="handleSOS()">
-        {{ isRecording ? '🛑 ENVIAR SOS' : 'SOS' }}
+      <!-- Botón de configuración/opciones adicionales -->
+      <button class="action-floating-btn">
+        <ion-icon name="cog-outline"></ion-icon>
       </button>
     </div>
   </div>
+
+  <!-- 2. Botón SOS en la esquina inferior derecha -->
+  <div class="sos-floating-container">
+    <button 
+      class="sos-floating-btn" 
+      [class.recording]="isRecording"
+      type="button"
+      (click)="handleSOS()">
+      <ion-icon name="warning-outline" *ngIf="!isRecording"></ion-icon>
+      <span>{{ isRecording ? '🛑' : 'SOS' }}</span>
+    </button>
+  </div>
+
+  <!-- 3. Bottom Pill con los dos avatares para centrado (bottom center) -->
+  <div class="bottom-pill-container">
+    <!-- Avatar Usuario -->
+    <div class="avatar-pill-btn user-avatar-pill" (click)="centrarEnUsuario()" title="Centrar en mí">
+      <img [src]="userAvatarUrl || '/assets/images/user.png'" alt="Tú" />
+    </div>
+
+    <!-- Avatar Pareja -->
+    <div class="avatar-pill-btn partner-avatar-pill" (click)="centrarEnPareja()" title="Centrar en mi pareja">
+      <img [src]="partnerAvatarUrl || '/assets/images/user.png'" alt="Pareja" />
+    </div>
+    
+    <!-- Icono decorativo / acción de chispa en el pill -->
+    <div class="pill-spark-icon">
+      <ion-icon name="sparkles-outline"></ion-icon>
+    </div>
+  </div>
+
 </ion-content>
