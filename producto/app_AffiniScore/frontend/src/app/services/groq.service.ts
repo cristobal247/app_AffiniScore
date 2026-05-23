@@ -3,7 +3,7 @@ import { environment } from '../../environments/environment';
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
-  content: string;
+  content: string | any[];
 }
 
 @Injectable({
@@ -34,12 +34,26 @@ Restricciones:
 
   constructor() {}
 
-  async sendMessage(message: string, userName?: string): Promise<string> {
+  async sendMessage(message: string, userName?: string, imageUrl?: string): Promise<string> {
     // Añadimos metadatos si tenemos el nombre del usuario
     const finalMessage = userName ? `[Contexto del Sistema: El usuario que te habla se llama ${userName}]\n\n${message}` : message;
     
     // Añadimos el mensaje del usuario al historial
-    this.conversationHistory.push({ role: 'user', content: finalMessage });
+    if (imageUrl) {
+      this.conversationHistory.push({
+        role: 'user',
+        content: [
+          { type: 'text', text: finalMessage },
+          { type: 'image_url', image_url: { url: imageUrl } }
+        ]
+      });
+    } else {
+      this.conversationHistory.push({ role: 'user', content: finalMessage });
+    }
+
+    // Determinar si usar modelo de visión
+    const hasImages = this.conversationHistory.some(msg => Array.isArray(msg.content));
+    const model = hasImages ? 'llama-3.2-11b-vision-preview' : 'llama-3.3-70b-versatile';
 
     try {
       const response = await fetch(this.apiUrl, {
@@ -49,7 +63,7 @@ Restricciones:
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
+          model: model,
           messages: this.conversationHistory,
           temperature: 0.7,
           max_tokens: 350,
@@ -104,7 +118,18 @@ Restricciones:
     // Mapeamos los mensajes de la base de datos al formato de Groq
     for (const msg of dbMessages) {
       if (msg.sender_type === 'USER') {
-        this.conversationHistory.push({ role: 'user', content: msg.message });
+        const imageUrl = msg.metadata?.image_url;
+        if (imageUrl) {
+          this.conversationHistory.push({
+            role: 'user',
+            content: [
+              { type: 'text', text: msg.message },
+              { type: 'image_url', image_url: { url: imageUrl } }
+            ]
+          });
+        } else {
+          this.conversationHistory.push({ role: 'user', content: msg.message });
+        }
       } else if (msg.sender_type === 'AI') {
         this.conversationHistory.push({ role: 'assistant', content: msg.message });
       }

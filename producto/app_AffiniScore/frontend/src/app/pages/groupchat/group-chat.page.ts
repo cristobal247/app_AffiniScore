@@ -5,7 +5,8 @@ import { RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { 
   IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, 
-  IonBackButton, IonFooter, IonInput, IonButton, IonIcon, IonAvatar
+  IonBackButton, IonFooter, IonInput, IonButton, IonIcon, IonAvatar,
+  IonSpinner
 } from '@ionic/angular/standalone';
 import { SupabaseService, ChatMessage } from '../../services/supabase';
 import { environment } from '../../../environments/environment';
@@ -19,7 +20,7 @@ import { send, sparkles, ellipsisHorizontal, chevronBackOutline, person, cameraO
   standalone: true,
   imports: [
     IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, 
-    IonBackButton, IonFooter, IonInput, IonButton, IonIcon, IonAvatar,
+    IonBackButton, IonFooter, IonInput, IonButton, IonIcon, IonAvatar, IonSpinner,
     CommonModule, FormsModule, RouterModule
   ]
 })
@@ -33,6 +34,10 @@ export class GroupChatPage implements OnInit, OnDestroy {
   currentUserId: string = '';
   partnershipId: string = '';
   isLoading: boolean = false;
+  
+  selectedImageUrl: string | null = null;
+  isUploadingImage: boolean = false;
+  
   private subscription: any;
 
   constructor(
@@ -127,27 +132,34 @@ export class GroupChatPage implements OnInit, OnDestroy {
     }
   }
 
+  cancelSelectedImage() {
+    this.selectedImageUrl = null;
+    this.isUploadingImage = false;
+  }
+
   async onFileSelected(event: any) {
     const file = event.target?.files?.[0];
     if (!file) return;
 
-    this.isLoading = true;
+    this.isUploadingImage = true;
     const res = await this.supabaseSvc.uploadChatImage(file);
-    this.isLoading = false;
+    this.isUploadingImage = false;
 
     if (res.url) {
-      await this.sendMessage(res.url);
+      this.selectedImageUrl = res.url;
     } else {
       console.error('Error al subir la imagen:', res.error);
       alert('No se pudo subir la foto. Inténtalo de nuevo.');
     }
   }
 
-  async sendMessage(imageUrl?: string) {
+  async sendMessage() {
     const trimmed = this.newMessage.trim();
+    const imageUrl = this.selectedImageUrl;
     if (!trimmed && !imageUrl) return;
 
     const displayMsg = trimmed || '📷 Foto';
+    this.selectedImageUrl = null; // Limpiar selección
 
     const tempMsg: ChatMessage = {
       id: Math.random().toString(),

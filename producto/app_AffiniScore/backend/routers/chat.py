@@ -60,12 +60,14 @@ def get_fallback_therapist_response(user_message: str, is_group: bool) -> str:
     ]
     return random.choice(generic_responses)
 
-async def get_groq_ai_response(user_message: str, is_group: bool) -> tuple[str, bool]:
+async def get_groq_ai_response(user_message: str, is_group: bool, image_url: Optional[str] = None) -> tuple[str, bool]:
     groq_api_key = os.environ.get("GROQ_API_KEY", "")
     if not groq_api_key:
         print("GROQ_API_KEY no encontrada en entorno, usando fallback terapéutico inteligente offline.")
         return get_fallback_therapist_response(user_message, is_group), True
         
+    model = "llama-3.2-11b-vision-preview" if image_url else "llama-3.3-70b-versatile"
+
     base_prompt = (
         "Eres AffiniCoach, un terapeuta de parejas de élite con más de 15 años de experiencia clínica. "
         "Te especializas en relaciones de pareja, comunicación asertiva y resolución de conflictos utilizando marcos probados "
@@ -101,6 +103,14 @@ async def get_groq_ai_response(user_message: str, is_group: bool) -> tuple[str, 
             "puede aportar de manera constructiva a la relación y entender la perspectiva de su pareja."
         )
 
+    # Preparar el contenido para Groq
+    user_content = user_message
+    if image_url:
+        user_content = [
+            {"type": "text", "text": user_message},
+            {"type": "image_url", "image_url": {"url": image_url}}
+        ]
+
     try:
         async with httpx.AsyncClient() as client:
             response = await client.post(
@@ -110,10 +120,10 @@ async def get_groq_ai_response(user_message: str, is_group: bool) -> tuple[str, 
                     "Content-Type": "application/json"
                 },
                 json={
-                    "model": "llama-3.3-70b-versatile",
+                    "model": model,
                     "messages": [
                         {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_message}
+                        {"role": "user", "content": user_content}
                     ]
                 },
                 timeout=12.0
@@ -175,7 +185,7 @@ async def process_group_chat_3_message(
         inserted_user = user_res.data[0] if (user_res.data and len(user_res.data) > 0) else user_msg_data
         
         # 3. Obtener respuesta de la IA configurada como moderadora grupal
-        ai_text, was_fallback = await get_groq_ai_response(payload.message, is_group=True)
+        ai_text, was_fallback = await get_groq_ai_response(payload.message, is_group=True, image_url=payload.image_url)
         
         # 4. Guardar respuesta de la IA
         ai_msg_data = {
@@ -231,7 +241,7 @@ async def process_chat_message(
             
         elif canal_id in [2, 3]:
             is_group = (canal_id == 3)
-            ai_text, was_fallback = await get_groq_ai_response(payload.message, is_group)
+            ai_text, was_fallback = await get_groq_ai_response(payload.message, is_group, payload.image_url)
             
             ai_msg_data = {
                 "room_id": room_id,

@@ -5,7 +5,8 @@ import { RouterModule } from '@angular/router';
 import { 
   IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, 
   IonBackButton, IonFooter, IonInput, IonButton, IonIcon, IonAvatar,
-  IonMenu, IonMenuButton, IonList, IonItem, IonLabel, MenuController
+  IonMenu, IonMenuButton, IonList, IonItem, IonLabel, MenuController,
+  IonSpinner
 } from '@ionic/angular/standalone';
 import { SupabaseService, ChatMessage } from '../../services/supabase';
 import { GroqService } from '../../services/groq.service';
@@ -20,7 +21,7 @@ import { sendOutline, arrowBackOutline, videocam, call, ellipsisVertical, happyO
   imports: [
     IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, 
     IonBackButton, IonFooter, IonInput, IonButton, IonIcon, IonAvatar,
-    IonMenu, IonMenuButton, IonList, IonItem, IonLabel,
+    IonMenu, IonMenuButton, IonList, IonItem, IonLabel, IonSpinner,
     CommonModule, FormsModule, RouterModule
   ]
 })
@@ -34,6 +35,10 @@ export class ChatPage implements OnDestroy {
   currentUserName: string = '';
   roomId: string = ''; 
   isLoading: boolean = false;
+  
+  selectedImageUrl: string | null = null;
+  isUploadingImage: boolean = false;
+  
   private subscription: any;
 
   constructor(
@@ -116,27 +121,34 @@ export class ChatPage implements OnDestroy {
     // Limpiar suscripciones si las hubiera
   }
 
+  cancelSelectedImage() {
+    this.selectedImageUrl = null;
+    this.isUploadingImage = false;
+  }
+
   async onFileSelected(event: any) {
     const file = event.target?.files?.[0];
     if (!file) return;
 
-    this.isLoading = true;
+    this.isUploadingImage = true;
     const res = await this.supabaseSvc.uploadChatImage(file);
-    this.isLoading = false;
+    this.isUploadingImage = false;
 
     if (res.url) {
-      await this.sendMessage(res.url);
+      this.selectedImageUrl = res.url;
     } else {
       console.error('Error al subir la imagen:', res.error);
       alert('No se pudo subir la foto. Inténtalo de nuevo.');
     }
   }
 
-  async sendMessage(imageUrl?: string) {
+  async sendMessage() {
     const trimmed = this.newMessage.trim();
+    const imageUrl = this.selectedImageUrl;
     if (!trimmed && !imageUrl) return;
 
     const displayMsg = trimmed || '📷 Foto';
+    this.selectedImageUrl = null; // Limpiar selección
 
     // UI optimista
     const tempMsg: ChatMessage = {
@@ -155,8 +167,8 @@ export class ChatPage implements OnDestroy {
     this.newMessage = '';
     this.isLoading = true;
     
-    // Guardar el mensaje del usuario en Supabase de forma asíncrona (no bloquea UI)
-    const sendUserMsgPromise = this.supabaseSvc.sendMessage(this.roomId, displayMsg, 'USER', imageUrl);
+    // Guardar el mensaje del usuario en Supabase de forma asíncrona
+    const sendUserMsgPromise = this.supabaseSvc.sendMessage(this.roomId, displayMsg, 'USER', imageUrl || undefined);
 
     // Auto-título si es el primer mensaje real del usuario
     if (this.messages.length === 2) {
@@ -168,14 +180,8 @@ export class ChatPage implements OnDestroy {
       });
     }
     
-    // Enviamos a Groq con el nombre del usuario
-    let groqPrompt = displayMsg;
-    if (imageUrl) {
-      groqPrompt = trimmed 
-        ? `[El usuario ha adjuntado una foto] ${trimmed}`
-        : 'He compartido una foto contigo.';
-    }
-    const botResponseText = await this.groqSvc.sendMessage(groqPrompt, this.currentUserName);
+    // Enviamos a Groq con la imagen para visión multimodal
+    const botResponseText = await this.groqSvc.sendMessage(displayMsg, this.currentUserName, imageUrl || undefined);
     
     const botMsg: ChatMessage = {
       id: Math.random().toString(),
