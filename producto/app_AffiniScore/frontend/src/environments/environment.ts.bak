@@ -1,0 +1,17 @@
+﻿export const environment = {
+  production: false,
+  supabaseUrl: 'https://fojvwsegibjssttbzghe.supabase.co',
+  supabaseKey: 'sb_publishable_pZmJy4l92Un1FusZit823w_vossgdgt',
+  apiKeyGroq: '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',
+  // Modo de desarrollo: solo usarlo si no hay credenciales vÃ¡lidas de Supabase.
+  devAuth: false,
+  devAuthEmail: 'dev@local',
+  devAuthPassword: 'devpass'
+};
+
+
+
+
+
+
+

@@ -1,0 +1,531 @@
+﻿
+> affiniscore@0.0.1 build
+> ng build
+
+[33mÔØ»[39m Building...
+[32mÔ£ö[39m Building...
+[1mInitial chunk files[22m  [2m | [22m[1mNames[22m               [2m | [22m [1mRaw size[22m[2m | [22m[1mEstimated transfer size[22m
+[32mchunk-HV3RSUY7.js[39m    [2m | [22m[2m-[22m                   [2m | [22m[36m481.60 kB[39m[2m | [22m               [36m70.85 kB[39m
+[32mchunk-6RP4NDI2.js[39m    [2m | [22m[2m-[22m                   [2m | [22m[36m366.08 kB[39m[2m | [22m               [36m95.35 kB[39m
+[32mchunk-FXBIGCRT.js[39m    [2m | [22m[2m-[22m                   [2m | [22m[36m223.69 kB[39m[2m | [22m               [36m48.49 kB[39m
+[32mstyles-U7P7EHRS.css[39m  [2m | [22m[2mstyles[22m              [2m | [22m [36m51.57 kB[39m[2m | [22m                [36m6.56 kB[39m
+[32mchunk-4PCLZLCP.js[39m    [2m | [22m[2m-[22m                   [2m | [22m [36m47.63 kB[39m[2m | [22m               [36m15.27 kB[39m
+[32mchunk-NGMRRDAX.js[39m    [2m | [22m[2m-[22m                   [2m | [22m [36m36.28 kB[39m[2m | [22m               [36m12.62 kB[39m
+[32mpolyfills-5FDKUQTZ.js[39m[2m | [22m[2mpolyfills[22m           [2m | [22m [36m34.61 kB[39m[2m | [22m               [36m11.36 kB[39m
+[32mchunk-OAIWSR6O.js[39m    [2m | [22m[2m-[22m                   [2m | [22m [36m10.29 kB[39m[2m | [22m                [36m2.67 kB[39m
+[32mchunk-W4K3CLCM.js[39m    [2m | [22m[2m-[22m                   [2m | [22m [36m10.16 kB[39m[2m | [22m                [36m2.63 kB[39m
+[32mmain-HATKRZDY.js[39m     [2m | [22m[2mmain[22m                [2m | [22m  [36m9.50 kB[39m[2m | [22m                [36m2.85 kB[39m
+[32mchunk-ZX4NK27D.js[39m    [2m | [22m[2m-[22m                   [2m | [22m  [36m9.03 kB[39m[2m | [22m                [36m3.34 kB[39m
+[32mchunk-BBCIWVIB.js[39m    [2m | [22m[2m-[22m                   [2m | [22m  [36m8.52 kB[39m[2m | [22m                [36m2.94 kB[39m
+[32mchunk-RSPN63V5.js[39m    [2m | [22m[2m-[22m                   [2m | [22m  [36m7.55 kB[39m[2m | [22m                [36m2.62 kB[39m
+[32mchunk-YJ5TA4PT.js[39m    [2m | [22m[2m-[22m                   [2m | [22m  [36m5.74 kB[39m[2m | [22m                [36m2.13 kB[39m
+[32mchunk-XM6QJMPJ.js[39m    [2m | [22m[2m-[22m                   [2m | [22m  [36m5.50 kB[39m[2m | [22m                [36m2.18 kB[39m
+[32mchunk-5GZ3UI6C.js[39m    [2m | [22m[2m-[22m                   [2m | [22m  [36m3.93 kB[39m[2m | [22m                [36m1.49 kB[39m
+[32mchunk-O4KJG3JG.js[39m    [2m | [22m[2m-[22m                   [2m | [22m  [36m3.67 kB[39m[2m | [22m                [36m1.30 kB[39m
+[32mchunk-MTHZ7MWU.js[39m    [2m | [22m[2m-[22m                   [2m | [22m  [36m3.31 kB[39m[2m | [22m                [36m1.49 kB[39m
+[32mchunk-WON5A5Y4.js[39m    [2m | [22m[2m-[22m                   [2m | [22m  [36m3.17 kB[39m[2m | [22m                [36m1.26 kB[39m
+[32mchunk-DXZOPHK6.js[39m    [2m | [22m[2m-[22m                   [2m | [22m  [36m2.70 kB[39m[2m | [22m                [36m1.09 kB[39m
+[32mchunk-WI5MSH4N.js[39m    [2m | [22m[2m-[22m                   [2m | [22m  [36m2.53 kB[39m[2m | [22m              [36m739 bytes[39m
+[32mchunk-Z5KZHVLF.js[39m    [2m | [22m[2m-[22m                   [2m | [22m  [36m2.31 kB[39m[2m | [22m                [36m1.05 kB[39m
+[32mchunk-P3KDDA6O.js[39m    [2m | [22m[2m-[22m                   [2m | [22m  [36m1.73 kB[39m[2m | [22m              [36m745 bytes[39m
+[32mchunk-R77ELPWV.js[39m    [2m | [22m[2m-[22m                   [2m | [22m  [36m1.52 kB[39m[2m | [22m              [36m656 bytes[39m
+[32mchunk-YDOXD4O3.js[39m    [2m | [22m[2m-[22m                   [2m | [22m  [36m1.43 kB[39m[2m | [22m              [36m640 bytes[39m
+[32mchunk-2NIBOUWM.js[39m    [2m | [22m[2m-[22m                   [2m | [22m[36m998 bytes[39m[2m | [22m              [36m998 bytes[39m
+[32mchunk-DD7D74RY.js[39m    [2m | [22m[2m-[22m                   [2m | [22m[36m978 bytes[39m[2m | [22m              [36m978 bytes[39m
+[32mchunk-QYE42A6Q.js[39m    [2m | [22m[2m-[22m                   [2m | [22m[36m976 bytes[39m[2m | [22m              [36m976 bytes[39m
+[32mchunk-7QTSZKMV.js[39m    [2m | [22m[2m-[22m                   [2m | [22m[36m969 bytes[39m[2m | [22m              [36m969 bytes[39m
+[32mchunk-QUJFQN2Y.js[39m    [2m | [22m[2m-[22m                   [2m | [22m[36m962 bytes[39m[2m | [22m              [36m962 bytes[39m
+[32mchunk-77EJQJML.js[39m    [2m | [22m[2m-[22m                   [2m | [22m[36m932 bytes[39m[2m | [22m              [36m932 bytes[39m
+[32mchunk-JW65ZD54.js[39m    [2m | [22m[2m-[22m                   [2m | [22m[36m833 bytes[39m[2m | [22m              [36m833 bytes[39m
+[32mchunk-IE2TSMH2.js[39m    [2m | [22m[2m-[22m                   [2m | [22m[36m563 bytes[39m[2m | [22m              [36m563 bytes[39m
+[32mchunk-I547WOKC.js[39m    [2m | [22m[2m-[22m                   [2m | [22m[36m544 bytes[39m[2m | [22m              [36m544 bytes[39m
+[32mchunk-YUNOCBLG.js[39m    [2m | [22m[2m-[22m                   [2m | [22m[36m103 bytes[39m[2m | [22m              [36m103 bytes[39m
+[32mchunk-CKP3SGE2.js[39m    [2m | [22m[2m-[22m                   [2m | [22m [36m99 bytes[39m[2m | [22m               [36m99 bytes[39m
+[32mchunk-NMFL75IO.js[39m    [2m | [22m[2m-[22m                   [2m | [22m [36m99 bytes[39m[2m | [22m               [36m99 bytes[39m
+[32mchunk-XV34QRHJ.js[39m    [2m | [22m[2m-[22m                   [2m | [22m  [36m0 bytes[39m[2m | [22m                [36m0 bytes[39m
+
+[1m [22m                    [2m | [22m[1mInitial total[22m       [2m | [22m  [1m1.34 MB[22m[2m | [22m              [1m300.38 kB[22m
+
+[1mLazy chunk files[22m     [2m | [22m[1mNames[22m               [2m | [22m [1mRaw size[22m[2m | [22m[1mEstimated transfer size[22m
+[32mchunk-NOT3ZIGP.js[39m    [2m | [22m[2mprofile-page[22m        [2m | [22m[36m467.00 kB[39m[2m | [22m              [36m126.90 kB[39m
+[32mchunk-Z2YBEBTY.js[39m    [2m | [22m[2mqr-page[22m             [2m | [22m[36m426.35 kB[39m[2m | [22m              [36m101.51 kB[39m
+[32mchunk-NZSTUAAD.js[39m    [2m | [22m[2mhtml2canvas[22m         [2m | [22m[36m202.84 kB[39m[2m | [22m               [36m38.42 kB[39m
+[32mchunk-U56OYCSS.js[39m    [2m | [22m[2mindex-es[22m            [2m | [22m[36m159.15 kB[39m[2m | [22m               [36m46.83 kB[39m
+[32mchunk-A6NWSJET.js[39m    [2m | [22m[2m-[22m                   [2m | [22m [36m90.95 kB[39m[2m | [22m               [36m12.63 kB[39m
+[32mchunk-S7BACWWK.js[39m    [2m | [22m[2mion-datetime_3-entry[22m[2m | [22m [36m74.97 kB[39m[2m | [22m               [36m14.49 kB[39m
+[32mchunk-IIEU57RX.js[39m    [2m | [22m[2mion-item_8-entry[22m    [2m | [22m [36m55.18 kB[39m[2m | [22m                [36m7.22 kB[39m
+[32mchunk-YF4US3RQ.js[39m    [2m | [22m[2mion-textarea-entry[22m  [2m | [22m [36m47.21 kB[39m[2m | [22m                [36m5.76 kB[39m
+[32mchunk-ATCHXQR3.js[39m    [2m | [22m[2mion-select_3-entry[22m  [2m | [22m [36m43.33 kB[39m[2m | [22m                [36m7.34 kB[39m
+[32mchunk-MZHQU6QT.js[39m    [2m | [22m[2mion-modal-entry[22m     [2m | [22m [36m42.06 kB[39m[2m | [22m                [36m9.95 kB[39m
+[32mchunk-7LAEE5CT.js[39m    [2m | [22m[2mion-app_8-entry[22m     [2m | [22m [36m41.95 kB[39m[2m | [22m                [36m9.30 kB[39m
+[32mchunk-BJLIF5QV.js[39m    [2m | [22m[2mion-input-entry[22m     [2m | [22m [36m41.58 kB[39m[2m | [22m                [36m5.84 kB[39m
+[32mchunk-NJITFNEV.js[39m    [2m | [22m[2m-[22m                   [2m | [22m [36m38.64 kB[39m[2m | [22m                [36m8.37 kB[39m
+[32mchunk-TQHA65S4.js[39m    [2m | [22m[2mion-alert-entry[22m     [2m | [22m [36m35.34 kB[39m[2m | [22m                [36m6.36 kB[39m
+[32mchunk-KTYKYOYK.js[39m    [2m | [22m[2mion-range-entry[22m     [2m | [22m [36m30.95 kB[39m[2m | [22m                [36m6.05 kB[39m
+[2m...and 103 more lazy chunks files. Use "--verbose" to show all the files.[22m
+
+Application bundle generation complete. [22.153 seconds] - 2026-05-20T18:42:02.631Z
+
+node.exe : [1m[33m[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: 
+IonHeader is not used within the template of ActionsPage[0m [1m[35m[plugin 
+angular-compiler][0m
+En línea: 1 Carácter: 1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([1m[33m[33mÔ...r-compiler][0m 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+    src/app/actions/actions.page.ts:29:16:
+[37m      29 Ôöé     IonContent, [32mIonHeader[37m, IonToolbar, IonGrid, 
+IonRow, IonCol,
+         ÔòÁ                 [32m~~~~~~~~~[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: IonToolbar is not 
+used within the template of ActionsPage[0m [1m[35m[plugin 
+angular-compiler][0m
+
+    src/app/actions/actions.page.ts:29:27:
+[37m      29 Ôöé     IonContent, IonHeader, [32mIonToolbar[37m, IonGrid, 
+IonRow, IonCol,
+         ÔòÁ                            [32m~~~~~~~~~~[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: IonLabel is not 
+used within the template of ActionsPage[0m [1m[35m[plugin 
+angular-compiler][0m
+
+    src/app/actions/actions.page.ts:30:13:
+[37m      30 Ôöé     IonIcon, [32mIonLabel[37m, IonButtons, IonButton,
+         ÔòÁ              [32m~~~~~~~~[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: IonCardTitle is not 
+used within the template of ActionsPage[0m [1m[35m[plugin 
+angular-compiler][0m
+
+    src/app/actions/actions.page.ts:31:48:
+[37m      31 Ôöé     IonAvatar, IonInput, RouterModule, IonCard, 
+[32mIonCardTitle[37m,
+         ÔòÁ                                                 
+[32m~~~~~~~~~~~~[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: IonTitle is not 
+used within the template of BingoPage[0m [1m[35m[plugin 
+angular-compiler][0m
+
+    src/app/bingo/bingo.page.ts:19:27:
+[37m      19 Ôöé     IonContent, IonHeader, [32mIonTitle[37m, IonToolbar, 
+IonButtons,
+         ÔòÁ                            [32m~~~~~~~~[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: IonHeader is not 
+used within the template of LoginPage[0m [1m[35m[plugin 
+angular-compiler][0m
+
+    src/app/login/login.page.ts:33:16:
+[37m      33 Ôöé     IonContent, [32mIonHeader[37m, IonTitle, IonToolbar, 
+IonIcon,
+         ÔòÁ                 [32m~~~~~~~~~[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: IonTitle is not 
+used within the template of LoginPage[0m [1m[35m[plugin 
+angular-compiler][0m
+
+    src/app/login/login.page.ts:33:27:
+[37m      33 Ôöé     IonContent, IonHeader, [32mIonTitle[37m, IonToolbar, 
+IonIcon,
+         ÔòÁ                            [32m~~~~~~~~[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: IonToolbar is not 
+used within the template of LoginPage[0m [1m[35m[plugin 
+angular-compiler][0m
+
+    src/app/login/login.page.ts:33:37:
+[37m      33 Ôöé     IonContent, IonHeader, IonTitle, [32mIonToolbar[37m, 
+IonIcon,
+         ÔòÁ                                      [32m~~~~~~~~~~[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: IonText is not used 
+within the template of LoginPage[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/login/login.page.ts:34:4:
+[37m      34 Ôöé     [32mIonText[37m, IonCard, IonItem, IonLabel, IonInput,
+         ÔòÁ     [32m~~~~~~~[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: IonCard is not used 
+within the template of LoginPage[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/login/login.page.ts:34:13:
+[37m      34 Ôöé     IonText, [32mIonCard[37m, IonItem, IonLabel, IonInput,
+         ÔòÁ              [32m~~~~~~~[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: IonLabel is not 
+used within the template of LoginPage[0m [1m[35m[plugin 
+angular-compiler][0m
+
+    src/app/login/login.page.ts:34:31:
+[37m      34 Ôöé     IonText, IonCard, IonItem, [32mIonLabel[37m, IonInput,
+         ÔòÁ                                [32m~~~~~~~~[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: IonCheckbox is not 
+used within the template of LoginPage[0m [1m[35m[plugin 
+angular-compiler][0m
+
+    src/app/login/login.page.ts:35:15:
+[37m      35 Ôöé     IonButton, [32mIonCheckbox[37m, CommonModule, 
+FormsModule
+         ÔòÁ                [32m~~~~~~~~~~~[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: IonAvatar is not 
+used within the template of ChatPage[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/Chat/chat.page.ts:22:60:
+[37m      22 Ôöé ...IonBackButton, IonFooter, IonInput, IonButton, IonIcon, 
+[32mIonAvatar[37m,
+         ÔòÁ                                                            
+[32m~~~~~~~~~[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: IonMenuButton is 
+not used within the template of ChatPage[0m [1m[35m[plugin 
+angular-compiler][0m
+
+    src/app/pages/Chat/chat.page.ts:23:13:
+[37m      23 Ôöé     IonMenu, [32mIonMenuButton[37m, IonList, IonItem, 
+IonLabel,
+         ÔòÁ              [32m~~~~~~~~~~~~~[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: IonModal is not 
+used within the template of QrPage[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/QR/qr.page.ts:29:40:
+[37m      29 Ôöé ...con, IonButtons, IonBackButton, [32mIonModal[37m, 
+IonCard, IonCardContent,
+         ÔòÁ                                    [32m~~~~~~~~[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: IonCardContent is 
+not used within the template of QrPage[0m [1m[35m[plugin 
+angular-compiler][0m
+
+    src/app/pages/QR/qr.page.ts:29:59:
+[37m      29 Ôöé ...con, IonButtons, IonBackButton, IonModal, IonCard, 
+[32mIonCardContent[37m,
+         ÔòÁ                                                       
+[32m~~~~~~~~~~~~~~[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: IonButton is not 
+used within the template of GroupChatPage[0m [1m[35m[plugin 
+angular-compiler][0m
+
+    src/app/pages/groupchat/group-chat.page.ts:22:40:
+[37m      22 Ôöé ...IonBackButton, IonFooter, IonInput, [32mIonButton[37m, 
+IonIcon, IonAvatar,
+         ÔòÁ                                        [32m~~~~~~~~~[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: IonAvatar is not 
+used within the template of GroupChatPage[0m [1m[35m[plugin 
+angular-compiler][0m
+
+    src/app/pages/groupchat/group-chat.page.ts:22:60:
+[37m      22 Ôöé ...IonBackButton, IonFooter, IonInput, IonButton, IonIcon, 
+[32mIonAvatar[37m,
+         ÔòÁ                                                            
+[32m~~~~~~~~~[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: IonHeader is not 
+used within the template of HomePage[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/home/home.page.ts:36:16:
+[37m      36 Ôöé     IonContent, [32mIonHeader[37m, IonTitle, IonToolbar, 
+IonText,
+         ÔòÁ                 [32m~~~~~~~~~[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: IonTitle is not 
+used within the template of HomePage[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/home/home.page.ts:36:27:
+[37m      36 Ôöé     IonContent, IonHeader, [32mIonTitle[37m, IonToolbar, 
+IonText,
+         ÔòÁ                            [32m~~~~~~~~[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: IonToolbar is not 
+used within the template of HomePage[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/home/home.page.ts:36:37:
+[37m      36 Ôöé     IonContent, IonHeader, IonTitle, [32mIonToolbar[37m, 
+IonText,
+         ÔòÁ                                      [32m~~~~~~~~~~[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: IonText is not used 
+within the template of HomePage[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/home/home.page.ts:36:49:
+[37m      36 Ôöé     IonContent, IonHeader, IonTitle, IonToolbar, 
+[32mIonText[37m,
+         ÔòÁ                                                  [32m~~~~~~~[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: IonItem is not used 
+within the template of HomePage[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/home/home.page.ts:37:13:
+[37m      37 Ôöé     IonCard, [32mIonItem[37m, IonLabel, IonIcon, IonBadge, 
+IonButton,
+         ÔòÁ              [32m~~~~~~~[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: IonLabel is not 
+used within the template of HomePage[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/home/home.page.ts:37:22:
+[37m      37 Ôöé     IonCard, IonItem, [32mIonLabel[37m, IonIcon, IonBadge, 
+IonButton,
+         ÔòÁ                       [32m~~~~~~~~[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: IonBadge is not 
+used within the template of HomePage[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/home/home.page.ts:37:41:
+[37m      37 Ôöé     IonCard, IonItem, IonLabel, IonIcon, [32mIonBadge[37m, 
+IonButton,
+         ÔòÁ                                          [32m~~~~~~~~[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: IonHeader is not 
+used within the template of MapaPage[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/mapa/mapa.page.ts:27:4:
+[37m      27 Ôöé     [32mIonHeader[37m,
+         ÔòÁ     [32m~~~~~~~~~[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: IonToolbar is not 
+used within the template of MapaPage[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/mapa/mapa.page.ts:28:4:
+[37m      28 Ôöé     [32mIonToolbar[37m,
+         ÔòÁ     [32m~~~~~~~~~~[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: IonHeader is not 
+used within the template of ProfilePage[0m [1m[35m[plugin 
+angular-compiler][0m
+
+    src/app/pages/profile/profile.page.ts:50:16:
+[37m      50 Ôöé     IonContent, [32mIonHeader[37m, IonTitle, IonToolbar, 
+IonButton,
+         ÔòÁ                 [32m~~~~~~~~~[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: IonTitle is not 
+used within the template of ProfilePage[0m [1m[35m[plugin 
+angular-compiler][0m
+
+    src/app/pages/profile/profile.page.ts:50:27:
+[37m      50 Ôöé     IonContent, IonHeader, [32mIonTitle[37m, IonToolbar, 
+IonButton,
+         ÔòÁ                            [32m~~~~~~~~[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: IonToolbar is not 
+used within the template of ProfilePage[0m [1m[35m[plugin 
+angular-compiler][0m
+
+    src/app/pages/profile/profile.page.ts:50:37:
+[37m      50 Ôöé     IonContent, IonHeader, IonTitle, [32mIonToolbar[37m, 
+IonButton,
+         ÔòÁ                                      [32m~~~~~~~~~~[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: IonTitle is not 
+used within the template of QuickInteractionPage[0m [1m[35m[plugin 
+angular-compiler][0m
+
+    src/app/quick-interaction/quick-interaction.page.ts:35:4:
+[37m      35 Ôöé     [32mIonTitle[37m,
+         ÔòÁ     [32m~~~~~~~~[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: IonButton is not 
+used within the template of TiendaPage[0m [1m[35m[plugin 
+angular-compiler][0m
+
+    src/app/tienda/tienda.page.ts:26:37:
+[37m      26 Ôöé     IonBackButton, IonCard, IonIcon, [32mIonButton[37m, 
+CommonModule
+         ÔòÁ                                      [32m~~~~~~~~~[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mModule 
+'core-js/modules/es.promise.js' used by 'node_modules/canvg/lib/index.es.js' 
+is not ESM[0m
+
+  CommonJS or AMD dependencies can cause optimization bailouts.
+  For more information see: 
+[4mhttps://angular.dev/tools/cli/build#configuring-commonjs-dependencies[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mModule 
+'core-js/modules/es.string.match.js' used by 
+'node_modules/canvg/lib/index.es.js' is not ESM[0m
+
+  CommonJS or AMD dependencies can cause optimization bailouts.
+  For more information see: 
+[4mhttps://angular.dev/tools/cli/build#configuring-commonjs-dependencies[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mModule 
+'core-js/modules/es.string.replace.js' used by 
+'node_modules/canvg/lib/index.es.js' is not ESM[0m
+
+  CommonJS or AMD dependencies can cause optimization bailouts.
+  For more information see: 
+[4mhttps://angular.dev/tools/cli/build#configuring-commonjs-dependencies[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mModule 
+'core-js/modules/es.string.starts-with.js' used by 
+'node_modules/canvg/lib/index.es.js' is not ESM[0m
+
+  CommonJS or AMD dependencies can cause optimization bailouts.
+  For more information see: 
+[4mhttps://angular.dev/tools/cli/build#configuring-commonjs-dependencies[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mModule 
+'core-js/modules/es.array.iterator.js' used by 
+'node_modules/canvg/lib/index.es.js' is not ESM[0m
+
+  CommonJS or AMD dependencies can cause optimization bailouts.
+  For more information see: 
+[4mhttps://angular.dev/tools/cli/build#configuring-commonjs-dependencies[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mModule 
+'core-js/modules/web.dom-collections.iterator.js' used by 
+'node_modules/canvg/lib/index.es.js' is not ESM[0m
+
+  CommonJS or AMD dependencies can cause optimization bailouts.
+  For more information see: 
+[4mhttps://angular.dev/tools/cli/build#configuring-commonjs-dependencies[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mModule 
+'core-js/modules/es.array.reduce.js' used by 
+'node_modules/canvg/lib/index.es.js' is not ESM[0m
+
+  CommonJS or AMD dependencies can cause optimization bailouts.
+  For more information see: 
+[4mhttps://angular.dev/tools/cli/build#configuring-commonjs-dependencies[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mModule 
+'core-js/modules/es.string.ends-with.js' used by 
+'node_modules/canvg/lib/index.es.js' is not ESM[0m
+
+  CommonJS or AMD dependencies can cause optimization bailouts.
+  For more information see: 
+[4mhttps://angular.dev/tools/cli/build#configuring-commonjs-dependencies[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mModule 
+'core-js/modules/es.string.split.js' used by 
+'node_modules/canvg/lib/index.es.js' is not ESM[0m
+
+  CommonJS or AMD dependencies can cause optimization bailouts.
+  For more information see: 
+[4mhttps://angular.dev/tools/cli/build#configuring-commonjs-dependencies[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mModule 'raf' used by 
+'node_modules/canvg/lib/index.es.js' is not ESM[0m
+
+  CommonJS or AMD dependencies can cause optimization bailouts.
+  For more information see: 
+[4mhttps://angular.dev/tools/cli/build#configuring-commonjs-dependencies[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mModule 
+'core-js/modules/es.string.trim.js' used by 
+'node_modules/canvg/lib/index.es.js' is not ESM[0m
+
+  CommonJS or AMD dependencies can cause optimization bailouts.
+  For more information see: 
+[4mhttps://angular.dev/tools/cli/build#configuring-commonjs-dependencies[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mModule 'rgbcolor' used by 
+'node_modules/canvg/lib/index.es.js' is not ESM[0m
+
+  CommonJS or AMD dependencies can cause optimization bailouts.
+  For more information see: 
+[4mhttps://angular.dev/tools/cli/build#configuring-commonjs-dependencies[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mModule 
+'core-js/modules/es.array.index-of.js' used by 
+'node_modules/canvg/lib/index.es.js' is not ESM[0m
+
+  CommonJS or AMD dependencies can cause optimization bailouts.
+  For more information see: 
+[4mhttps://angular.dev/tools/cli/build#configuring-commonjs-dependencies[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mModule 
+'core-js/modules/es.string.includes.js' used by 
+'node_modules/canvg/lib/index.es.js' is not ESM[0m
+
+  CommonJS or AMD dependencies can cause optimization bailouts.
+  For more information see: 
+[4mhttps://angular.dev/tools/cli/build#configuring-commonjs-dependencies[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mModule 
+'core-js/modules/es.array.reverse.js' used by 
+'node_modules/canvg/lib/index.es.js' is not ESM[0m
+
+  CommonJS or AMD dependencies can cause optimization bailouts.
+  For more information see: 
+[4mhttps://angular.dev/tools/cli/build#configuring-commonjs-dependencies[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mModule 
+'core-js/modules/es.regexp.to-string.js' used by 
+'node_modules/canvg/lib/index.es.js' is not ESM[0m
+
+  CommonJS or AMD dependencies can cause optimization bailouts.
+  For more information see: 
+[4mhttps://angular.dev/tools/cli/build#configuring-commonjs-dependencies[0m
+
+
+[33mÔû▓ [43;33m[[43;30mWARNING[43;33m][0m [1mModule 'html2canvas' used 
+by 'node_modules/jspdf/dist/jspdf.es.min.js' is not ESM[0m
+
+  CommonJS or AMD dependencies can cause optimization bailouts.
+  For more information see: 
+[4mhttps://angular.dev/tools/cli/build#configuring-commonjs-dependencies[0m
+
+[39m[22m
+Output location: C:\Users\pared\Downloads\AffiniScore_Oficial\producto\app_AffiniScore\frontend\www
+

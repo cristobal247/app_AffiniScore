@@ -1,0 +1,755 @@
+@import url("https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css");
+
+:host {
+  --bone: #F8F8F8;
+  --accent: #d85158;
+  --accent-soft: #f3d8d9;
+  --ink: #2c2c2c;
+  --muted: #8f8f8f;
+  
+  width: 100%;
+  height: 100%;
+  display: block;
+  position: relative;
+}
+
+#map {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1;
+}
+
+ion-content.map-page {
+  --background: transparent !important;
+  background: transparent !important;
+  --overflow: hidden;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  pointer-events: none;
+  
+  &::part(scroll) {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: transparent !important;
+  }
+}
+
+/* Habilitar interacción táctil para elementos flotantes */
+.top-floating-container,
+.sos-floating-container,
+.bottom-pill-container,
+.premium-search-modal {
+  pointer-events: auto !important;
+}
+
+/* 1. Botones Flotantes Superiores */
+.top-floating-container {
+  position: absolute;
+  top: calc(var(--ion-safe-area-top, 20px) + 28px);
+  left: 16px;
+  right: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.back-floating-btn {
+  pointer-events: auto;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  color: #d85158;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+  margin: 0;
+  outline: none;
+
+  &:active {
+    transform: scale(0.92);
+    background: #ffffff;
+  }
+
+  ion-icon {
+    font-size: 22px;
+  }
+}
+
+.actions-floating-group {
+  pointer-events: auto;
+  display: flex;
+  gap: 12px;
+}
+
+.action-floating-btn {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  color: #4a4a4a;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+  margin: 0;
+  outline: none;
+
+  &:active {
+    transform: scale(0.92);
+    background: #ffffff;
+  }
+
+  ion-icon {
+    font-size: 22px;
+    color: #d85158;
+  }
+  
+  &:last-child ion-icon {
+    color: #666666;
+  }
+}
+
+/* 2. Botón SOS Flotante (Bottom Right) */
+.sos-floating-container {
+  position: absolute;
+  bottom: calc(var(--ion-safe-area-bottom, 0px) + 54px);
+  right: 16px;
+  z-index: 10;
+}
+
+.sos-floating-btn {
+  border: none;
+  border-radius: 50%;
+  width: 62px;
+  height: 62px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #ff0844 0%, #ffb199 100%);
+  color: white;
+  box-shadow: 0 0 15px rgba(255, 8, 68, 0.5), 0 8px 24px rgba(255, 8, 68, 0.3);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 0;
+  margin: 0;
+  outline: none;
+  position: relative;
+  
+  ion-icon {
+    font-size: 28px;
+    color: #ffffff;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
+    transition: transform 0.25s ease;
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -2.5px;
+    left: -2.5px;
+    right: -2.5px;
+    bottom: -2.5px;
+    background: linear-gradient(135deg, #ffb199 0%, #ff0844 100%);
+    border-radius: 50%;
+    z-index: -1;
+    opacity: 0.65;
+    transition: opacity 0.3s ease;
+  }
+
+  /* Animación de respiración cuando está inactivo */
+  animation: sos-breathing 3s infinite alternate;
+
+  &:hover {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 0 25px rgba(255, 8, 68, 0.7), 0 12px 30px rgba(255, 8, 68, 0.4);
+  }
+
+  &:active {
+    transform: scale(0.94);
+  }
+
+  &.recording {
+    background: linear-gradient(135deg, #f857a6 0%, #ff5858 100%);
+    box-shadow: 0 0 35px #ff5858, 0 0 12px rgba(248, 87, 166, 0.8);
+    animation: pulse-red-sos 1.2s infinite;
+
+    ion-icon {
+      transform: scale(0.85);
+      animation: stop-icon-pulse 1.2s infinite alternate;
+    }
+    
+    &::before {
+      opacity: 0.95;
+      background: #ff5858;
+    }
+  }
+}
+
+@keyframes sos-breathing {
+  0% {
+    box-shadow: 0 0 12px rgba(255, 8, 68, 0.45), 0 6px 16px rgba(255, 8, 68, 0.25);
+  }
+  100% {
+    box-shadow: 0 0 24px rgba(255, 8, 68, 0.75), 0 8px 24px rgba(255, 8, 68, 0.35);
+  }
+}
+
+@keyframes pulse-red-sos {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 88, 88, 0.75), 0 0 0 0 rgba(248, 87, 166, 0.55);
+    transform: scale(1);
+  }
+  70% {
+    box-shadow: 0 0 0 20px rgba(255, 88, 88, 0), 0 0 0 12px rgba(248, 87, 166, 0);
+    transform: scale(1.08);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 88, 88, 0), 0 0 0 0 rgba(248, 87, 166, 0);
+    transform: scale(1);
+  }
+}
+
+@keyframes stop-icon-pulse {
+  0% {
+    transform: scale(0.8);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* 3. Bottom Pill Centring (Bottom Center) */
+.bottom-pill-container {
+  position: absolute;
+  bottom: calc(var(--ion-safe-area-bottom, 0px) + 54px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 30px;
+  padding: 6px 14px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  gap: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.avatar-pill-btn {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #e0e0e0;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  &:active {
+    transform: scale(0.9);
+  }
+
+  &.user-avatar-pill {
+    border: 2.5px solid #ff4e7e;
+  }
+
+  &.partner-avatar-pill {
+    border: 2.5px solid #3880ff;
+  }
+}
+
+.pill-spark-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666666;
+  cursor: pointer;
+  transition: background 0.2s ease;
+
+  &:active {
+    background: rgba(0, 0, 0, 0.1);
+  }
+
+  ion-icon {
+    font-size: 16px;
+  }
+}
+
+/* Restablecer Mapbox controls y popup a una estética glassmorphic premium */
+.mapboxgl-ctrl-bottom-right,
+.mapboxgl-ctrl-bottom-left {
+  z-index: 2 !important;
+}
+
+.mapboxgl-ctrl-attrib {
+  font-size: 9px !important;
+  background: rgba(255, 255, 255, 0.5) !important;
+  border-radius: 4px;
+  padding: 2px 4px !important;
+}
+
+.mapboxgl-ctrl-logo {
+  opacity: 0.6;
+  transform: scale(0.85);
+  transform-origin: bottom left;
+}
+
+.mapboxgl-popup-content {
+  border-radius: 16px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15) !important;
+  padding: 12px 14px !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  
+  h4 {
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+  }
+  
+  p {
+    font-family: inherit;
+    font-size: 12px;
+  }
+}
+
+.mapboxgl-popup-tip {
+  border-top-color: rgba(255, 255, 255, 0.95) !important;
+  border-bottom-color: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* Estilos para el Modal Premium de Búsqueda */
+.premium-search-modal {
+  --background: rgba(255, 255, 255, 0.95);
+  --backdrop-opacity: 0.4;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  
+  &::part(content) {
+    border-top-left-radius: 24px;
+    border-top-right-radius: 24px;
+    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.15);
+  }
+}
+
+.modal-toolbar {
+  --background: transparent;
+  --border-style: none;
+  padding-top: 10px !important;
+
+  ion-title {
+    --color: #df5b61 !important;
+    color: #df5b61 !important;
+    font-weight: 600 !important;
+    font-size: 18px !important;
+    letter-spacing: 0.5px !important;
+    text-align: left !important;
+    padding-left: 16px !important;
+  }
+}
+
+.modal-content {
+  --background: transparent;
+}
+
+.modal-body-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.input-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: #666;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.premium-input {
+  --background: rgba(0, 0, 0, 0.04);
+  --padding-start: 14px;
+  --padding-end: 14px;
+  --border-radius: 12px;
+  --border-style: none;
+  font-size: 15px;
+  color: #333;
+  margin: 0;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.premium-searchbar {
+  --background: rgba(0, 0, 0, 0.04);
+  --box-shadow: none;
+  --border-radius: 12px;
+  padding: 0;
+  --color: #333333 !important;
+  --placeholder-color: #666666 !important;
+  --icon-color: #666666 !important;
+  --clear-button-color: #666666 !important;
+  color: #333333 !important;
+  
+  input {
+    color: #333333 !important;
+  }
+  
+  .searchbar-input-container {
+    box-shadow: none !important;
+  }
+}
+
+.spinner-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 0;
+  gap: 10px;
+  
+  p {
+    font-size: 13px;
+    color: #8f8f8f;
+    margin: 0;
+  }
+}
+
+.suggestions-list {
+  background: transparent !important;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-top: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.suggestion-item {
+  --background: #ffffff;
+  --border-style: none;
+  --padding-start: 14px;
+  --padding-end: 14px;
+  --inner-padding-end: 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  
+  &:last-child {
+    border-bottom: none;
+  }
+  
+  h2 {
+    font-size: 14px;
+    font-weight: 700;
+    color: #333;
+    margin: 0 0 2px;
+  }
+  
+  p {
+    font-size: 11px;
+    color: #8f8f8f;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.suggestion-icon {
+  color: #df5b61;
+  font-size: 18px;
+}
+
+.selected-address-box {
+  display: flex;
+  align-items: flex-start;
+  background: rgba(46, 204, 113, 0.08);
+  border: 1px solid rgba(46, 204, 113, 0.2);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-top: 16px;
+  gap: 10px;
+  
+  ion-icon {
+    font-size: 20px;
+    margin-top: 2px;
+  }
+  
+  .address-details {
+    display: flex;
+    flex-direction: column;
+    
+    strong {
+      font-size: 12px;
+      color: #27ae60;
+    }
+    
+    p {
+      font-size: 13px;
+      color: #333;
+      margin: 2px 0 0;
+    }
+  }
+}
+
+.modal-actions-container {
+  margin-top: 24px;
+  margin-bottom: 16px;
+}
+
+.btn-registrar-lugar {
+  --background: linear-gradient(135deg, #df5b61 0%, #bd343a 100%);
+  --background-hover: linear-gradient(135deg, #e57378 0%, #bd343a 100%);
+  --border-radius: 14px;
+  --box-shadow: 0 6px 16px rgba(189, 52, 58, 0.3);
+  font-weight: 700;
+  font-size: 15px;
+  height: 48px;
+}
+
+/* Premium Segment Controller for Modal */
+.premium-segment {
+  --background: rgba(0, 0, 0, 0.04);
+  border-radius: 12px;
+  padding: 4px;
+  margin: 8px 16px 12px !important;
+  
+  ion-segment-button {
+    --indicator-color: #ffffff;
+    --color: #666666;
+    --color-checked: #df5b61;
+    --border-radius: 10px;
+    font-weight: 700;
+    min-height: 36px;
+    --padding-start: 4px !important;
+    --padding-end: 4px !important;
+    
+    ion-label {
+      margin: 0 !important;
+      font-size: 11px !important;
+      font-weight: 700 !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+    }
+    
+    &::part(indicator-background) {
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    }
+  }
+}
+
+/* Suggestion Chips */
+.suggestions-chips-container {
+  margin-top: 14px;
+  margin-bottom: 6px;
+  
+  .suggestions-chips-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #8f8f8f;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    display: block;
+  }
+  
+  .chips-flex {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .suggestion-chip {
+    background: rgba(223, 91, 97, 0.06);
+    border: 1.5px solid rgba(223, 91, 97, 0.12);
+    color: #df5b61;
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    &:hover {
+      background: rgba(223, 91, 97, 0.1);
+      border-color: rgba(223, 91, 97, 0.25);
+      transform: translateY(-1px);
+    }
+    
+    &:active {
+      transform: scale(0.95) translateY(0);
+      background: rgba(223, 91, 97, 0.16);
+    }
+  }
+}
+
+/* Memories History Grid & Cards */
+.no-memories-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 48px 24px;
+  text-align: center;
+  
+  .no-memories-text {
+    font-size: 14px;
+    color: #8f8f8f;
+    line-height: 1.6;
+    font-weight: 500;
+  }
+}
+
+.memories-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 8px 0 24px;
+}
+
+.geozone-history-card {
+  background: #ffffff;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.08);
+  }
+}
+
+.geozone-map-snapshot {
+  width: 100%;
+  height: 145px;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  background: #f0f0f0;
+  
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+  }
+  
+  &:hover img {
+    transform: scale(1.04);
+  }
+  
+  .heart-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    box-shadow: 0 4px 12px rgba(255, 78, 126, 0.25);
+    border: 1px solid rgba(255, 78, 126, 0.1);
+  }
+}
+
+.geozone-card-details {
+  padding: 14px 16px 8px;
+  
+  .geozone-card-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #2c2c2c;
+    margin: 0 0 6px;
+  }
+  
+  .geozone-card-coords {
+    font-size: 12px;
+    color: #7f7f7f;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    
+    ion-icon {
+      font-size: 14px;
+      color: #ff4e7e;
+    }
+  }
+}
+
+.geozone-card-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 12px 10px;
+  border-top: 1px solid rgba(0, 0, 0, 0.03);
+  
+  .btn-ver-mapa {
+    --color: #ff4e7e;
+    font-weight: 700;
+    font-size: 13px;
+    margin: 0;
+  }
+  
+  .btn-eliminar-geozone {
+    --color: #d85158;
+    margin: 0;
+    --padding-start: 8px;
+    --padding-end: 8px;
+    
+    ion-icon {
+      font-size: 19px;
+    }
+  }
+}

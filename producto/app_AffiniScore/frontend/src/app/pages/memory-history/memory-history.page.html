@@ -1,0 +1,92 @@
+<ion-header>
+  <ion-toolbar class="memory-toolbar">
+    <ion-button fill="clear" routerLink="/tabs/dashboard" class="back-button">
+      <ion-icon name="arrow-back-outline"></ion-icon>
+    </ion-button>
+    <ion-title>¿Dónde estábamos aquí?</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="memory-history-content">
+  <div class="stage-shell">
+    <div class="stage-copy">
+      <span class="eyebrow">Micro-gamificación · 5 minutos</span>
+      <h1>Jugar Memoria Histórica</h1>
+      <p>
+        Miren la misma foto, reconstruyan el contexto y dejen que el recuerdo los vuelva a unir.
+      </p>
+    </div>
+
+    <ion-card class="timer-card">
+      <div class="timer-row">
+        <ion-icon name="time-outline"></ion-icon>
+        <span>Tiempo restante</span>
+        <strong>{{ timerLabel }}</strong>
+      </div>
+      <ion-progress-bar [value]="timerProgress"></ion-progress-bar>
+    </ion-card>
+
+    <div *ngIf="isLoading" class="loading-state">
+      <ion-spinner name="crescent"></ion-spinner>
+      <p>Buscando un recuerdo especial...</p>
+    </div>
+
+    <div *ngIf="!isLoading && errorMessage" class="empty-state">
+      <ion-icon name="heart-outline"></ion-icon>
+      <h2>No hay partida disponible</h2>
+      <p>{{ errorMessage }}</p>
+      <ion-button routerLink="/tabs/dashboard">Volver al inicio</ion-button>
+    </div>
+
+    <ion-card *ngIf="!isLoading && activeMemory" class="memory-card">
+      <div class="image-frame" (click)="openPreview()">
+        <ion-img [src]="activeMemory.image_url" alt="Recuerdo histórico"></ion-img>
+        <div class="image-overlay">
+          <ion-icon name="expand-outline"></ion-icon>
+          <span>Tocar para ampliar</span>
+        </div>
+      </div>
+
+      <ion-card-content>
+        <div class="memory-meta">
+          <ion-badge color="light">{{ formatDate(activeMemory.created_at) }}</ion-badge>
+          <ion-badge color="light">{{ activeMemory.location_name || 'Lugar no registrado' }}</ion-badge>
+        </div>
+
+        <h2>¿Dónde crees que fue este momento?</h2>
+        <p class="memory-hint">
+          Hablen de quién estaba allí, qué celebraban y qué sentían en ese instante.
+        </p>
+
+        <div class="score-chip">
+          <ion-icon name="sparkles-outline"></ion-icon>
+          +20 Affini Points al completarlo
+        </div>
+
+        <ion-button
+          expand="block"
+          class="complete-button"
+          [disabled]="isCompleting || completed || remainingSeconds === 0"
+          (click)="completeMemory()"
+        >
+          {{ completed ? 'Recuerdo completado' : 'Recuerdo completado' }}
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <ion-modal [isOpen]="isPreviewOpen" (didDismiss)="closePreview()">
+    <ng-template>
+      <div class="preview-modal">
+        <ion-button fill="clear" class="close-preview" (click)="closePreview()">
+          <ion-icon name="close-outline"></ion-icon>
+        </ion-button>
+        <ion-img *ngIf="activeMemory" [src]="activeMemory.image_url" alt="Recuerdo ampliado"></ion-img>
+        <div class="preview-copy" *ngIf="activeMemory">
+          <h3>{{ formatDate(activeMemory.created_at) }}</h3>
+          <p>{{ activeMemory.location_name || 'Lugar no registrado' }}</p>
+        </div>
+      </div>
+    </ng-template>
+  </ion-modal>
+</ion-content>

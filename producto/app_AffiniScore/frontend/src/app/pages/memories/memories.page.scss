@@ -1,0 +1,17 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.grid-item ion-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.grid-item img {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  display: block;
+}

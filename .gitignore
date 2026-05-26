@@ -1,0 +1,21 @@
+# Raíz del proyecto
+.env
+.DS_Store
+.angular/
+build_output.log
+
+# Backend (Ajustado a la nueva ruta)
+**/backend/venv/
+**/backend/__pycache__/
+**/.venv/
+
+# Frontend (Ajustado a la nueva ruta)
+**/node_modules/
+**/frontend/dist/
+**/frontend/.angular/
+**/www/
+
+# API Keys and Environments
+**/environments/environment.ts
+**/environments/environment.prod.ts
+**/firebase-key.json

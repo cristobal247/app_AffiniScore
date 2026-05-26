@@ -1,0 +1,5 @@
+{
+  // Usar la versión de TypeScript del frontend para evitar diagnósticos deprecados
+  "typescript.tsdk": "producto/app_AffiniScore/frontend/node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true
+}
