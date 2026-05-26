@@ -72,7 +72,6 @@ export class QuickInteractionService {
       console.warn('No se pudo registrar el catálogo del juego rápido:', error);
     }
   }
-
   getRandomQuestions(count: number = 3): TriviaQuestion[] {
     const shuffled = [...this.TRIVIA_POOL].sort(() => Math.random() - 0.5);
     return shuffled.slice(0, count);
@@ -88,7 +87,6 @@ export class QuickInteractionService {
 
   async createGameSession(partnershipId: string, gameType: 'trivia' = 'trivia'): Promise<{ data: QuickGameSession | null; error: any }> {
     await this.ensureCatalogEntry();
-
     const questions = this.getRandomQuestions(3);
 
     const session: QuickGameSession = {

@@ -46,7 +46,6 @@ addIcons({ imagesOutline, cloudUploadOutline, expandOutline, closeOutline, locat
         <ion-button size="small" fill="outline" (click)="openGame('tabs/bingo')">Jugar: Bingo</ion-button>
         <ion-button size="small" fill="outline" (click)="openGame('tabs/quick-interaction')">Jugar: ¿Dónde estábamos?</ion-button>
       </div>
-
       <div class="grid">
         <div *ngIf="images.length === 0" class="empty">No hay recuerdos validados todavía.</div>
         <ion-card class="grid-item" *ngFor="let img of images" (click)="openImage(img)">
