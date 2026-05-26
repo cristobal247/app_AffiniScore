@@ -54,7 +54,7 @@ ion-content.map-page {
 /* 1. Botones Flotantes Superiores */
 .top-floating-container {
   position: absolute;
-  top: calc(var(--ion-safe-area-top, 20px) + 12px);
+  top: calc(var(--ion-safe-area-top, 20px) + 28px);
   left: 16px;
   right: 16px;
   display: flex;
@@ -64,35 +64,33 @@ ion-content.map-page {
   pointer-events: none;
 }
 
-.profile-floating-btn {
+.back-floating-btn {
   pointer-events: auto;
-  background: none;
-  border: none;
-  padding: 0;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  color: #d85158;
   cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+  margin: 0;
   outline: none;
-  
-  .user-avatar-circle {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    border: 2px solid #ffffff;
-    overflow: hidden;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    background: #e0e0e0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    
-    img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-  }
 
   &:active {
     transform: scale(0.92);
+    background: #ffffff;
+  }
+
+  ion-icon {
+    font-size: 22px;
   }
 }
 
@@ -139,7 +137,7 @@ ion-content.map-page {
 /* 2. Botón SOS Flotante (Bottom Right) */
 .sos-floating-container {
   position: absolute;
-  bottom: calc(var(--ion-safe-area-bottom, 0px) + 24px);
+  bottom: calc(var(--ion-safe-area-bottom, 0px) + 54px);
   right: 16px;
   z-index: 10;
 }
@@ -248,7 +246,7 @@ ion-content.map-page {
 /* 3. Bottom Pill Centring (Bottom Center) */
 .bottom-pill-container {
   position: absolute;
-  bottom: calc(var(--ion-safe-area-bottom, 0px) + 24px);
+  bottom: calc(var(--ion-safe-area-bottom, 0px) + 54px);
   left: 50%;
   transform: translateX(-50%);
   z-index: 10;
@@ -381,6 +379,16 @@ ion-content.map-page {
   --background: transparent;
   --border-style: none;
   padding-top: 10px !important;
+
+  ion-title {
+    --color: #df5b61 !important;
+    color: #df5b61 !important;
+    font-weight: 600 !important;
+    font-size: 18px !important;
+    letter-spacing: 0.5px !important;
+    text-align: left !important;
+    padding-left: 16px !important;
+  }
 }
 
 .modal-content {
@@ -421,6 +429,15 @@ ion-content.map-page {
   --box-shadow: none;
   --border-radius: 12px;
   padding: 0;
+  --color: #333333 !important;
+  --placeholder-color: #666666 !important;
+  --icon-color: #666666 !important;
+  --clear-button-color: #666666 !important;
+  color: #333333 !important;
+  
+  input {
+    color: #333333 !important;
+  }
   
   .searchbar-input-container {
     box-shadow: none !important;
@@ -481,7 +498,7 @@ ion-content.map-page {
 }
 
 .suggestion-icon {
-  color: #ff4e7e;
+  color: #df5b61;
   font-size: 18px;
 }
 
@@ -523,10 +540,10 @@ ion-content.map-page {
 }
 
 .btn-registrar-lugar {
-  --background: linear-gradient(135deg, #ff4e7e 0%, #d85158 100%);
-  --background-hover: linear-gradient(135deg, #ff6c95 0%, #e06269 100%);
+  --background: linear-gradient(135deg, #df5b61 0%, #bd343a 100%);
+  --background-hover: linear-gradient(135deg, #e57378 0%, #bd343a 100%);
   --border-radius: 14px;
-  --box-shadow: 0 6px 16px rgba(216, 81, 88, 0.3);
+  --box-shadow: 0 6px 16px rgba(189, 52, 58, 0.3);
   font-weight: 700;
   font-size: 15px;
   height: 48px;
@@ -535,19 +552,28 @@ ion-content.map-page {
 /* Premium Segment Controller for Modal */
 .premium-segment {
   --background: rgba(0, 0, 0, 0.04);
-  background: rgba(0, 0, 0, 0.04);
   border-radius: 12px;
   padding: 4px;
-  margin: 8px 16px 12px;
+  margin: 8px 16px 12px !important;
   
   ion-segment-button {
     --indicator-color: #ffffff;
     --color: #666666;
-    --color-checked: #ff4e7e;
+    --color-checked: #df5b61;
     --border-radius: 10px;
-    font-weight: 600;
-    font-size: 13px;
+    font-weight: 700;
     min-height: 36px;
+    --padding-start: 4px !important;
+    --padding-end: 4px !important;
+    
+    ion-label {
+      margin: 0 !important;
+      font-size: 11px !important;
+      font-weight: 700 !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+    }
     
     &::part(indicator-background) {
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
@@ -577,9 +603,9 @@ ion-content.map-page {
   }
   
   .suggestion-chip {
-    background: rgba(255, 78, 126, 0.06);
-    border: 1.5px solid rgba(255, 78, 126, 0.12);
-    color: #ff4e7e;
+    background: rgba(223, 91, 97, 0.06);
+    border: 1.5px solid rgba(223, 91, 97, 0.12);
+    color: #df5b61;
     border-radius: 20px;
     padding: 6px 14px;
     font-size: 12px;
@@ -588,14 +614,14 @@ ion-content.map-page {
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     
     &:hover {
-      background: rgba(255, 78, 126, 0.1);
-      border-color: rgba(255, 78, 126, 0.25);
+      background: rgba(223, 91, 97, 0.1);
+      border-color: rgba(223, 91, 97, 0.25);
       transform: translateY(-1px);
     }
     
     &:active {
       transform: scale(0.95) translateY(0);
-      background: rgba(255, 78, 126, 0.16);
+      background: rgba(223, 91, 97, 0.16);
     }
   }
 }

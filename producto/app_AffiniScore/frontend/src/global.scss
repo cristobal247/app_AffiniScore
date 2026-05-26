@@ -191,10 +191,9 @@ ion-avatar.user-avatar-top { width: 38px !important; height: 38px !important; }
   background-color: #F5F3F3; // Color base blanco grisáceo (similar a #f4f4f4 pero con un pequeñísimo tono cálido)
 }
 
-/* Hiding tab bar in AI Chat, Group Chat, and Fullscreen Map */
+/* Hiding tab bar in AI Chat and Group Chat */
 body:has(app-chat) ion-tab-bar,
-body:has(app-group-chat) ion-tab-bar,
-body:has(app-mapa) ion-tab-bar {
+body:has(app-group-chat) ion-tab-bar {
   display: none !important;
 }
 

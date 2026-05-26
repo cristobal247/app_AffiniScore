@@ -27,7 +27,7 @@ import { Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { addIcons } from 'ionicons';
-import { addCircleOutline, cogOutline, warningOutline, square, locationOutline, checkmarkCircleOutline, closeOutline, trashOutline } from 'ionicons/icons';
+import { addCircleOutline, cogOutline, warningOutline, square, locationOutline, checkmarkCircleOutline, closeOutline, trashOutline, chevronBackOutline } from 'ionicons/icons';
 import { environment } from '../../../environments/environment';
 import { FormsModule } from '@angular/forms';
 
@@ -131,7 +131,8 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
       locationOutline, 
       checkmarkCircleOutline, 
       closeOutline,
-      trashOutline
+      trashOutline,
+      'chevron-back-outline': chevronBackOutline
     });
   }
 
@@ -203,11 +204,11 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
       el.style.backgroundSize = 'cover';
       el.style.backgroundPosition = 'center';
       el.style.borderRadius = '50%';
-      el.style.border = '3px solid #ff4e7e';
-      el.style.boxShadow = '0 0 10px rgba(255, 78, 126, 0.7), 0 4px 8px rgba(0,0,0,0.3)';
+      el.style.border = '3px solid #df5b61';
+      el.style.boxShadow = '0 0 10px rgba(223, 91, 97, 0.7), 0 4px 8px rgba(0,0,0,0.3)';
       el.style.cursor = 'pointer';
 
-      const popup = new mapboxgl.Popup({ offset: 25 }).setHTML('<p style="margin:0;font-weight:700;color:#ff4e7e;font-size:13px;font-family:inherit;text-align:center;">¡Tú estás aquí! 💖</p>');
+      const popup = new mapboxgl.Popup({ offset: 25 }).setHTML('<p style="margin:0;font-weight:700;color:#df5b61;font-size:13px;font-family:inherit;text-align:center;">¡Tú estás aquí! 💖</p>');
 
       this.userMarker = new mapboxgl.Marker(el)
         .setLngLat([lng, lat])
@@ -585,7 +586,7 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
     this.registeredGeozones.forEach((zone: any) => {
       const el = document.createElement('div');
       el.className = 'special-place-marker';
-      el.style.background = '#ff4e7e';
+      el.style.background = '#df5b61';
       el.style.color = 'white';
       el.style.width = '38px';
       el.style.height = '38px';
@@ -593,7 +594,7 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
       el.style.display = 'flex';
       el.style.alignItems = 'center';
       el.style.justifyContent = 'center';
-      el.style.boxShadow = '0 4px 12px rgba(255, 78, 126, 0.5)';
+      el.style.boxShadow = '0 4px 12px rgba(223, 91, 97, 0.5)';
       el.style.border = '2px solid white';
       el.style.fontSize = '16px';
       el.style.cursor = 'pointer';
@@ -601,8 +602,8 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
 
       const popupHtml = `
         <div style="font-family: inherit; text-align: center; padding: 4px;">
-          <h4 style="margin: 0 0 4px; color: #ff4e7e; font-weight: 700; font-size: 14px;">${zone.name}</h4>
-          <span style="font-size: 10px; background: #ffebee; color: #ff4e7e; padding: 2px 6px; border-radius: 10px; font-weight: 600;">Zona de Geofencing Activa</span>
+          <h4 style="margin: 0 0 4px; color: #df5b61; font-weight: 700; font-size: 14px;">${zone.name}</h4>
+          <span style="font-size: 10px; background: #fbecec; color: #df5b61; padding: 2px 6px; border-radius: 10px; font-weight: 600;">Zona de Geofencing Activa</span>
         </div>
       `;
 
@@ -619,7 +620,7 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
 
   // Genera un mapa estático de Mapbox centrado en la geocerca con un pin en forma de corazón
   getStaticMapUrl(longitude: number, latitude: number): string {
-    return `https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s-heart+ff4e7e(${longitude},${latitude})/${longitude},${latitude},14.5/350x180@2x?access_token=${environment.mapboxToken}`;
+    return `https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s-heart+df5b61(${longitude},${latitude})/${longitude},${latitude},14.5/350x180@2x?access_token=${environment.mapboxToken}`;
   }
 
   // Centra la cámara principal de la app en la geocerca seleccionada y abre su popup descriptivo

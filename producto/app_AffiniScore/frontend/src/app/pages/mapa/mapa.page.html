@@ -7,23 +7,16 @@
   
   <!-- 1. Botones Flotantes Superiores -->
   <div class="top-floating-container">
-    <!-- Lado Izquierdo: Botón de Perfil -->
-    <button class="profile-floating-btn" routerLink="/profile">
-      <div class="user-avatar-circle">
-        <img [src]="userAvatarUrl || '/assets/images/user.png'" alt="Perfil" />
-      </div>
+    <!-- Lado Izquierdo: Botón para volver atrás -->
+    <button class="back-floating-btn" routerLink="/tabs/dashboard" title="Volver al Panel">
+      <ion-icon name="chevron-back-outline"></ion-icon>
     </button>
 
-    <!-- Lado Derecho: Acciones (Agregar lugar especial, ajustes) -->
+    <!-- Lado Derecho: Acciones (Agregar lugar especial) -->
     <div class="actions-floating-group">
       <!-- Botón de ingresar dirección del lugar visitado -->
       <button class="action-floating-btn" (click)="abrirRegistrarLugar()" title="Registrar lugar de primera cita">
         <ion-icon name="add-circle-outline"></ion-icon>
-      </button>
-      
-      <!-- Botón de configuración/opciones adicionales -->
-      <button class="action-floating-btn">
-        <ion-icon name="cog-outline"></ion-icon>
       </button>
     </div>
   </div>
@@ -58,7 +51,7 @@
     <ng-template>
       <ion-header class="ion-no-border">
         <ion-toolbar class="modal-toolbar">
-          <ion-title style="color: #ff4e7e; font-weight: 700; text-align: center;">Lugares Especiales 💖</ion-title>
+          <ion-title style="color: #df5b61; text-align: center;">Lugares Especiales 💖</ion-title>
           <ion-buttons slot="end">
             <ion-button (click)="closeModal()" style="font-weight: 600; color: #666; --color: #666;">Cerrar</ion-button>
           </ion-buttons>
