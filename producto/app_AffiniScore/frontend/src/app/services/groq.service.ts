@@ -53,7 +53,7 @@ Restricciones:
 
     // Determinar si usar modelo de visión
     const hasImages = this.conversationHistory.some(msg => Array.isArray(msg.content));
-    const model = hasImages ? 'llama-3.2-11b-vision-preview' : 'llama-3.3-70b-versatile';
+    const model = hasImages ? 'meta-llama/llama-4-scout-17b-16e-instruct' : 'llama-3.3-70b-versatile';
 
     try {
       const response = await fetch(this.apiUrl, {
@@ -71,7 +71,9 @@ Restricciones:
       });
 
       if (!response.ok) {
-        throw new Error(`Error de red: ${response.status} ${response.statusText}`);
+        const errorText = await response.text();
+        console.error('Groq API error details:', errorText);
+        throw new Error(`Error de red: ${response.status} ${response.statusText} - ${errorText}`);
       }
 
       const data = await response.json();

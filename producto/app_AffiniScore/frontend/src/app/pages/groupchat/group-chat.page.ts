@@ -11,7 +11,7 @@ import {
 import { SupabaseService, ChatMessage } from '../../services/supabase';
 import { environment } from '../../../environments/environment';
 import { addIcons } from 'ionicons';
-import { send, sparkles, ellipsisHorizontal, chevronBackOutline, person, cameraOutline } from 'ionicons/icons';
+import { send, sparkles, ellipsisHorizontal, chevronBackOutline, person, cameraOutline, close } from 'ionicons/icons';
 
 @Component({
   selector: 'app-group-chat',
@@ -24,7 +24,7 @@ import { send, sparkles, ellipsisHorizontal, chevronBackOutline, person, cameraO
     CommonModule, FormsModule, RouterModule
   ]
 })
-export class GroupChatPage implements OnInit, OnDestroy {
+export class GroupChatPage implements OnDestroy {
   @ViewChild(IonContent, { static: false }) content!: IonContent;
   
   messages: ChatMessage[] = [];
@@ -46,10 +46,10 @@ export class GroupChatPage implements OnInit, OnDestroy {
     private zone: NgZone,
     private cdr: ChangeDetectorRef
   ) {
-    addIcons({ send, sparkles, ellipsisHorizontal, chevronBackOutline, person, 'camera-outline': cameraOutline });
+    addIcons({ send, sparkles, ellipsisHorizontal, chevronBackOutline, person, 'camera-outline': cameraOutline, close });
   }
 
-  async ngOnInit() {
+  async ionViewWillEnter() {
     const user = await this.supabaseSvc.getCurrentUser();
     if (user) {
       this.currentUserId = user.id;
@@ -69,6 +69,18 @@ export class GroupChatPage implements OnInit, OnDestroy {
     }
   }
 
+  ionViewWillLeave() {
+    this.cleanupRealtime();
+  }
+
+  cleanupRealtime() {
+    if (this.subscription) {
+      console.log('DEBUG Realtime: Desuscribiendo canal para la sala:', this.partnershipId);
+      this.supabaseSvc.supabase.removeChannel(this.subscription);
+      this.subscription = null;
+    }
+  }
+
   async loadPartnershipProfiles(partnership?: any) {
     if (!partnership) {
       partnership = await this.supabaseSvc.getActivePartnership();
@@ -82,8 +94,8 @@ export class GroupChatPage implements OnInit, OnDestroy {
     
     if (profiles) {
       this.partnershipAvatars = profiles
-        .map(p => p.avatar_url)
-        .filter(url => !!url);
+         .map(p => p.avatar_url)
+         .filter(url => !!url);
       
       // Crear un mapa para acceder rápido por ID
       profiles.forEach(p => {
@@ -103,6 +115,9 @@ export class GroupChatPage implements OnInit, OnDestroy {
   }
 
   setupRealtime() {
+    this.cleanupRealtime();
+    console.log('DEBUG Realtime: Iniciando suscripción para la sala:', this.partnershipId);
+    
     this.subscription = this.supabaseSvc.supabase
       .channel(`room:${this.partnershipId}`)
       .on('postgres_changes', { 
@@ -111,8 +126,10 @@ export class GroupChatPage implements OnInit, OnDestroy {
         table: 'chat_messages',
         filter: `room_id=eq.${this.partnershipId}`
       }, (payload: any) => {
+        console.log('DEBUG Realtime: Evento recibido:', payload);
         const newMsg = payload.new as ChatMessage;
         if (newMsg.sender_id !== this.currentUserId) {
+          console.log('DEBUG Realtime: Añadiendo nuevo mensaje de otro emisor:', newMsg);
           this.zone.run(() => {
             if (!this.messages.find(m => m.id === newMsg.id)) {
               this.messages.push(newMsg);
@@ -121,15 +138,20 @@ export class GroupChatPage implements OnInit, OnDestroy {
               this.cdr.detectChanges();
             }
           });
+        } else {
+          console.log('DEBUG Realtime: Mensaje ignorado porque es del usuario actual.');
         }
       })
-      .subscribe();
+      .subscribe((status, err) => {
+        console.log(`DEBUG Realtime: Estado de la suscripción = ${status}`, err ? err : '');
+        if (status === 'CHANNEL_ERROR') {
+          console.error('DEBUG Realtime: Error en el canal. Posible falta de replicación o bloqueo de RLS.');
+        }
+      });
   }
 
   ngOnDestroy() {
-    if (this.subscription) {
-      this.supabaseSvc.supabase.removeChannel(this.subscription);
-    }
+    this.cleanupRealtime();
   }
 
   cancelSelectedImage() {

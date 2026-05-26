@@ -28,7 +28,7 @@ async def get_groq_ai_response(user_message: str, is_group: bool, image_url: Opt
     if not groq_api_key:
         raise HTTPException(status_code=500, detail="GROQ_API_KEY no encontrada en el entorno del servidor.")
         
-    model = "llama-3.2-11b-vision-preview" if image_url else "llama-3.3-70b-versatile"
+    model = "meta-llama/llama-4-scout-17b-16e-instruct" if image_url else "llama-3.3-70b-versatile"
 
     base_prompt = (
         "Eres AffiniCoach, un terapeuta de parejas de élite con más de 15 años de experiencia clínica. "
