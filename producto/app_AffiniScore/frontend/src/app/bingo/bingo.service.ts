@@ -31,19 +31,19 @@ export interface BingoProgress {
 })
 export class BingoService {
   private readonly defaultBingoCard: BingoCard = {
-    id: 'default-bingo-1',
+    id: '2f2d2d7e-6c9a-4cc4-bdc8-2f0fb13b9d01',
     title: 'Bingo de Conexión',
     difficulty: 'Medio',
     cells: [
-      { id: 'c1', title: 'Besarse', points: 10, description: 'Un beso apasionado' },
-      { id: 'c2', title: 'Bailar juntos', points: 15, description: 'Al menos 3 minutos' },
-      { id: 'c3', title: 'Reír juntos', points: 10, description: 'Carcajadas genuinas' },
-      { id: 'c4', title: 'Abrazo largo', points: 10, description: 'Mínimo 20 segundos' },
-      { id: 'c5', title: 'Mirada profunda', points: 15, description: 'Verse a los ojos 1 minuto' },
-      { id: 'c6', title: 'Hacer ejercicio', points: 20, description: 'Juntos, 15 minutos' },
-      { id: 'c7', title: 'Cocinar juntos', points: 25, description: 'Una comida especial' },
-      { id: 'c8', title: 'Salida sorpresa', points: 30, description: 'Planear algo inesperado' },
-      { id: 'c9', title: 'Masaje relajante', points: 15, description: 'Mínimo 5 minutos' }
+      { id: '0f6f4e24-6d2d-4f2d-8f23-3b1a9d5e1a01', title: 'Besarse', points: 10, description: 'Un beso apasionado' },
+      { id: '0f6f4e24-6d2d-4f2d-8f23-3b1a9d5e1a02', title: 'Bailar juntos', points: 15, description: 'Al menos 3 minutos' },
+      { id: '0f6f4e24-6d2d-4f2d-8f23-3b1a9d5e1a03', title: 'Reír juntos', points: 10, description: 'Carcajadas genuinas' },
+      { id: '0f6f4e24-6d2d-4f2d-8f23-3b1a9d5e1a04', title: 'Abrazo largo', points: 10, description: 'Mínimo 20 segundos' },
+      { id: '0f6f4e24-6d2d-4f2d-8f23-3b1a9d5e1a05', title: 'Mirada profunda', points: 15, description: 'Verse a los ojos 1 minuto' },
+      { id: '0f6f4e24-6d2d-4f2d-8f23-3b1a9d5e1a06', title: 'Hacer ejercicio', points: 20, description: 'Juntos, 15 minutos' },
+      { id: '0f6f4e24-6d2d-4f2d-8f23-3b1a9d5e1a07', title: 'Cocinar juntos', points: 25, description: 'Una comida especial' },
+      { id: '0f6f4e24-6d2d-4f2d-8f23-3b1a9d5e1a08', title: 'Salida sorpresa', points: 30, description: 'Planear algo inesperado' },
+      { id: '0f6f4e24-6d2d-4f2d-8f23-3b1a9d5e1a09', title: 'Masaje relajante', points: 15, description: 'Mínimo 5 minutos' }
     ]
   };
 
@@ -62,7 +62,7 @@ export class BingoService {
     try {
       // Ensure the 9 cells exist in the activity_catalog table
       const cellsToInsert = this.defaultBingoCard.cells.map(cell => ({
-        id: `bingo-${this.defaultBingoCard.id}-${cell.id}`,
+        id: cell.id,
         name: `Bingo: ${cell.title}`,
         category: 'BINGO',
         default_points: cell.points,
@@ -93,29 +93,28 @@ export class BingoService {
       .eq('status', 'active')
       .single();
 
-    if (!partnership) {
-      return { data: null, error: 'No partnership found' };
-    }
+    const ownerIds = partnership
+      ? [partnership.user1_id, partnership.user2_id]
+      : [user.user.id];
 
     // Query all logs in user_actions_log for this card
-    const partnerIds = [partnership.user1_id, partnership.user2_id];
     const { data: logs, error: logsError } = await this.supabase
       .from('user_actions_log')
       .select('action_id, points_earned')
-      .in('user_id', partnerIds)
+      .in('user_id', ownerIds)
       .eq('status', 'CONFIRMED')
-      .like('action_id', `bingo-${cardId}-%`);
+      .in('action_id', this.defaultBingoCard.cells.map(cell => cell.id));
 
     if (logsError) {
       return { data: null, error: logsError };
     }
 
-    const completedCells = (logs || []).map(log => log.action_id.replace(`bingo-${cardId}-`, ''));
+    const completedCells = (logs || []).map(log => String(log.action_id));
     const pointsEarned = (logs || []).reduce((sum, log) => sum + (log.points_earned || 0), 0);
 
     const progress: BingoProgress = {
-      id: `progress-${partnership.id}-${cardId}`,
-      partnership_id: partnership.id,
+      id: partnership ? `progress-${partnership.id}-${cardId}` : `progress-solo-${user.user.id}-${cardId}`,
+      partnership_id: partnership ? partnership.id : user.user.id,
       card_id: cardId,
       completed_cells: completedCells,
       points_earned: pointsEarned
@@ -137,12 +136,10 @@ export class BingoService {
       .eq('status', 'active')
       .single();
 
-    if (!partnership) {
-      return { error: 'No partnership found' };
-    }
-
-    const partnerIds = [partnership.user1_id, partnership.user2_id];
-    const actionId = `bingo-${cardId}-${cellId}`;
+    const partnerIds = partnership
+      ? [partnership.user1_id, partnership.user2_id]
+      : [user.user.id];
+    const actionId = cellId;
 
     // Check if cell is already completed
     const { data: existingLogs } = await this.supabase
@@ -184,14 +181,21 @@ export class BingoService {
       return { error: null };
     } else {
       // Toggle on: Create new log
+      // Build payload conditionally to avoid sending partnership_id when the
+      // column is not present in the DB schema cache.
+      const payload: any = {
+        user_id: user.user.id,
+        action_id: actionId,
+        points_earned: points,
+        status: 'CONFIRMED'
+      };
+      if (partnership) {
+        payload.partnership_id = partnership.id;
+      }
+
       const { data: insertedLog, error: insertError } = await this.supabase
         .from('user_actions_log')
-        .insert({
-          user_id: user.user.id,
-          action_id: actionId,
-          points_earned: points,
-          status: 'CONFIRMED'
-        })
+        .insert(payload)
         .select()
         .single();
 
@@ -224,7 +228,10 @@ export class BingoService {
       [0, 4, 8], [2, 4, 6]
     ];
 
-    const cellIndexes = completedCells.map(cellId => parseInt(cellId.replace('c', ''), 10) - 1);
+    const cellIndexes = completedCells
+      .map(cellId => this.defaultBingoCard.cells.findIndex(cell => cell.id === cellId))
+      .filter(index => index >= 0);
+
     return winningLines.some(line => line.every(index => cellIndexes.includes(index)));
   }
 

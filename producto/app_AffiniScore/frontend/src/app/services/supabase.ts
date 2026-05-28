@@ -644,9 +644,10 @@ export class SupabaseService {
   }
 
   // Subir una imagen de recuerdo al bucket 'memories' y registrar metadatos en tabla 'memories'
-  async uploadMemory(file: File | Blob, filename?: string) {
+  async uploadMemory(file: File | Blob, filename?: string, metadata?: { location_name?: string | null; created_at?: string | null }) {
     const user = await this.getCurrentUser();
     if (!user) return { error: 'Usuario no autenticado' };
+    const partnership = await this.getActivePartnership();
 
     const fileExt = (file instanceof File) ? file.name.split('.').pop() : 'jpg';
     const name = filename || `${user.id}_${new Date().getTime()}.${fileExt}`;
@@ -655,18 +656,229 @@ export class SupabaseService {
       .from('memories')
       .upload(name, file, { upsert: true });
 
-    if (uploadError) return { error: uploadError };
+    if (uploadError) return { error: uploadError.message || uploadError };
 
     const { data: { publicUrl } } = this.supabase.storage.from('memories').getPublicUrl(name);
 
-    // Intentar registrar metadatos
+    const normalizedCreatedAt = metadata?.created_at
+      ? (metadata.created_at.includes('T') ? metadata.created_at : new Date(`${metadata.created_at}T12:00:00`).toISOString())
+      : new Date().toISOString();
+
+    // Intentar registrar metadatos por backend para evitar depender de RLS en el cliente.
     try {
-      await this.supabase.from('memories').insert([{ user_id: user.id, public_url: publicUrl, file_name: name, created_at: new Date().toISOString() }]);
-    } catch (e) {
-      console.warn('No se pudo insertar metadatos en tabla memories (si existe):', e);
+      const { data: session } = await this.supabase.auth.getSession();
+      const tokenHeader = session?.session?.access_token || '';
+
+      const headers = new HttpHeaders({
+        'Authorization': `Bearer ${tokenHeader}`,
+        'Content-Type': 'application/json'
+      });
+
+      const response = await firstValueFrom(
+        this.http.post<any>(`${this.apiUrl}/api/v1/memories/register`, {
+          partnership_id: partnership?.id ?? null,
+          file_url: publicUrl,
+          file_name: name,
+          created_at: normalizedCreatedAt,
+          location_name: metadata?.location_name ?? null,
+          emotional_score: 1,
+        }, { headers })
+      );
+
+      if (!response?.success) {
+        return { error: response?.detail || 'No se pudo registrar el recuerdo' };
+      }
+    } catch (e: any) {
+      console.warn('No se pudo registrar metadatos del recuerdo por backend, intentando insert cliente:', e);
+      // Fallback: intentar insertar desde el cliente autenticado para entornos donde el backend
+      // no tenga todavía las variables de entorno (SUPABASE_URL/SUPABASE_KEY).
+      try {
+        const partnershipId = partnership?.id ?? null;
+        const insertPayload: any = {
+          partnership_id: partnershipId,
+          file_url: publicUrl,
+          file_name: name,
+          created_at: normalizedCreatedAt,
+          location_name: metadata?.location_name ?? null,
+          emotional_score: 1,
+          user_id: user.id,
+        };
+
+        const { data: inserted, error: insertError } = await this.supabase
+          .from('memories')
+          .insert([insertPayload])
+          .select('*')
+          .maybeSingle();
+
+        if (insertError) {
+          console.warn('Fallback insert client failed:', insertError);
+          return { error: insertError.message || insertError };
+        }
+
+        return { publicUrl, fileName: name, data: inserted };
+      } catch (ie: any) {
+        console.warn('Fallback client insert exception:', ie);
+        return { error: ie?.message || String(ie) || 'No se pudo registrar el recuerdo' };
+      }
     }
 
-    return { publicUrl };
+    return { publicUrl, fileName: name };
+  }
+
+  async updateMemoryMetadata(memoryId: string, updates: { location_name?: string | null; created_at?: string | null }, imageUrl?: string) {
+    const user = await this.getCurrentUser();
+    if (!user) return { error: 'Usuario no autenticado' };
+
+    const payload: Record<string, any> = {};
+
+    if (updates.location_name !== undefined) {
+      payload['location_name'] = updates.location_name;
+    }
+
+    if (updates.created_at !== undefined) {
+      payload['created_at'] = updates.created_at;
+    }
+
+    // First, try to update by id (expected UUID). If that fails (e.g. memoryId is a filename),
+    // attempt a fallback update by file_name or by matching file_url.
+    try {
+      const { data, error } = await this.supabase
+        .from('memories')
+        .update(payload)
+        .eq('id', memoryId)
+        .select('*')
+        .maybeSingle();
+
+      if (error) {
+        const msg = (error && (error.message || error)) as any;
+        if (typeof msg === 'string' && msg.toLowerCase().includes('invalid input syntax for type uuid')) {
+          // fallthrough to fallback handlers
+        } else {
+          return { error: msg };
+        }
+      } else if (data) {
+        return { data };
+      }
+      // if no data and no specific uuid error, fall through to fallback
+    } catch (e) {
+      // continue to fallback
+    }
+
+    // Fallback: try to update by file_name exactly
+    try {
+      // Try matching by file_name using memoryId or filename extracted from provided imageUrl
+      const candidateNames: string[] = [memoryId];
+      try {
+        if (imageUrl) {
+          const parts = imageUrl.split('/');
+          const last = parts[parts.length - 1];
+          if (last && !candidateNames.includes(last)) candidateNames.push(last);
+        }
+      } catch (e) {
+        // ignore
+      }
+
+      for (const name of candidateNames) {
+        try {
+          const byName = await this.supabase
+            .from('memories')
+            .update(payload)
+            .eq('file_name', name)
+            .select('*')
+            .maybeSingle();
+
+          if (!byName.error && byName.data) return { data: byName.data };
+        } catch (e) {
+          // ignore and try next
+        }
+      }
+    } catch (e) {
+      // ignore and try url match
+    }
+
+    // Final fallback: try to match file_url containing the memoryId (useful when id==filename)
+    try {
+      const likeMatch = await this.supabase
+        .from('memories')
+        .update(payload)
+        .like('file_url', `%${memoryId}%`)
+        .select('*')
+        .maybeSingle();
+
+      if (!likeMatch.error && likeMatch.data) return { data: likeMatch.data };
+      // If no rows matched, try to create a new metadata row from the storage object
+      if (!likeMatch.error && !likeMatch.data) {
+        try {
+          // If the caller provided the imageUrl (from the UI), try to match storage items by publicUrl
+          let storageName: string | null = null;
+          let publicUrl: string | null = null;
+
+          if (imageUrl) {
+            const { data: storageItems } = await this.listMemoriesPublic();
+            if (storageItems && Array.isArray(storageItems)) {
+              const found = (storageItems as any[]).find((it: any) => it.publicUrl === imageUrl || (it.publicUrl && imageUrl && it.publicUrl.indexOf(imageUrl) !== -1) || it.name === memoryId || (memoryId && it.name && it.name.indexOf(memoryId) !== -1));
+              if (found) {
+                storageName = found.name;
+                publicUrl = found.publicUrl;
+              }
+            }
+          }
+
+          // If we still don't have a storageName, try direct getPublicUrl (may fail if path differs)
+          if (!storageName) {
+            try {
+              const { data: urlData } = this.supabase.storage.from('memories').getPublicUrl(memoryId);
+              publicUrl = urlData?.publicUrl || null;
+              storageName = memoryId;
+            } catch (e) {
+              // ignore
+            }
+          }
+
+          const partnership = await this.getActivePartnership();
+
+          const insertPayload: any = {
+            partnership_id: partnership?.id ?? null,
+            file_url: publicUrl,
+            file_name: storageName ?? memoryId,
+            created_at: payload['created_at'] || new Date().toISOString(),
+            location_name: payload['location_name'] ?? null,
+            emotional_score: 1
+          };
+
+          const inserted = await this.supabase
+            .from('memories')
+            .insert([insertPayload])
+            .select('*')
+            .maybeSingle();
+
+          if (!inserted.error && inserted.data) return { data: inserted.data };
+          // If insert failed (possibly due to RLS), try upsert using file_name as conflict key
+          try {
+            const conflictKey = 'file_name';
+            const upsertRes = await this.supabase
+              .from('memories')
+              .upsert([insertPayload], { onConflict: conflictKey })
+              .select('*')
+              .maybeSingle();
+
+            if (!upsertRes.error && upsertRes.data) return { data: upsertRes.data };
+          } catch (e) {
+            // ignore
+          }
+          console.warn('updateMemoryMetadata: insert/upsert no succeeded', { memoryId, imageUrl, inserted });
+          return { error: inserted.error ? (inserted.error.message || inserted.error) : 'No se pudo crear el recuerdo en la base de datos' };
+        } catch (e) {
+          console.warn('updateMemoryMetadata: exception creating row', { memoryId, imageUrl, e });
+          return { error: (e as any)?.message || String(e) };
+        }
+      }
+      console.warn('updateMemoryMetadata: no match on like and no storage fallback', { memoryId, imageUrl, likeMatch });
+      return { error: likeMatch.error ? (likeMatch.error.message || likeMatch.error) : 'No se encontró el recuerdo a actualizar' };
+    } catch (e) {
+      console.warn('updateMemoryMetadata: final exception', { memoryId, imageUrl, e });
+      return { error: (e as any)?.message || String(e) };
+    }
   }
 
   // Listar imágenes públicas del bucket 'memories' (simple list pública)
@@ -696,23 +908,89 @@ export class SupabaseService {
 
     if (memoriesData) {
       for (const row of memoriesData as any[]) {
-        const imageUrl = row.public_url || row.image_url || row.url || '';
-        const emotionalScore = typeof row.emotional_score === 'number' ? row.emotional_score : null;
-        const wasChallengeValidated = Boolean(row.challenge_completed || row.challenge_id || row.ai_validated);
+        const imageUrl = row.file_url || row.public_url || row.image_url || row.url || '';
 
         if (!imageUrl) continue;
-        if (!(emotionalScore !== null && emotionalScore > 0) && !wasChallengeValidated) continue;
 
         items.push({
-          id: row.id || row.file_name || imageUrl,
+          id: row.id || imageUrl,
           image_url: imageUrl,
           location_name: row.location_name,
           created_at: row.created_at,
           emotional_score: row.emotional_score,
           partnership_id: row.partnership_id,
-          user_id: row.user_id,
           title: row.location_name || 'Recuerdo validado',
         });
+      }
+    }
+
+    items.sort((left, right) => {
+      const leftDate = left.created_at ? new Date(left.created_at).getTime() : 0;
+      const rightDate = right.created_at ? new Date(right.created_at).getTime() : 0;
+      return rightDate - leftDate;
+    });
+
+    return { data: items, error };
+  }
+
+  async getPersonalMemories(): Promise<{ data: CollageMemoryItem[]; error?: any }> {
+    const user = await this.getCurrentUser();
+    if (!user) return { data: [], error: 'Usuario no autenticado' };
+
+    const { data: memoriesData, error } = await this.supabase
+      .from('memories')
+      .select('*')
+      .is('partnership_id', null);
+
+    const items: CollageMemoryItem[] = [];
+
+    if (memoriesData) {
+      for (const row of memoriesData as any[]) {
+        const imageUrl = row.file_url || row.public_url || row.image_url || row.url || '';
+        if (!imageUrl) continue;
+
+        items.push({
+          id: row.id || imageUrl,
+          image_url: imageUrl,
+          location_name: row.location_name,
+          created_at: row.created_at,
+          emotional_score: row.emotional_score,
+          partnership_id: row.partnership_id,
+          title: row.location_name || 'Recuerdo',
+        });
+      }
+    }
+
+    // If the table has no usable rows yet, fall back to the storage bucket
+    // using the user prefix that uploadMemory() already writes into filenames.
+    if (items.length === 0) {
+      const { data: storageItems } = await this.listMemoriesPublic();
+      const ownItems = (storageItems || [])
+        .filter((item: any) => typeof item.name === 'string' && item.name.startsWith(`${user.id}_`))
+        .map((item: any) => ({
+          id: item.name,
+          image_url: item.publicUrl,
+          location_name: undefined,
+          created_at: undefined,
+          emotional_score: undefined,
+          partnership_id: undefined,
+          user_id: user.id,
+          title: 'Recuerdo',
+        }));
+
+      if (ownItems.length > 0) {
+        items.push(...ownItems);
+      } else if (storageItems && storageItems.length > 0) {
+        items.push(...(storageItems as any[]).map((item: any) => ({
+          id: item.name,
+          image_url: item.publicUrl,
+          location_name: undefined,
+          created_at: undefined,
+          emotional_score: undefined,
+          partnership_id: undefined,
+          user_id: undefined,
+          title: 'Recuerdo',
+        })));
       }
     }
 

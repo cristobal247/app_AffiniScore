@@ -108,7 +108,8 @@ export class BingoPage implements OnInit {
 
       if (result.error) {
         console.error('Error marking cell:', result.error);
-        await this.showToast('Error al guardar', 'danger');
+        const msg = (result.error as any)?.message || JSON.stringify(result.error);
+        await this.showToast('Error al guardar: ' + msg, 'danger');
 
         if (this.completedCellIds.has(cell.id)) {
           this.completedCellIds.delete(cell.id);
@@ -128,7 +129,7 @@ export class BingoPage implements OnInit {
       }
     } catch (error) {
       console.error('Error toggling cell:', error);
-      await this.showToast('Error inesperado', 'danger');
+      await this.showToast('Error inesperado: ' + (((error as any)?.message) || JSON.stringify(error)), 'danger');
     } finally {
       this.isSaving = false;
     }

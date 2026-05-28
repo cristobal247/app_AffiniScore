@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header
 from database import supabase
 from pydantic import BaseModel
 import random
@@ -11,6 +11,7 @@ from firebase_admin import credentials, messaging
 
 import os
 import json
+import requests
 
 app = FastAPI()
 
@@ -158,6 +159,59 @@ class NotificationRequest(BaseModel):
     partner_id: str
     action_name: str
     log_id: str
+
+
+class MemoryRegisterRequest(BaseModel):
+    partnership_id: str | None = None
+    file_url: str
+    file_name: str
+    created_at: str
+    location_name: str | None = None
+    emotional_score: float | None = 1
+
+
+@app.post("/api/v1/memories/register")
+async def register_memory_metadata(request: MemoryRegisterRequest, authorization: str | None = Header(default=None)):
+    try:
+        if not authorization or not authorization.lower().startswith("bearer "):
+            raise HTTPException(status_code=401, detail="Falta token de autorización")
+
+        token = authorization.split(" ", 1)[1].strip()
+        supabase_url = os.getenv("SUPABASE_URL")
+        supabase_key = os.getenv("SUPABASE_KEY")
+
+        if not supabase_url or not supabase_key:
+            raise HTTPException(status_code=500, detail="SUPABASE_URL o SUPABASE_KEY no configurados")
+
+        payload = {
+            "partnership_id": request.partnership_id,
+            "file_url": request.file_url,
+            "file_name": request.file_name,
+            "created_at": request.created_at,
+            "location_name": request.location_name,
+            "emotional_score": request.emotional_score or 1,
+        }
+
+        # Escribimos con el JWT del usuario para respetar RLS autenticado.
+        response = requests.post(
+            f"{supabase_url.rstrip('/')}/rest/v1/memories",
+            headers={
+                "apikey": supabase_key,
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json",
+                "Prefer": "return=representation",
+            },
+            json=payload,
+            timeout=20,
+        )
+
+        if response.status_code not in (200, 201):
+            raise HTTPException(status_code=400, detail=response.text)
+
+        data = response.json()
+        return {"success": True, "data": data[0] if isinstance(data, list) and data else data}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 @app.post("/api/v1/notifications/send")
 async def send_push_notification(request: NotificationRequest):
