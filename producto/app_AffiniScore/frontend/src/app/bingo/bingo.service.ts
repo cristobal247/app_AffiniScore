@@ -26,10 +26,30 @@ export interface BingoProgress {
   updated_at?: string;
 }
 
+export interface BingoBonusAward {
+  type: 'line' | 'full_card';
+  points: number;
+  message: string;
+  lineIndex?: number;
+}
+
+interface BingoBonusState {
+  awardedLineIndices: number[];
+  fullCardAwarded: boolean;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class BingoService {
+  private readonly bingoLineBonusPoints = 25;
+  private readonly bingoFullCardBonusPoints = 50;
+  private readonly bingoWinningLines = [
+    [0, 1, 2], [3, 4, 5], [6, 7, 8],
+    [0, 3, 6], [1, 4, 7], [2, 5, 8],
+    [0, 4, 8], [2, 4, 6]
+  ];
+
   private readonly defaultBingoCard: BingoCard = {
     id: '2f2d2d7e-6c9a-4cc4-bdc8-2f0fb13b9d01',
     title: 'Bingo de Conexión',
@@ -109,21 +129,27 @@ export class BingoService {
       return { data: null, error: logsError };
     }
 
-    const completedCells = (logs || []).map(log => String(log.action_id));
-    const pointsEarned = (logs || []).reduce((sum, log) => sum + (log.points_earned || 0), 0);
+    const uniqueLogs = Array.from(
+      new Map((logs || []).map(log => [String(log.action_id), log])).values()
+    );
+
+    const completedCells = uniqueLogs.map(log => String(log.action_id));
+    const pointsEarned = uniqueLogs.reduce((sum, log) => sum + (log.points_earned || 0), 0);
+    const { data: profile } = await this.getCurrentProfile();
+    const bonusKey = partnership ? partnership.id : user.user.id;
 
     const progress: BingoProgress = {
       id: partnership ? `progress-${partnership.id}-${cardId}` : `progress-solo-${user.user.id}-${cardId}`,
       partnership_id: partnership ? partnership.id : user.user.id,
       card_id: cardId,
       completed_cells: completedCells,
-      points_earned: pointsEarned
+      points_earned: pointsEarned + this.getPersistedBingoBonusPoints(profile?.preferences, bonusKey)
     };
 
     return { data: progress, error: null };
   }
 
-  async markBingoCellComplete(cardId: string, cellId: string): Promise<{ error: any }> {
+  async markBingoCellComplete(cardId: string, cellId: string): Promise<{ error: any; completed?: string[]; pointsEarned?: number; fullCard?: boolean; newCard?: BingoCard; bonusAwards?: BingoBonusAward[] }> {
     const { data: user } = await this.supabase.auth.getUser();
     if (!user?.user) {
       return { error: 'Usuario no autenticado' };
@@ -153,32 +179,10 @@ export class BingoService {
     const points = cellTask ? cellTask.points : 10;
 
     if (existingLogs && existingLogs.length > 0) {
-      // Toggle off: Delete existing log
-      const logToDelete = existingLogs[0];
-      const { error: deleteError } = await this.supabase
-        .from('user_actions_log')
-        .delete()
-        .eq('id', logToDelete.id);
-
-      if (deleteError) return { error: deleteError };
-
-      // Subtract points from the profile of the user who registered it
-      const { data: ownerProfile } = await this.supabase
-        .from('profiles')
-        .select('total_points')
-        .eq('id', logToDelete.user_id)
-        .single();
-
-      const currentPoints = ownerProfile?.total_points || 0;
-      const newTotal = Math.max(0, currentPoints - points);
-
-      await this.supabase
-        .from('profiles')
-        .update({ total_points: newTotal, updated_at: new Date() })
-        .eq('id', logToDelete.user_id);
-
-      this.supabaseSvc.pointsUpdated.next();
-      return { error: null };
+      // Once a bingo cell is completed by the partnership or user, do NOT allow
+      // it to be toggled off to avoid cheating. Return a specific error so the
+      // UI can inform the user and keep the cell locked.
+      return { error: { code: 'ALREADY_COMPLETED', message: 'La casilla ya fue completada y no puede desactivarse.' } };
     } else {
       // Toggle on: Create new log
       // Build payload conditionally to avoid sending partnership_id when the
@@ -201,24 +205,273 @@ export class BingoService {
 
       if (insertError) return { error: insertError };
 
-      // Add points to the current user's profile
-      const { data: profile } = await this.supabase
-        .from('profiles')
-        .select('total_points')
-        .eq('id', user.user.id)
-        .single();
+      // After inserting, compute updated completed cells and detect full-card
+      const { data: progressData } = await this.getBingoProgress(cardId);
+      const completed = progressData?.completed_cells || [];
+      const bonusContext = await this.getBingoBonusContext(partnership ? partnership.id : user.user.id);
+      const lineAwards = this.getNewLineAwards(completed, bonusContext.state.awardedLineIndices);
+      const shouldAwardFullCard = completed.length >= (this.defaultBingoCard.cells?.length || 9) && !bonusContext.state.fullCardAwarded;
+      const bonusAwards: BingoBonusAward[] = [
+        ...lineAwards.map((lineIndex) => ({
+          type: 'line' as const,
+          points: this.bingoLineBonusPoints,
+          lineIndex,
+          message: `¡Línea completada! +${this.bingoLineBonusPoints} puntos extra.`
+        })),
+        ...(shouldAwardFullCard ? [{
+          type: 'full_card' as const,
+          points: this.bingoFullCardBonusPoints,
+          message: `¡Cartón completo! +${this.bingoFullCardBonusPoints} puntos extra.`
+        }] : [])
+      ];
 
-      const currentPoints = profile?.total_points || 0;
-      const newTotal = currentPoints + points;
+      const bonusPoints = bonusAwards.reduce((sum, bonus) => sum + bonus.points, 0);
+      const pointsEarned = (progressData?.points_earned || 0) + bonusPoints;
+
+      const currentPoints = bonusContext.profile?.total_points || 0;
+      const newTotal = currentPoints + points + bonusPoints;
+
+      if (bonusAwards.length > 0) {
+        await this.recordBingoBonusLedger(
+          partnership ? partnership.id : null,
+          user.user.id,
+          cellId,
+          bonusAwards
+        );
+      }
 
       await this.supabase
         .from('profiles')
         .update({ total_points: newTotal, updated_at: new Date() })
         .eq('id', user.user.id);
 
+      if (bonusAwards.length > 0) {
+        const nextState: BingoBonusState = {
+          awardedLineIndices: Array.from(new Set([...bonusContext.state.awardedLineIndices, ...lineAwards])),
+          fullCardAwarded: bonusContext.state.fullCardAwarded || shouldAwardFullCard
+        };
+        await this.saveBingoBonusState(partnership ? partnership.id : user.user.id, nextState);
+      }
+
       this.supabaseSvc.pointsUpdated.next();
-      return { error: null };
+
+      const fullCard = completed.length >= (this.defaultBingoCard.cells?.length || 9);
+
+      if (fullCard) {
+        // Reset the bingo state so the next round starts from zero completed cells.
+        try {
+          if (shouldAwardFullCard) {
+            this.supabaseSvc.pointsUpdated.next();
+          }
+          const newCard = await this.generateNewCard();
+          return { error: null, completed, pointsEarned, fullCard: true, newCard, bonusAwards };
+        } catch (e) {
+          return { error: null, completed, pointsEarned, fullCard: true, bonusAwards };
+        }
+      }
+
+      return { error: null, completed, pointsEarned, bonusAwards };
     }
+  }
+
+  // Reset the bingo state and return the base card again.
+  // This clears confirmed bingo logs so the next round does not inherit old progress.
+  async generateNewCard(): Promise<BingoCard> {
+    const { data: user } = await this.supabase.auth.getUser();
+    if (!user?.user) {
+      return this.defaultBingoCard;
+    }
+
+    const { data: partnership } = await this.supabase
+      .from('partnerships')
+      .select('*')
+      .or(`user1_id.eq.${user.user.id},user2_id.eq.${user.user.id}`)
+      .eq('status', 'active')
+      .single();
+
+    const ownerIds = partnership
+      ? [partnership.user1_id, partnership.user2_id]
+      : [user.user.id];
+
+    const bingoIds = this.defaultBingoCard.cells.map(cell => cell.id);
+
+    const { data: completedLogs } = await this.supabase
+      .from('user_actions_log')
+      .select('id')
+      .in('user_id', ownerIds)
+      .eq('status', 'CONFIRMED')
+      .in('action_id', bingoIds);
+
+    if (completedLogs && completedLogs.length > 0) {
+      const logIds = completedLogs.map(log => log.id);
+      const { error: resetError } = await this.supabase
+        .from('user_actions_log')
+        .update({ status: 'REJECTED' })
+        .in('id', logIds);
+
+      if (resetError) {
+        throw resetError;
+      }
+    }
+
+    await this.clearBingoBonusState(partnership ? partnership.id : user.user.id);
+
+    const newCard: BingoCard = {
+      ...this.defaultBingoCard,
+      title: this.defaultBingoCard.title + ' (reiniciado)',
+      difficulty: this.defaultBingoCard.difficulty,
+      created_at: new Date().toISOString()
+    };
+
+    // Re-ensure the catalog rows exist for the base bingo cells.
+    try {
+      const cellsToInsert = this.defaultBingoCard.cells.map(cell => ({
+        id: cell.id,
+        name: `Bingo: ${cell.title}`,
+        category: 'BINGO',
+        default_points: cell.points,
+        activity_type: 'CHALLENGE',
+        description: cell.description || ''
+      }));
+
+      await this.supabase.from('activity_catalog').upsert(cellsToInsert, { onConflict: 'id' });
+    } catch (e) {
+      console.warn('Could not upsert bingo cells to catalog after reset:', e);
+    }
+
+    return newCard;
+  }
+
+  private getBingoBonusState(preferences: any, bonusKey: string): BingoBonusState {
+    const states = preferences?.bingo_bonus_states || {};
+    const fallbackState = preferences?.bingo_bonus_state || {};
+    const rawState = states[bonusKey] || fallbackState;
+
+    return {
+      awardedLineIndices: Array.isArray(rawState?.awardedLineIndices) ? rawState.awardedLineIndices : [],
+      fullCardAwarded: !!rawState?.fullCardAwarded
+    };
+  }
+
+  private getPersistedBingoBonusPoints(preferences: any, bonusKey: string): number {
+    const state = this.getBingoBonusState(preferences, bonusKey);
+    return (state.awardedLineIndices.length * this.bingoLineBonusPoints) + (state.fullCardAwarded ? this.bingoFullCardBonusPoints : 0);
+  }
+
+  private getNewLineAwards(completedCells: string[], alreadyAwardedLineIndices: number[]): number[] {
+    const cellIndexes = completedCells
+      .map(cellId => this.defaultBingoCard.cells.findIndex(cell => cell.id === cellId))
+      .filter(index => index >= 0);
+
+    return this.bingoWinningLines
+      .map((line, index) => ({ line, index }))
+      .filter(({ line, index }) => !alreadyAwardedLineIndices.includes(index) && line.every(cellIndex => cellIndexes.includes(cellIndex)))
+      .map(({ index }) => index);
+  }
+
+  private async getBingoBonusContext(bonusKey: string): Promise<{ profile: any; state: BingoBonusState }> {
+    const { data: profile } = await this.getCurrentProfile();
+
+    return {
+      profile,
+      state: this.getBingoBonusState(profile?.preferences, bonusKey)
+    };
+  }
+
+  private async saveBingoBonusState(bonusKey: string, state: BingoBonusState) {
+    const { data: user } = await this.supabase.auth.getUser();
+    if (!user?.user) return;
+
+    const { data: profile } = await this.supabase
+      .from('profiles')
+      .select('preferences')
+      .eq('id', user.user.id)
+      .single();
+
+    const currentPreferences = profile?.preferences || {};
+    const currentStates = currentPreferences.bingo_bonus_states || {};
+
+    const updatedPreferences = {
+      ...currentPreferences,
+      bingo_bonus_states: {
+        ...currentStates,
+        [bonusKey]: state
+      }
+    };
+
+    await this.supabase
+      .from('profiles')
+      .update({ preferences: updatedPreferences })
+      .eq('id', user.user.id);
+  }
+
+  private async clearBingoBonusState(bonusKey: string) {
+    const { data: user } = await this.supabase.auth.getUser();
+    if (!user?.user) return;
+
+    const { data: profile } = await this.supabase
+      .from('profiles')
+      .select('preferences')
+      .eq('id', user.user.id)
+      .single();
+
+    const currentPreferences = profile?.preferences || {};
+    const currentStates = currentPreferences.bingo_bonus_states || {};
+
+    if (!currentStates[bonusKey] && !currentPreferences.bingo_bonus_state) {
+      return;
+    }
+
+    const updatedStates = { ...currentStates };
+    delete updatedStates[bonusKey];
+
+    const updatedPreferences = {
+      ...currentPreferences,
+      bingo_bonus_states: updatedStates
+    };
+
+    delete updatedPreferences.bingo_bonus_state;
+
+    await this.supabase
+      .from('profiles')
+      .update({ preferences: updatedPreferences })
+      .eq('id', user.user.id);
+  }
+
+  private async recordBingoBonusLedger(partnershipId: string | null, userId: string, cellId: string, bonusAwards: BingoBonusAward[]) {
+    const rows = bonusAwards.map((bonus) => ({
+      partnership_id: partnershipId,
+      user_id: userId,
+      points: bonus.points,
+      ai_validated: false,
+      act_id: cellId,
+      created_at: new Date().toISOString()
+    }));
+
+    if (rows.length === 0) {
+      return;
+    }
+
+    const { error } = await this.supabase
+      .from('points_ledger')
+      .insert(rows);
+
+    if (error) {
+      console.warn('No se pudo registrar el bono del bingo en points_ledger:', error);
+    }
+  }
+
+  private async getCurrentProfile(): Promise<{ data: any; error: any }> {
+    const { data: user } = await this.supabase.auth.getUser();
+    if (!user?.user) {
+      return { data: null, error: 'Usuario no autenticado' };
+    }
+
+    return await this.supabase
+      .from('profiles')
+      .select('id, total_points, preferences')
+      .eq('id', user.user.id)
+      .single();
   }
 
   checkBingoWin(completedCells: string[]): boolean {

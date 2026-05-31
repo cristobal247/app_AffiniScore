@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -8,7 +8,7 @@ import {
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { chevronBackOutline, checkmarkCircle, alertCircleOutline } from 'ionicons/icons';
-import { BingoCard, BingoCellTask, BingoProgress, BingoService } from './bingo.service';
+import { BingoBonusAward, BingoCard, BingoCellTask, BingoProgress, BingoService } from './bingo.service';
 
 @Component({
   selector: 'app-bingo',
@@ -24,17 +24,49 @@ export class BingoPage implements OnInit {
   bingoCard: BingoCard | null = null;
   progress: BingoProgress | null = null;
   completedCellIds: Set<string> = new Set();
+  savingCellId: string | null = null;
   isLoading = true;
   isSaving = false;
   hasWon = false;
+  isCelebratingFullCard = false;
+  fullCardCelebrationMessage = '';
 
   constructor(
     private bingoService: BingoService,
     private loadingCtrl: LoadingController,
     private toastCtrl: ToastController,
+    private cdr: ChangeDetectorRef,
     private navCtrl: NavController
   ) {
     addIcons({ chevronBackOutline, checkmarkCircle, alertCircleOutline });
+  }
+
+  async resetCard() {
+    if (this.isSaving) return;
+    this.isSaving = true;
+    try {
+      const newCard = await this.bingoService.generateNewCard();
+      if (newCard) {
+        this.bingoCard = newCard;
+        this.progress = {
+          id: '',
+          partnership_id: '',
+          card_id: this.bingoCard.id,
+          completed_cells: [],
+          points_earned: 0
+        } as any;
+        this.completedCellIds = new Set();
+        this.hasWon = false;
+        this.isCelebratingFullCard = false;
+        this.fullCardCelebrationMessage = '';
+        await this.showToast('Cartón reiniciado', 'success');
+      }
+    } catch (e) {
+      console.error('Error resetting card:', e);
+      await this.showToast('Error al reiniciar el cartón', 'danger');
+    } finally {
+      this.isSaving = false;
+    }
   }
 
   async ngOnInit() {
@@ -91,46 +123,86 @@ export class BingoPage implements OnInit {
   }
 
   async toggleCell(cell: BingoCellTask) {
-    if (!this.bingoCard || this.isSaving) {
+    if (!this.bingoCard || this.isSaving || this.savingCellId) {
       return;
     }
 
     this.isSaving = true;
+    this.savingCellId = cell.id;
+    this.completedCellIds.add(cell.id);
 
     try {
       if (this.completedCellIds.has(cell.id)) {
-        this.completedCellIds.delete(cell.id);
-      } else {
-        this.completedCellIds.add(cell.id);
+        // Keep the optimistic state visible while the server validates it.
       }
 
-      const result = await this.bingoService.markBingoCellComplete(this.bingoCard.id, cell.id);
+      const result: any = await this.bingoService.markBingoCellComplete(this.bingoCard.id, cell.id);
 
-      if (result.error) {
+      if (result?.error) {
         console.error('Error marking cell:', result.error);
         const msg = (result.error as any)?.message || JSON.stringify(result.error);
         await this.showToast('Error al guardar: ' + msg, 'danger');
-
-        if (this.completedCellIds.has(cell.id)) {
-          this.completedCellIds.delete(cell.id);
-        } else {
-          this.completedCellIds.add(cell.id);
-        }
+        // rollback optimistic change
+        this.completedCellIds.delete(cell.id);
       } else {
-        const completedArray = Array.from(this.completedCellIds);
-        const won = this.bingoService.checkBingoWin(completedArray);
+        // Use server-provided completed list and points if available
+        const completedArray: string[] = result?.completed || Array.from(this.completedCellIds);
+        this.completedCellIds = new Set(completedArray);
+        const bonusAwards: BingoBonusAward[] = result?.bonusAwards || [];
+        this.progress = {
+          id: this.progress?.id || '',
+          partnership_id: this.progress?.partnership_id || '',
+          card_id: this.bingoCard.id,
+          completed_cells: completedArray,
+          points_earned: result?.pointsEarned ?? this.progress?.points_earned ?? 0,
+          created_at: this.progress?.created_at,
+          updated_at: this.progress?.updated_at
+        };
 
+        const won = this.bingoService.checkBingoWin(completedArray);
         if (won && !this.hasWon) {
           this.hasWon = true;
-          await this.showToast('¡¡¡GANARON!!! 🎉 ¡Línea completa!', 'success');
+        }
+
+        if (bonusAwards.length > 0) {
+          for (const bonus of bonusAwards) {
+            await this.showToast(bonus.message, 'success');
+          }
         } else {
           await this.showToast('Celda guardada', 'success');
+        }
+
+        if (result?.fullCard) {
+          this.isCelebratingFullCard = true;
+          this.fullCardCelebrationMessage = '¡Cartón completado! Reiniciando el tablero...';
+          this.cdr.detectChanges();
+          await this.delay(100);
+          await this.showToast('¡Cartón completado! + bono especial', 'success');
+
+          await this.delay(1400);
+
+          if (result.newCard) {
+            this.bingoCard = result.newCard as BingoCard;
+            this.progress = {
+              id: '',
+              partnership_id: '',
+              card_id: this.bingoCard.id,
+              completed_cells: [],
+              points_earned: 0
+            } as any;
+            this.completedCellIds = new Set();
+            this.hasWon = false;
+          }
+
+          this.isCelebratingFullCard = false;
+          this.fullCardCelebrationMessage = '';
         }
       }
     } catch (error) {
       console.error('Error toggling cell:', error);
       await this.showToast('Error inesperado: ' + (((error as any)?.message) || JSON.stringify(error)), 'danger');
     } finally {
+      this.savingCellId = null;
       this.isSaving = false;
     }
   }
@@ -150,6 +222,14 @@ export class BingoPage implements OnInit {
   }
 
   getTotalPoints(): number {
-    return this.progress?.points_earned || (this.completedCellIds.size * 10);
+    return this.progress?.points_earned ?? 0;
+  }
+
+  isCellSaving(cell: BingoCellTask): boolean {
+    return this.savingCellId === cell.id;
+  }
+
+  private delay(ms: number) {
+    return new Promise<void>(resolve => setTimeout(resolve, ms));
   }
 }

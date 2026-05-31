@@ -3,7 +3,6 @@ from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
 import random
-import os
 
 from database import supabase
 
@@ -55,31 +54,6 @@ def _normalize_memory(row: dict) -> dict:
         "file_name": row.get("file_name"),
     }
 
-def _storage_memory_candidates(partner_ids: set[str]) -> list[dict]:
-    storage_list = supabase.storage.from_("memories").list("")
-    candidates: list[dict] = []
-    supabase_url = (os.getenv("SUPABASE_URL") or "").rstrip("/")
-
-    for item in storage_list or []:
-        name = item.get("name") if isinstance(item, dict) else getattr(item, "name", None)
-        if not name:
-            continue
-
-        if any(name.startswith(f"{partner_id}_") for partner_id in partner_ids):
-            public_url = f"{supabase_url}/storage/v1/object/public/memories/{name}" if supabase_url else name
-            candidates.append({
-                "id": name,
-                "image_url": public_url,
-                "location_name": None,
-                "created_at": None,
-                "emotional_score": None,
-                "partnership_id": None,
-                "user_id": None,
-                "file_name": name,
-            })
-
-    return candidates
-
 
 @router.post("/round")
 async def get_historic_memory_round(request: HistoricMemoryRequest):
@@ -97,12 +71,9 @@ async def get_historic_memory_round(request: HistoricMemoryRequest):
                 candidates.append(normalized)
 
     if not candidates:
-        candidates = _storage_memory_candidates(partner_ids)
-
-    if not candidates:
         raise HTTPException(
             status_code=404,
-            detail="No hay recuerdos disponibles para esta pareja"
+            detail="No hay recuerdos disponibles en la galería para esta pareja"
         )
 
     now = datetime.utcnow()

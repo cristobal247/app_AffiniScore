@@ -11,6 +11,15 @@
 </ion-header>
 
 <ion-content [fullscreen]="true" class="dashboard-bg">
+  <div *ngIf="isCelebratingFullCard" class="full-card-celebration-overlay bounce-animation">
+    <div class="celebration-card">
+      <div class="celebration-icon">🎉</div>
+      <h2>¡Cartón completado!</h2>
+      <p>{{ fullCardCelebrationMessage }}</p>
+      <div class="celebration-points">Bono especial desbloqueado</div>
+    </div>
+  </div>
+
   <div *ngIf="isLoading" class="loading-container">
     <div class="loading-card">
       <ion-spinner name="crescent" color="primary"></ion-spinner>
@@ -29,8 +38,13 @@
           </span>
         </div>
         <div class="progress-badge">
-          <span>{{ completedCellIds.size }}/9 celdas</span>
-        </div>
+            <span>{{ completedCellIds.size }}/9 celdas</span>
+          </div>
+          <div class="actions-badge">
+            <ion-button size="small" color="medium" (click)="resetCard()">
+              Reiniciar cartón
+            </ion-button>
+          </div>
       </div>
 
       <div class="stats-row">
@@ -61,10 +75,18 @@
           *ngFor="let cell of bingoCard.cells"
           class="bingo-cell-premium"
           [class.completed]="isCellCompleted(cell)"
+          [class.saving]="isCellSaving(cell)"
+          [class.locked]="isCelebratingFullCard"
+          [class.disabled-cell]="isSaving && !isCellSaving(cell)"
           (click)="toggleCell(cell)"
         >
           <div class="completed-overlay" *ngIf="isCellCompleted(cell)">
             <ion-icon name="checkmark-circle" class="check-icon"></ion-icon>
+          </div>
+
+          <div class="saving-overlay" *ngIf="isCellSaving(cell)">
+            <ion-spinner name="crescent" color="light"></ion-spinner>
+            <span>cargando...</span>
           </div>
           
           <div class="cell-content">

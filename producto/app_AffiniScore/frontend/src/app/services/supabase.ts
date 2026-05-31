@@ -485,29 +485,46 @@ export class SupabaseService {
     startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay() + (startOfWeek.getDay() === 0 ? -6 : 1));
     startOfWeek.setHours(0, 0, 0, 0);
 
-    let query = this.supabase
+    let actionsQuery = this.supabase
       .from('user_actions_log')
       .select('points_earned')
       .eq('status', 'CONFIRMED')
+      .gte('created_at', startOfWeek.toISOString());
+
+    let ledgerQuery = this.supabase
+      .from('points_ledger')
+      .select('points')
       .gte('created_at', startOfWeek.toISOString());
 
     if (partnershipId) {
       // Obtenemos los IDs de la vinculación directamente de la tabla partnerships
       const partnership = await this.getActivePartnership();
       const partnerIds = partnership ? [partnership.user1_id, partnership.user2_id] : [user.id];
-      query = query.in('user_id', partnerIds);
+      actionsQuery = actionsQuery.in('user_id', partnerIds);
+      ledgerQuery = ledgerQuery.in('user_id', partnerIds);
     } else {
-      query = query.eq('user_id', user.id);
+      actionsQuery = actionsQuery.eq('user_id', user.id);
+      ledgerQuery = ledgerQuery.eq('user_id', user.id);
     }
 
-    const { data, error } = await query;
+    const [{ data: actionsData, error: actionsError }, { data: ledgerData, error: ledgerError }] = await Promise.all([
+      actionsQuery,
+      ledgerQuery
+    ]);
 
-    if (error) {
-      console.error('Error fetching weekly points:', error);
-      return { data: 0, error };
+    if (actionsError) {
+      console.error('Error fetching weekly action points:', actionsError);
+      return { data: 0, error: actionsError };
     }
 
-    const weeklyTotal = data.reduce((sum: number, log: any) => sum + (log.points_earned || 0), 0);
+    if (ledgerError) {
+      console.error('Error fetching weekly ledger points:', ledgerError);
+      return { data: 0, error: ledgerError };
+    }
+
+    const actionPoints = (actionsData || []).reduce((sum: number, log: any) => sum + (log.points_earned || 0), 0);
+    const ledgerPoints = (ledgerData || []).reduce((sum: number, row: any) => sum + (row.points || 0), 0);
+    const weeklyTotal = actionPoints + ledgerPoints;
     return { data: weeklyTotal, error: null };
   }
 
