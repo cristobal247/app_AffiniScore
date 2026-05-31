@@ -96,20 +96,18 @@
     </ion-card>
 
     <!-- Tarjeta 2: Reflexión Diaria -->
-    <ion-card class="daily-reflection-card">
+    <ion-card class="daily-reflection-card" (click)="cambiarFraseAleatoria()" style="cursor: pointer;">
       <div class="reflection-header">
         <ion-icon name="location" class="pin-icon"></ion-icon>
         <span class="reflection-title">Reflexión Diaria</span>
       </div>
       
       <p class="quote-text">
-        "El amor no es algo que se encuentra, es algo que se construye día a día con pequeños gestos de gratitud."
+        "{{ reflectionPhrase }}"
       </p>
-
-      <div class="reflection-footer" style="display: flex; gap: 10px;">
-        <button class="respond-btn" routerLink="/tabs/chat-ai" style="background: transparent; color: #bd343a; border: 1px solid #bd343a;">Coach IA</button>
-        <button class="respond-btn" routerLink="/tabs/chat-partner">Chat Pareja +</button>
-      </div>
+      <p class="quote-author" style="text-align: right; font-size: 11px; font-style: italic; color: #bd343a; margin-top: -6px; margin-bottom: 2px; padding-right: 4px;" *ngIf="reflectionAuthor">
+        — {{ reflectionAuthor }}
+      </p>
     </ion-card>
 
     <!-- Sección: Juegos y Retos -->
@@ -117,8 +115,7 @@
       <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px; margin-left: 5px;">
         <span style="font-size: 11px; font-weight: 800; color: #bd343a; letter-spacing: 1.5px; text-transform: uppercase;">Juegos y Conexión</span>
       </div>
-      
-      <div class="activities-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+      <div class="activities-scroll-container">
         <!-- Card Bingo -->
         <ion-card class="activity-card" routerLink="/tabs/bingo" style="margin: 0; border-radius: 24px; background: linear-gradient(135deg, #fff0f1 0%, #ffffff 100%); box-shadow: 0 8px 20px rgba(189, 52, 58, 0.05); border: 1px solid rgba(189, 52, 58, 0.1); padding: 18px; display: flex; flex-direction: column; justify-content: space-between; height: 160px;">
           <div>

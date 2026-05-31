@@ -413,6 +413,65 @@ export class SupabaseService {
     return data[0];
   }
 
+  /**
+   * Obtiene el catálogo completo de reflexiones desde la base de datos con un fallback local.
+   */
+  async getReflectionsCatalog(): Promise<{ phrase: string; author: string }[]> {
+    const fallback = [
+      {
+        phrase: 'El amor no es algo que se encuentra, es algo que se construye día a día con pequeños gestos de gratitud.',
+        author: 'Anónimo'
+      },
+      {
+        phrase: 'La comunicación es el puente entre la confusión y la claridad.',
+        author: 'Anónimo'
+      },
+      {
+        phrase: 'Un gran matrimonio no es cuando se junta la pareja perfecta, sino cuando una pareja imperfecta aprende a disfrutar de sus diferencias.',
+        author: 'Dave Meurer'
+      }
+    ];
+
+    try {
+      if (!this.supabaseEnabled || !this.supabase) {
+        return fallback;
+      }
+
+      const { data, error } = await this.supabase
+        .from('daily_reflections')
+        .select('phrase, author');
+
+      if (error || !data || data.length === 0) {
+        console.warn('Error al obtener catálogo o tabla vacía, usando fallback:', error);
+        return fallback;
+      }
+
+      return data as { phrase: string; author: string }[];
+    } catch (e) {
+      console.warn('Excepción al obtener catálogo de reflexiones, usando fallback:', e);
+      return fallback;
+    }
+  }
+
+  /**
+   * Obtiene la reflexión diaria desde la base de datos de manera determinista
+   * basándose en el día del año actual. Posee un fallback local por si falla.
+   */
+  async getDailyReflection(): Promise<{ phrase: string; author: string }> {
+    const data = await this.getReflectionsCatalog();
+    
+    // Calcular el día del año actual de forma determinista para que ambos partners vean la misma frase
+    const now = new Date();
+    const startOfYear = new Date(now.getFullYear(), 0, 0);
+    const diff = now.getTime() - startOfYear.getTime();
+    const oneDay = 1000 * 60 * 60 * 24;
+    const dayOfYear = Math.floor(diff / oneDay);
+
+    const index = dayOfYear % data.length;
+    return data[index];
+  }
+
+
   // Obtener puntos obtenidos en la semana actual (Suma los de la pareja si están vinculados)
   async getWeeklyPoints() {
     const user = await this.getCurrentUser();

@@ -14,7 +14,7 @@ $white: #ffffff;
 }
 
 .dashboard-container {
-  padding: 0 20px 40px 20px;
+  padding: 0 20px 100px 20px;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -138,35 +138,35 @@ $white: #ffffff;
 // Tarjeta de Reflexión Diaria
 .daily-reflection-card {
   margin: 0;
-  border-radius: 32px;
+  border-radius: 24px;
   background: #f1efe9; // Gris beige sutil
   box-shadow: none;
-  padding: 28px;
+  padding: 18px 20px;
 
   .reflection-header {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
 
     .pin-icon {
-      font-size: 18px;
+      font-size: 16px;
       color: $red-brand;
     }
     .reflection-title {
-      font-size: 13px;
+      font-size: 11px;
       font-weight: 800;
       color: $text-dark;
     }
   }
 
   .quote-text {
-    margin: 0 0 28px 0;
-    font-size: 20px;
+    margin: 0 0 12px 0;
+    font-size: 15px;
     font-style: italic;
     font-weight: 500;
     color: #4a4a4a;
-    line-height: 1.4;
+    line-height: 1.45;
   }
 
   .reflection-footer {
@@ -257,7 +257,22 @@ $white: #ffffff;
   }
 }
 
+.activities-scroll-container {
+  display: flex;
+  overflow-x: auto;
+  gap: 14px;
+  padding: 8px 4px 16px 4px;
+  margin: 0 -4px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 .activity-card {
+  flex: 0 0 190px; /* Ancho elegante para cada card en horizontal scroll */
   transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease;
   
   &:active {

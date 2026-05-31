@@ -45,6 +45,9 @@ export class HomePage implements OnInit {
   nivelAfinidad: number = 1;
   porcentajeAfinidad: number = 0;
   userAvatarUrl: string | null = null;
+  reflectionPhrase: string = '';
+  reflectionAuthor: string = '';
+  reflectionsCatalog: { phrase: string; author: string }[] = [];
 
   constructor(
     private supabaseSvc: SupabaseService,
@@ -134,6 +137,19 @@ export class HomePage implements OnInit {
 
   async cargarDatosAfinidad() {
     try {
+      // Cargar la reflexión diaria dinámicamente
+      this.reflectionsCatalog = await this.supabaseSvc.getReflectionsCatalog();
+      if (this.reflectionsCatalog && this.reflectionsCatalog.length > 0) {
+        const now = new Date();
+        const startOfYear = new Date(now.getFullYear(), 0, 0);
+        const diff = now.getTime() - startOfYear.getTime();
+        const oneDay = 1000 * 60 * 60 * 24;
+        const dayOfYear = Math.floor(diff / oneDay);
+        const index = dayOfYear % this.reflectionsCatalog.length;
+        this.reflectionPhrase = this.reflectionsCatalog[index].phrase;
+        this.reflectionAuthor = this.reflectionsCatalog[index].author;
+      }
+
       const { data, error } = await this.supabaseSvc.getUserProfile();
       const weeklyRes = await this.supabaseSvc.getWeeklyPoints();
       
@@ -159,6 +175,20 @@ export class HomePage implements OnInit {
       }
     } catch (error) {
       console.error('Error al cargar puntos:', error);
+    }
+  }
+
+  cambiarFraseAleatoria() {
+    if (this.reflectionsCatalog && this.reflectionsCatalog.length > 0) {
+      // Filtrar para evitar mostrar la misma frase consecutivamente si el catálogo tiene más opciones
+      const otrasFrases = this.reflectionsCatalog.filter(
+        r => r.phrase !== this.reflectionPhrase
+      );
+      const fuente = otrasFrases.length > 0 ? otrasFrases : this.reflectionsCatalog;
+      const indexAleatorio = Math.floor(Math.random() * fuente.length);
+      
+      this.reflectionPhrase = fuente[indexAleatorio].phrase;
+      this.reflectionAuthor = fuente[indexAleatorio].author;
     }
   }
 

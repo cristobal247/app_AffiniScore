@@ -13,7 +13,10 @@ ion-content.notebook-bg::part(background) {
   justify-content: flex-start;
   align-items: center;
   gap: 8px;
-  padding: 16px 20px;
+  padding-top: calc(var(--ion-safe-area-top, 45px) + 26px) !important;
+  padding-left: 20px !important;
+  padding-right: 20px !important;
+  padding-bottom: 12px !important;
   position: relative;
   z-index: 10;
 }
@@ -25,13 +28,17 @@ ion-content.notebook-bg::part(background) {
   --background-activated: transparent;
   --color: #2f2324;
   --box-shadow: none;
-  width: 54px;
-  height: 54px;
+  --padding-start: 0px !important;
+  --padding-end: 0px !important;
+  --padding-top: 0px !important;
+  --padding-bottom: 0px !important;
+  width: 38px;
+  height: 38px;
   margin: 0;
   padding: 0;
   
   ion-icon {
-    font-size: 44px;
+    font-size: 24px;
   }
 }
 
@@ -94,7 +101,7 @@ ion-content.notebook-bg::part(background) {
 /* Cámara Retro Polaroid */
 .retro-camera-wrapper {
   position: absolute;
-  top: 74px;
+  top: calc(var(--ion-safe-area-top, 45px) + 26px) !important;
   right: 20px;
   cursor: pointer;
   z-index: 15;
@@ -581,8 +588,8 @@ ion-content.notebook-bg::part(background) {
 /* Header transparente para navegación de salida */
 .modal-nav-header {
   position: absolute;
-  top: 10px;
-  left: 10px;
+  top: calc(var(--ion-safe-area-top, 45px) + 26px) !important;
+  left: 20px !important;
   z-index: 100;
   
   .back-circle-btn {
@@ -592,13 +599,17 @@ ion-content.notebook-bg::part(background) {
     --background-activated: transparent;
     --color: #2f2324;
     --box-shadow: none;
-    width: 48px;
-    height: 48px;
+    --padding-start: 0px !important;
+    --padding-end: 0px !important;
+    --padding-top: 0px !important;
+    --padding-bottom: 0px !important;
+    width: 38px;
+    height: 38px;
     margin: 0;
     padding: 0;
     
     ion-icon {
-      font-size: 34px;
+      font-size: 24px;
     }
   }
 }
@@ -1026,7 +1037,10 @@ ion-content.notebook-bg::part(background) {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 16px;
+  padding-top: calc(var(--ion-safe-area-top, 45px) + 26px) !important;
+  padding-left: 20px !important;
+  padding-right: 20px !important;
+  padding-bottom: 12px !important;
   position: absolute;
   top: 0;
   left: 0;
@@ -1039,19 +1053,23 @@ ion-content.notebook-bg::part(background) {
     --background-activated: transparent;
     --color: #2f2324;
     --box-shadow: none;
-    width: 44px;
-    height: 44px;
+    --padding-start: 0px !important;
+    --padding-end: 0px !important;
+    --padding-top: 0px !important;
+    --padding-bottom: 0px !important;
+    width: 38px;
+    height: 38px;
     margin: 0;
     padding: 0;
 
     ion-icon {
-      font-size: 32px;
+      font-size: 24px;
     }
   }
 
   .right-actions {
     display: flex;
-    gap: 4px;
+    gap: 12px;
 
     .action-btn {
       --background: transparent;
@@ -1060,20 +1078,24 @@ ion-content.notebook-bg::part(background) {
       --background-activated: transparent;
       --color: #2f2324;
       --box-shadow: none;
-      width: 44px;
-      height: 44px;
+      --padding-start: 0px !important;
+      --padding-end: 0px !important;
+      --padding-top: 0px !important;
+      --padding-bottom: 0px !important;
+      width: 38px;
+      height: 38px;
       margin: 0;
       padding: 0;
 
       ion-icon {
-        font-size: 26px;
+        font-size: 24px;
       }
     }
   }
 }
 
 .detail-body-content {
-  padding-top: 60px !important; /* Espacio para la cabecera */
+  padding-top: calc(var(--ion-safe-area-top, 45px) + 90px) !important;
   display: flex;
   flex-direction: column;
   align-items: center;

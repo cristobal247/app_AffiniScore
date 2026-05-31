@@ -1,38 +1,40 @@
 <div class="ion-page" id="main-group-chat-content">
   <ion-header class="ion-no-border">
-    <ion-toolbar mode="ios">
-      <ion-buttons slot="start">
-        <ion-back-button defaultHref="/tabs/chat" text="" icon="chevron-back-outline" style="color: #df5b61; margin-left: 8px;"></ion-back-button>
-      </ion-buttons>
-      
-      <ion-title mode="ios">
-        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%;">
-          <span style="font-weight: 800; font-size: 15px; color: #3a3a3a; letter-spacing: -0.5px; line-height: 1.1;">Terapia Grupal</span>
-          <span *ngIf="!isLoading" style="font-size: 10px; color: #bd343a; font-weight: 700; margin-top: 2px; text-transform: uppercase;">Con AffiniCoach IA</span>
-          <span *ngIf="isLoading" style="font-size: 10px; color: #7e7e7e; font-weight: 600; margin-top: 2px;">ESCRIBIENDO...</span>
-        </div>
-      </ion-title>
-      
-      <ion-buttons slot="end" style="padding-right: 8px;">
-        <!-- Avatares de la pareja en la esquina superior derecha -->
-        <div class="header-avatars" style="display: flex; align-items: center;">
-          <div *ngFor="let avatar of partnershipAvatars; let i = index" 
-               [style.margin-left]="i > 0 ? '-12px' : '0'"
-               [style.z-index]="10 - i"
-               style="width: 28px; height: 28px; border-radius: 50%; border: 2px solid #ffffff; overflow: hidden; background: #f0f0f0; box-shadow: 0 2px 6px rgba(0,0,0,0.12); position: relative;">
-            <img [src]="avatar" style="width: 100%; height: 100%; object-fit: cover;" />
+    <ion-toolbar mode="ios" class="main-header-toolbar">
+      <div class="header-content-wrapper">
+        <ion-button fill="clear" routerLink="/tabs/chat" routerDirection="back" class="back-circle-btn">
+          <ion-icon name="chevron-back-outline"></ion-icon>
+        </ion-button>
+        
+        <ion-title mode="ios">
+          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%;">
+            <span style="font-weight: 800; font-size: 15px; color: #3a3a3a; letter-spacing: -0.5px; line-height: 1.1;">Terapia Grupal</span>
+            <span *ngIf="!isLoading" style="font-size: 10px; color: #bd343a; font-weight: 700; margin-top: 2px; text-transform: uppercase;">Con AffiniCoach IA</span>
+            <span *ngIf="isLoading" style="font-size: 10px; color: #7e7e7e; font-weight: 600; margin-top: 2px;">ESCRIBIENDO...</span>
           </div>
-          <!-- Fallback si no hay avatares -->
-          <div *ngIf="partnershipAvatars.length === 0" style="display: flex;">
-             <div style="width: 28px; height: 28px; border-radius: 50%; border: 2px solid white; background: #e0e0e0; display: flex; align-items: center; justify-content: center;">
-               <ion-icon name="person" style="font-size: 14px; color: #7e7e7e;"></ion-icon>
-             </div>
-             <div style="width: 28px; height: 28px; border-radius: 50%; border: 2px solid white; background: #e0e0e0; display: flex; align-items: center; justify-content: center; margin-left: -12px;">
-               <ion-icon name="person" style="font-size: 14px; color: #7e7e7e;"></ion-icon>
-             </div>
+        </ion-title>
+        
+        <ion-buttons slot="end" style="padding-right: 8px;">
+          <!-- Avatares de la pareja en la esquina superior derecha -->
+          <div class="header-avatars" style="display: flex; align-items: center;">
+            <div *ngFor="let avatar of partnershipAvatars; let i = index" 
+                 [style.margin-left]="i > 0 ? '-12px' : '0'"
+                 [style.z-index]="10 - i"
+                 style="width: 28px; height: 28px; border-radius: 50%; border: 2px solid #ffffff; overflow: hidden; background: #f0f0f0; box-shadow: 0 2px 6px rgba(0,0,0,0.12); position: relative;">
+              <img [src]="avatar" style="width: 100%; height: 100%; object-fit: cover;" />
+            </div>
+            <!-- Fallback si no hay avatares -->
+            <div *ngIf="partnershipAvatars.length === 0" style="display: flex;">
+               <div style="width: 28px; height: 28px; border-radius: 50%; border: 2px solid white; background: #e0e0e0; display: flex; align-items: center; justify-content: center;">
+                 <ion-icon name="person" style="font-size: 14px; color: #7e7e7e;"></ion-icon>
+               </div>
+               <div style="width: 28px; height: 28px; border-radius: 50%; border: 2px solid white; background: #e0e0e0; display: flex; align-items: center; justify-content: center; margin-left: -12px;">
+                 <ion-icon name="person" style="font-size: 14px; color: #7e7e7e;"></ion-icon>
+               </div>
+            </div>
           </div>
-        </div>
-      </ion-buttons>
+        </ion-buttons>
+      </div>
     </ion-toolbar>
   </ion-header>
 
