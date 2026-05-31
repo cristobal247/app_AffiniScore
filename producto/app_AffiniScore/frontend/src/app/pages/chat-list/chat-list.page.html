@@ -31,14 +31,22 @@
   <ion-list lines="inset" style="background: transparent; margin-top: 8px;">
     <ion-item *ngFor="let chat of chats; let i = index" [routerLink]="chat.route" detail="false" class="custom-chat-item">
       
-      <ion-avatar slot="start" style="width: 50px; height: 50px; margin-right: 16px;">
-        <!-- Placeholder visual para el avatar -->
-        <div style="width: 100%; height: 100%; border-radius: 50%; display: flex; align-items: center; justify-content: center;"
-             [ngStyle]="{'background': chat.isAI ? 'linear-gradient(135deg, #e0f7fa, #80deea)' : 'linear-gradient(135deg, #ffebee, #ef9a9a)'}">
-           <ion-icon *ngIf="chat.isAI" name="hardware-chip" style="font-size: 24px; color: #00838f;"></ion-icon>
-           <ion-icon *ngIf="!chat.isAI" name="heart" style="font-size: 24px; color: #c62828;"></ion-icon>
+      <div slot="start" style="width: 50px; height: 50px; margin-right: 16px; position: relative; display: flex; align-items: center; justify-content: center;">
+        <!-- Caso 1: Terapia Grupal (3 Avatares apilados en triángulo) -->
+        <ng-container *ngIf="chat.id === 'group-ai'">
+          <img [src]="userAvatarUrl || 'assets/images/user.png'" style="position: absolute; width: 28px; height: 28px; border-radius: 50%; border: 2px solid white; top: -2px; left: -2px; object-fit: cover; z-index: 3; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" />
+          <img [src]="partnerAvatarUrl || 'assets/images/user.png'" style="position: absolute; width: 28px; height: 28px; border-radius: 50%; border: 2px solid white; top: -2px; right: -2px; object-fit: cover; z-index: 2; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" />
+          <img src="assets/images/foto_perfil_affinicoach.jpg" style="position: absolute; width: 28px; height: 28px; border-radius: 50%; border: 2px solid white; bottom: -2px; left: 11px; object-fit: cover; z-index: 1; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" />
+        </ng-container>
+
+        <!-- Caso 2: Chat Individual con IA -->
+        <img *ngIf="chat.id === 'ai'" src="assets/images/foto_perfil_affinicoach.jpg" alt="AffiniCoach" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />
+
+        <!-- Caso 3: Chat de Pareja convencional -->
+        <div *ngIf="chat.id === 'partner'" style="width: 100%; height: 100%; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #ffebee, #ef9a9a);">
+           <ion-icon name="heart" style="font-size: 24px; color: #c62828;"></ion-icon>
         </div>
-      </ion-avatar>
+      </div>
 
       <ion-label>
         <h2 class="chat-title">{{ chat.name }}</h2>

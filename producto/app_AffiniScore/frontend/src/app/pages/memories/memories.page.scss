@@ -1,17 +1,1222 @@
-.grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+/* Patrón de Libreta Cuadriculada Beige Pastel */
+ion-content.notebook-bg::part(background) {
+  background: #FAF3EA !important;
+  background-image: 
+    linear-gradient(to right, rgba(160, 130, 90, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(160, 130, 90, 0.05) 1px, transparent 1px) !important;
+  background-size: 28px 28px !important;
 }
 
-.grid-item ion-card {
+/* Cabecera personalizada */
+.custom-header {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 20px;
+  position: relative;
+  z-index: 10;
+}
+
+.back-circle-btn {
+  --background: transparent;
+  --background-hover: transparent;
+  --background-focused: transparent;
+  --background-activated: transparent;
+  --color: #2f2324;
+  --box-shadow: none;
+  width: 54px;
+  height: 54px;
+  margin: 0;
   padding: 0;
-  overflow: hidden;
+  
+  ion-icon {
+    font-size: 44px;
+  }
 }
 
-.grid-item img {
-  width: 100%;
-  height: 160px;
-  object-fit: cover;
-  display: block;
+.avatar-stack {
+  display: flex;
+  position: relative;
+  height: 38px;
+  align-items: center;
+
+  .stack-av {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 2.5px solid #ffffff;
+    object-fit: cover;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  }
+
+  .partner-av {
+    margin-left: -12px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .user-av {
+    position: relative;
+    z-index: 2;
+  }
 }
+
+/* Título estilo marcador amarillo */
+.title-container {
+  padding: 12px 20px 4px 20px;
+}
+
+.highlight-title {
+  font-size: 20px;
+  font-weight: 900;
+  color: #2f2324;
+  margin: 0;
+  display: inline-block;
+  position: relative;
+  letter-spacing: -0.8px;
+  font-family: 'Outfit', sans-serif !important;
+
+  &::before {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    left: -4px;
+    width: 108%;
+    height: 9px;
+    background: rgba(254, 240, 138, 0.7); /* Resaltador Amarillo */
+    z-index: -1;
+    border-radius: 2px;
+    transform: rotate(-1deg);
+  }
+}
+
+/* Cámara Retro Polaroid */
+.retro-camera-wrapper {
+  position: absolute;
+  top: 74px;
+  right: 20px;
+  cursor: pointer;
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: transform 0.2s ease;
+
+  &:active {
+    transform: scale(0.92);
+  }
+}
+
+.retro-camera {
+  width: 62px;
+  height: 50px;
+  background: #fdfcf9;
+  border: 3px solid #2f2324;
+  border-radius: 10px;
+  position: relative;
+  box-shadow: 0 6px 14px rgba(47, 35, 36, 0.15);
+
+  /* Visor */
+  &::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: 14px;
+    width: 16px;
+    height: 6px;
+    background: #2f2324;
+    border-radius: 3px 3px 0 0;
+  }
+}
+
+.camera-lens {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 28px;
+  height: 28px;
+  background: #2f2324;
+  border-radius: 50%;
+  border: 3.5px solid #df5b61; /* Borde rojo característico */
+  box-shadow: inset 0 0 6px rgba(255,255,255,0.3);
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: 6px;
+    height: 6px;
+    background: rgba(255,255,255,0.6);
+    border-radius: 50%;
+  }
+}
+
+.camera-viewfinder {
+  position: absolute;
+  top: 5px;
+  right: 6px;
+  width: 9px;
+  height: 7px;
+  background: #2f2324;
+  border-radius: 2px;
+}
+
+.camera-flash {
+  position: absolute;
+  top: 5px;
+  left: 6px;
+  width: 7px;
+  height: 7px;
+  background: #f1c40f;
+  border-radius: 50%;
+  border: 1.5px solid #2f2324;
+}
+
+.plus-badge {
+  position: absolute;
+  bottom: -10px;
+  right: -6px;
+  background: #ffffff;
+  color: #df5b61;
+  border: 2.5px solid #2f2324;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 20px;
+  line-height: 1;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+  font-family: 'Outfit', 'Helvetica Neue', Arial, sans-serif;
+  padding-bottom: 2px; /* Pequeño ajuste para centrar verticalmente el glifo '+' */
+}
+
+/* Lienzo de fotos Polaroid */
+.polaroids-canvas {
+  padding: 24px 12px 100px 12px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px 10px;
+  justify-items: center;
+  align-items: start;
+}
+
+/* Tarjeta Polaroid pequeña para el tablero */
+.polaroid-card {
+  background: #ffffff;
+  padding: 5px 5px 12px 5px;
+  box-shadow: 0 4px 10px rgba(47, 35, 36, 0.06), 0 1px 2px rgba(47, 35, 36, 0.02);
+  border-radius: 1px;
+  position: relative; /* Eliminado absolute */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 110px; /* Tamaño adaptado para 3 columnas en pantallas móviles */
+  transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.25s ease;
+  cursor: pointer;
+  border: 1px solid rgba(0, 0, 0, 0.015);
+
+  &:hover {
+    transform: scale(1.1) rotate(0deg) !important;
+    box-shadow: 0 12px 24px rgba(47, 35, 36, 0.15);
+    z-index: 10;
+  }
+
+  .polaroid-photo {
+    width: 100%;
+    height: 95px; /* Altura proporcional cuadrada en el tablero */
+    overflow: hidden;
+    background: #fcfcfc;
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    border-radius: 1px;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+  }
+
+  .polaroid-footer {
+    margin-top: 6px;
+    width: 100%;
+    text-align: center;
+  }
+
+  .polaroid-date {
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: 700;
+    font-size: 8px; /* Fuente pequeña */
+    color: #8c8282;
+    letter-spacing: 0.1px;
+  }
+
+  /* Sticker ovalado flotante */
+  .polaroid-sticker {
+    position: absolute;
+    top: -8px;
+    background: #ffffff;
+    border: 1px solid rgba(0,0,0,0.06);
+    box-shadow: 0 3px 8px rgba(47, 35, 36, 0.05);
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-weight: 800;
+    font-size: 8px; /* Fuente pequeña */
+    color: #2f2324;
+    z-index: 5;
+    white-space: nowrap;
+    letter-spacing: -0.2px;
+    max-width: 90%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
+  }
+}
+
+/* Estado de libreca vacía */
+.empty-notebook {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 60px 20px;
+  color: #8c8282;
+
+  ion-icon {
+    font-size: 48px;
+    color: #df5b61;
+    margin-bottom: 12px;
+  }
+
+  h3 {
+    font-weight: 700;
+    color: #2f2324;
+    font-size: 18px;
+    margin: 0 0 6px 0;
+  }
+
+  p {
+    font-size: 14px;
+    margin: 0;
+    line-height: 1.5;
+    max-width: 250px;
+  }
+}
+
+/* Píldora Flotante Inferior de Juegos */
+.bottom-floating-pill-wrapper {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 280px;
+}
+
+.bottom-floating-pill {
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(47, 35, 36, 0.12);
+  border-radius: 30px;
+  padding: 6px 16px 6px 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  border: 1px solid rgba(0,0,0,0.03);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+.pill-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1.5px solid #df5b61;
+}
+
+.pill-content {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #2f2324;
+  font-weight: 700;
+  font-size: 14px;
+
+  ion-icon {
+    font-size: 18px;
+    color: #df5b61;
+  }
+}
+
+/* Dropdown de minijuegos */
+.games-dropdown {
+  background: #ffffff;
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(47, 35, 36, 0.15);
+  width: 100%;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  animation: slideUp 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  border: 1px solid rgba(0,0,0,0.02);
+
+  .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    color: #2f2324;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease;
+
+    &:active {
+      background: #faf6f0;
+    }
+
+    ion-icon {
+      font-size: 18px;
+      color: #df5b61;
+    }
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Modales estilo Libreta */
+.modal-notebook {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #faf6f0;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: #ffffff;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+
+  h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 800;
+    color: #2f2324;
+    letter-spacing: -0.5px;
+  }
+
+  .modal-close-btn {
+    --color: #2f2324;
+    margin: 0;
+    font-size: 24px;
+  }
+}
+
+.modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.polaroid-preview {
+  background: #ffffff;
+  padding: 10px 10px 20px 10px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+  border-radius: 2px;
+  width: 250px;
+  max-width: 100%;
+  border: 1px solid rgba(0,0,0,0.02);
+
+  img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 2px;
+    display: block;
+  }
+}
+
+.form-sheet {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 20px;
+  width: 100%;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  border: 1px solid rgba(0,0,0,0.02);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #8c8282;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    ion-icon {
+      font-size: 16px;
+      color: #df5b61;
+    }
+  }
+
+  input {
+    border: 1.5px solid rgba(0, 0, 0, 0.08);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 14px;
+    color: #2f2324;
+    outline: none;
+    background: #ffffff;
+    transition: border-color 0.2s ease;
+
+    &:focus {
+      border-color: #df5b61;
+    }
+  }
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+
+  ion-button {
+    flex: 1;
+    margin: 0;
+    font-weight: 700;
+    font-size: 14px;
+    height: 42px;
+  }
+
+  .btn-cancel {
+    --color: #2f2324;
+    --border-color: rgba(0, 0, 0, 0.15);
+    --border-radius: 10px;
+  }
+
+  .btn-save, .btn-edit {
+    --background: #df5b61;
+    --background-activated: #bd343a;
+    --border-radius: 10px;
+    --color: #ffffff;
+  }
+}
+
+.detail-display {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #2f2324;
+  font-weight: 600;
+  font-size: 14px;
+
+  ion-icon {
+    font-size: 18px;
+    color: #df5b61;
+  }
+}
+
+/* Rediseño de Carga de Recuerdos (Estilo Cámara Polaroid) */
+.modal-notebook-new {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #FAF3EA;
+  background-image: 
+    linear-gradient(to right, rgba(160, 130, 90, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(160, 130, 90, 0.05) 1px, transparent 1px) !important;
+  background-size: 28px 28px !important;
+  overflow-y: auto;
+  position: relative;
+}
+
+/* Header transparente para navegación de salida */
+.modal-nav-header {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 100;
+  
+  .back-circle-btn {
+    --background: transparent;
+    --background-hover: transparent;
+    --background-focused: transparent;
+    --background-activated: transparent;
+    --color: #2f2324;
+    --box-shadow: none;
+    width: 48px;
+    height: 48px;
+    margin: 0;
+    padding: 0;
+    
+    ion-icon {
+      font-size: 34px;
+    }
+  }
+}
+
+/* Cámara Retro Gigante arriba */
+.modal-camera-header {
+  width: 100%;
+  height: 80px;
+  background: #EAEAEA;
+  border-bottom: 5px solid #2f2324;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+
+  /* Lente de la cámara arriba (recortado) */
+  .header-lens {
+    width: 140px;
+    height: 140px;
+    background: #111;
+    border: 10px solid #FFFFFF;
+    border-radius: 50%;
+    position: absolute;
+    top: -95px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    
+    &::after {
+      content: '';
+      position: absolute;
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      background: #222;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      box-shadow: inset 0 0 10px rgba(255,255,255,0.4);
+    }
+  }
+
+  /* Franja multicolor */
+  .header-rainbow-stripe {
+    width: 60px;
+    height: 25px;
+    position: absolute;
+    top: 45px;
+    display: flex;
+    flex-direction: column;
+    
+    &::before {
+      content: '';
+      display: block;
+      width: 100%;
+      height: 25%;
+      background: #2ecc71;
+    }
+    
+    &::after {
+      content: '';
+      display: block;
+      width: 100%;
+      height: 75%;
+      background: linear-gradient(to bottom, #f1c40f 33%, #e67e22 33% 66%, #e74c3c 66%);
+    }
+  }
+
+  /* Ranura de salida de fotos */
+  .header-photo-slit {
+    width: 90%;
+    height: 16px;
+    background: #151515;
+    border: 3.5px solid #2f2324;
+    border-radius: 8px;
+    position: absolute;
+    bottom: -10px;
+    z-index: 10;
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.8);
+  }
+}
+
+.modal-body-content {
+  flex: 1;
+  padding: 30px 20px 40px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+/* Contenedor de ranura polaroid */
+.polaroid-slit-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  position: relative;
+  z-index: 5;
+  margin-top: -45px;
+  perspective: 1000px;
+}
+
+/* Polaroid emerging style */
+.polaroid-print-card {
+  background: #ffffff;
+  padding: 12px 12px 50px 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+  width: 240px;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  position: relative;
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+@keyframes polaroidEject {
+  from {
+    transform: translateY(-40px) rotateX(-15deg);
+    opacity: 0.5;
+  }
+  to {
+    transform: translateY(0) rotateX(0);
+    opacity: 1;
+  }
+}
+
+/* Polaroid state: placeholder (yellow with broccoli and button) */
+.placeholder-polaroid-content {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: #FDF4C5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border-radius: 2px;
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+
+  .mascot-illust {
+    height: 110px;
+    width: auto;
+    object-fit: contain;
+  }
+
+  .btn-add-photo {
+    background: #FF9800;
+    color: #ffffff;
+    border: none;
+    border-radius: 20px;
+    padding: 8px 24px;
+    font-weight: 700;
+    font-size: 13px;
+    box-shadow: 0 4px 10px rgba(255, 152, 0, 0.35);
+    cursor: pointer;
+    font-family: 'Outfit', sans-serif;
+    transition: transform 0.2s ease, background-color 0.2s ease;
+
+    &:active {
+      transform: scale(0.95);
+      background: #E68A00;
+    }
+  }
+}
+
+/* Polaroid state: image selected */
+.photo-polaroid-content {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 2px;
+  overflow: hidden;
+
+  .preview-img-tag {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+/* Formulario */
+.modal-form-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 320px;
+}
+
+/* Fecha estilo Pill */
+.form-pill {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 14px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 12px rgba(47, 35, 36, 0.04);
+  cursor: pointer;
+  position: relative;
+  border: 1px solid rgba(0,0,0,0.015);
+  transition: background-color 0.2s ease;
+
+  &:active {
+    background-color: #f7f7f7;
+  }
+
+  .pill-label {
+    font-size: 15px;
+    font-weight: 700;
+    color: #8c8282;
+  }
+
+  .pill-value-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #2f2324;
+    font-weight: 600;
+    font-size: 15px;
+
+    ion-icon {
+      font-size: 18px;
+      color: #bfb5b5;
+    }
+  }
+
+  .hidden-date-picker {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+  }
+}
+
+/* Caja de detalles */
+.details-card {
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 4px 12px rgba(47, 35, 36, 0.04);
+  border: 1px solid rgba(0,0,0,0.015);
+  display: flex;
+  flex-direction: column;
+  padding: 6px 0;
+
+  .detail-row {
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .heart-icon {
+    font-size: 18px;
+  }
+
+  .input-title {
+    border: none;
+    outline: none;
+    font-size: 16px;
+    font-weight: 700;
+    color: #2f2324;
+    width: 100%;
+    background: transparent;
+
+    &::placeholder {
+      color: #bfb5b5;
+      font-weight: 500;
+    }
+  }
+
+  .card-divider {
+    height: 1px;
+    background: rgba(0,0,0,0.06);
+    width: 90%;
+    align-self: center;
+  }
+
+  .desc-row {
+    align-items: flex-start;
+  }
+
+  .input-desc {
+    border: none;
+    outline: none;
+    font-size: 14px;
+    color: #6a5e5e;
+    width: 100%;
+    background: transparent;
+    resize: none;
+    line-height: 1.4;
+    font-family: inherit;
+
+    &::placeholder {
+      color: #bfb5b5;
+    }
+  }
+}
+
+/* Botón de envío */
+.submit-container {
+  margin-top: 8px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.btn-submit-day {
+  width: 100%;
+  background: #E2E2E2;
+  color: #8C8C8C;
+  border: none;
+  border-radius: 24px;
+  padding: 14px;
+  font-size: 16px;
+  font-weight: 700;
+  font-family: 'Outfit', sans-serif;
+  cursor: not-allowed;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+
+  &.active {
+    background: #FF9800;
+    color: #ffffff;
+    cursor: pointer;
+    box-shadow: 0 6px 16px rgba(255, 152, 0, 0.35);
+
+    &:active {
+      transform: translateY(1px);
+      box-shadow: 0 3px 8px rgba(255, 152, 0, 0.25);
+    }
+  }
+}
+
+/* Animación de Éxito al Guardar Recuerdo (Foto saliendo de la Cámara) */
+.success-animation-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(250, 243, 234, 0.95); /* Fondo crema sutil semi-transparente */
+  backdrop-filter: blur(8px);
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  animation: fadeInOverlay 0.3s ease-out forwards;
+}
+
+@keyframes fadeInOverlay {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.camera-print-wrapper {
+  position: relative;
+  width: 320px;
+  height: 600px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transform: translateY(-65px); /* Desplaza todo el conjunto hacia arriba */
+}
+
+/* La cámara polaroid.png */
+.polaroid-camera-img {
+  width: 290px;
+  height: auto;
+  z-index: 20;
+  position: relative;
+  filter: drop-shadow(0 12px 24px rgba(47, 35, 36, 0.2));
+  transform: translateY(-40px);
+}
+
+/* Contenedor de la foto que emerge */
+.ejected-photo-container {
+  position: absolute;
+  top: 240px;
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  transform-origin: top center;
+  animation: photoSlideOutSuccess 3.0s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+}
+
+/* La Polaroid ejectada */
+.ejected-card {
+  width: 220px !important;
+  padding: 10px 10px 42px 10px !important;
+  box-shadow: 0 15px 35px rgba(47, 35, 36, 0.15) !important;
+  transform: rotate(0deg) !important; /* Perfectamente derecha */
+  margin: 0 !important;
+}
+
+@keyframes photoSlideOutSuccess {
+  0% {
+    transform: translateY(-190px) scaleY(0.05) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(60px) scaleY(1) rotate(0deg); /* Deslizado derecho sin rotación */
+    opacity: 1;
+  }
+}
+
+/* Detalle de Recuerdos */
+.detail-header-nav {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 100;
+
+  .back-circle-btn {
+    --background: transparent;
+    --background-hover: transparent;
+    --background-focused: transparent;
+    --background-activated: transparent;
+    --color: #2f2324;
+    --box-shadow: none;
+    width: 44px;
+    height: 44px;
+    margin: 0;
+    padding: 0;
+
+    ion-icon {
+      font-size: 32px;
+    }
+  }
+
+  .right-actions {
+    display: flex;
+    gap: 4px;
+
+    .action-btn {
+      --background: transparent;
+      --background-hover: transparent;
+      --background-focused: transparent;
+      --background-activated: transparent;
+      --color: #2f2324;
+      --box-shadow: none;
+      width: 44px;
+      height: 44px;
+      margin: 0;
+      padding: 0;
+
+      ion-icon {
+        font-size: 26px;
+      }
+    }
+  }
+}
+
+.detail-body-content {
+  padding-top: 60px !important; /* Espacio para la cabecera */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 28px;
+}
+
+/* Polaroid Grande en Detalle */
+.detail-polaroid-wrapper {
+  perspective: 1000px;
+  margin-top: 10px;
+}
+
+.detail-polaroid-card {
+  width: 250px !important;
+  max-width: 250px !important; /* Evita que herede max-width de la grilla principal */
+  padding: 12px 12px 50px 12px !important;
+  box-shadow: 0 16px 36px rgba(47, 35, 36, 0.12) !important;
+  transform: rotate(-1.5deg) !important; /* Tilted ligeramente en el modal de detalle */
+  border-radius: 4px !important;
+  position: relative !important;
+
+  .polaroid-photo {
+    height: 210px !important;
+  }
+
+  .polaroid-footer {
+    margin-top: 14px !important;
+  }
+
+  .polaroid-date {
+    font-size: 13px !important;
+    letter-spacing: 0.5px !important;
+  }
+
+  .polaroid-sticker {
+    top: -12px !important;
+    padding: 4px 12px !important;
+    font-size: 10px !important;
+    border-radius: 14px !important;
+    box-shadow: 0 4px 10px rgba(47, 35, 36, 0.1) !important;
+  }
+}
+
+/* Contenedores de visualización de información del recuerdo */
+.detail-info-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+  max-width: 300px;
+  margin-top: 10px;
+
+  .info-subtitle {
+    font-size: 13px;
+    color: #8c8282;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+    font-family: 'Outfit', sans-serif;
+  }
+
+  .info-description {
+    font-size: 18px;
+    font-weight: 900;
+    color: #2f2324;
+    line-height: 1.4;
+    margin: 0;
+    font-family: 'Outfit', sans-serif;
+    max-width: 280px;
+  }
+
+  .info-divider {
+    width: 100%;
+    height: 1px;
+    background: rgba(47, 35, 36, 0.08);
+    margin: 20px 0;
+  }
+
+  .info-creator {
+    font-size: 13px;
+    color: #8c8282;
+    font-weight: 500;
+    font-family: 'Outfit', sans-serif;
+  }
+}
+
+/* Formulario de Edición en Detalle */
+.detail-edit-view {
+  width: 100%;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 10px;
+}
+
+.edit-actions-container {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  margin-top: 8px;
+
+  button {
+    flex: 1;
+    border: none;
+    border-radius: 20px;
+    padding: 12px;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: 'Outfit', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .btn-cancel-edit {
+    background: #ffffff;
+    border: 2px solid #2f2324;
+    color: #2f2324;
+
+    &:active {
+      transform: scale(0.97);
+      background-color: #f7f7f7;
+    }
+  }
+
+  .btn-save-edit {
+    background: #FF9800;
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+
+    &:active {
+      transform: scale(0.97);
+      background-color: #e68a00;
+    }
+
+    &:disabled {
+      background: #E2E2E2;
+      color: #8C8C8C;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+  }
+}
+

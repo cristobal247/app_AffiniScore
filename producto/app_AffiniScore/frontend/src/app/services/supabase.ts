@@ -3,6 +3,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { environment } from 'src/environments/environment';
 import { firstValueFrom, BehaviorSubject } from 'rxjs';
+import { compressImage } from '../utils/image-compress';
 
 export interface ChatRoom {
   id: string;
@@ -649,12 +650,20 @@ export class SupabaseService {
     if (!user) return { error: 'Usuario no autenticado' };
     const partnership = await this.getActivePartnership();
 
+    // Comprimir la imagen antes de subirla (máx. 1080x1080 píxeles, calidad 80%)
+    let compressedFile = file;
+    try {
+      compressedFile = await compressImage(file, 1080, 1080, 0.80);
+    } catch (e) {
+      console.warn('Fallo al comprimir memoria, usando original:', e);
+    }
+
     const fileExt = (file instanceof File) ? file.name.split('.').pop() : 'jpg';
     const name = filename || `${user.id}_${new Date().getTime()}.${fileExt}`;
 
     const { error: uploadError } = await this.supabase.storage
       .from('memories')
-      .upload(name, file, { upsert: true });
+      .upload(name, compressedFile, { upsert: true });
 
     if (uploadError) return { error: uploadError.message || uploadError };
 
@@ -919,6 +928,7 @@ export class SupabaseService {
           created_at: row.created_at,
           emotional_score: row.emotional_score,
           partnership_id: row.partnership_id,
+          user_id: row.user_id,
           title: row.location_name || 'Recuerdo validado',
         });
       }
@@ -956,6 +966,7 @@ export class SupabaseService {
           created_at: row.created_at,
           emotional_score: row.emotional_score,
           partnership_id: row.partnership_id,
+          user_id: row.user_id,
           title: row.location_name || 'Recuerdo',
         });
       }
@@ -1067,6 +1078,14 @@ export class SupabaseService {
     const user = await this.getCurrentUser();
     if (!user) return { error: 'Usuario no autenticado' };
 
+    // Comprimir la imagen antes de subirla (máx. 300x300 píxeles, calidad 75%)
+    let compressedFile = file;
+    try {
+      compressedFile = await compressImage(file, 300, 300, 0.75);
+    } catch (e) {
+      console.warn('Fallo al comprimir avatar, usando original:', e);
+    }
+
     // Si es un Blob, le asignamos una extensión por defecto .jpg
     const fileExt = (file instanceof File) ? file.name.split('.').pop() : 'jpg';
     const fileName = `${user.id}_${new Date().getTime()}.${fileExt}`;
@@ -1074,7 +1093,7 @@ export class SupabaseService {
 
     const { error: uploadError } = await this.supabase.storage
       .from('avatars')
-      .upload(filePath, file, {
+      .upload(filePath, compressedFile, {
         upsert: true,
         contentType: 'image/jpeg'
       });
@@ -1390,12 +1409,20 @@ export class SupabaseService {
     const user = await this.getCurrentUser();
     if (!user) return { url: null, error: 'Usuario no autenticado' };
 
+    // Comprimir la imagen antes de subirla (máx. 800x800 píxeles, calidad 75%)
+    let compressedFile = file;
+    try {
+      compressedFile = await compressImage(file, 800, 800, 0.75);
+    } catch (e) {
+      console.warn('Fallo al comprimir imagen de chat, usando original:', e);
+    }
+
     const fileExt = (file instanceof File) ? file.name.split('.').pop() : 'jpg';
     const fileName = `${user.id}_${new Date().getTime()}.${fileExt}`;
 
     const { data, error } = await this.supabase.storage
       .from('chat_images') // IMPORTANTE: Debes crear un bucket público llamado "chat_images" en Supabase
-      .upload(fileName, file, {
+      .upload(fileName, compressedFile, {
         cacheControl: '3600',
         upsert: false
       });

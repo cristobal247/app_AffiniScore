@@ -184,6 +184,14 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
         this.partnerLat = partnerData.latitude;
         this.partnerLng = partnerData.longitude;
       }
+
+      // Forzar actualización inmediata de las imágenes de los marcadores si ya existen
+      if (this.userMarker && this.currentLat && this.currentLng) {
+        this.updateUserMarker(this.currentLat, this.currentLng);
+      }
+      if (this.partnerMarker && this.partnerLat && this.partnerLng) {
+        this.updatePartnerMarker(this.partnerLat, this.partnerLng);
+      }
     } catch (error) {
       console.error('Error al cargar perfil en mapa:', error);
     }
@@ -216,6 +224,12 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
         .addTo(this.map);
     } else {
       this.userMarker.setLngLat([lng, lat]);
+      
+      // Actualizar la foto de perfil en el marcador existente por si cambió
+      const el = this.userMarker.getElement();
+      if (el) {
+        el.style.backgroundImage = `url(${this.userAvatarUrl || '/assets/images/user.png'})`;
+      }
     }
 
     this.recalculateDistance();
@@ -248,6 +262,12 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
         .addTo(this.map);
     } else {
       this.partnerMarker.setLngLat([lng, lat]);
+
+      // Actualizar la foto de perfil del partner por si cambió
+      const el = this.partnerMarker.getElement();
+      if (el) {
+        el.style.backgroundImage = `url(${this.partnerAvatarUrl || '/assets/images/user.png'})`;
+      }
     }
 
     this.recalculateDistance();

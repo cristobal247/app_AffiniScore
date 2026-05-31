@@ -16,6 +16,7 @@ import { SupabaseService } from '../../services/supabase';
 export class ChatListPage {
 
   userAvatarUrl: string | null = null;
+  partnerAvatarUrl: string | null = null;
 
   chats: any[] = [
     {
@@ -55,6 +56,26 @@ export class ChatListPage {
       this.userAvatarUrl = profile.avatar_url;
     }
 
+    // Obtener el avatar de la pareja
+    const partnership = await this.supabaseSvc.getActivePartnership();
+    if (partnership) {
+      const user = await this.supabaseSvc.getCurrentUser();
+      if (user) {
+        const partnerId = partnership.user1_id === user.id ? partnership.user2_id : partnership.user1_id;
+        if (partnerId) {
+          const { data: partnerProfile } = await this.supabaseSvc.supabase
+            .from('profiles')
+            .select('avatar_url')
+            .eq('id', partnerId)
+            .single();
+            
+          if (partnerProfile?.avatar_url) {
+            this.partnerAvatarUrl = partnerProfile.avatar_url;
+          }
+        }
+      }
+    }
+
     if (profile?.partnership_id) {
       // 1. Unread Count para Chat Grupal (Usa partnership_id como room_id)
       this.chats[2].unreadCount = await this.supabaseSvc.getUnreadCount(profile.partnership_id);
@@ -72,7 +93,6 @@ export class ChatListPage {
       }
     }
 
-    // Para la IA individual, podríamos sumar todas las sesiones, 
-    // pero por ahora lo dejamos en 0 o implementamos una lógica similar.
+    // Para la IA individual, se deja por defecto.
   }
 }

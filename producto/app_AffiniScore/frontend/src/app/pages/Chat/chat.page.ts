@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -11,7 +11,7 @@ import {
 import { SupabaseService, ChatMessage } from '../../services/supabase';
 import { GroqService } from '../../services/groq.service';
 import { addIcons } from 'ionicons';
-import { sendOutline, arrowBackOutline, videocam, call, ellipsisVertical, happyOutline, cameraOutline, send, sparkles, ellipsisHorizontal, chevronBackOutline, person } from 'ionicons/icons';
+import { sendOutline, arrowBackOutline, videocam, call, ellipsisVertical, happyOutline, cameraOutline, send, sparkles, ellipsisHorizontal, chevronBackOutline, person, menuOutline } from 'ionicons/icons';
 
 @Component({
   selector: 'app-chat',
@@ -44,9 +44,10 @@ export class ChatPage implements OnDestroy {
   constructor(
     private supabaseSvc: SupabaseService,
     private groqSvc: GroqService,
-    private menuCtrl: MenuController
+    private menuCtrl: MenuController,
+    private cdr: ChangeDetectorRef
   ) {
-    addIcons({ sendOutline, arrowBackOutline, videocam, call, ellipsisVertical, happyOutline, cameraOutline, 'camera-outline': cameraOutline, send, sparkles, ellipsisHorizontal, chevronBackOutline, person, addCircleOutline: 'add-circle-outline', chatbubbleOutline: 'chatbubble-outline' });
+    addIcons({ sendOutline, arrowBackOutline, videocam, call, ellipsisVertical, happyOutline, cameraOutline, 'camera-outline': cameraOutline, send, sparkles, ellipsisHorizontal, chevronBackOutline, person, menuOutline, addCircleOutline: 'add-circle-outline', chatbubbleOutline: 'chatbubble-outline' });
   }
 
   userAvatarUrl: string | null = null;
@@ -71,15 +72,36 @@ export class ChatPage implements OnDestroy {
     const { data, error } = await this.supabaseSvc.getAiSessions();
     if (data && data.length > 0) {
       this.aiSessions = data;
-      // Cargar la última sesión por defecto
-      await this.loadSession(this.aiSessions[0].id);
+      const latestSession = this.aiSessions[0];
+      
+      // Obtener mensajes de la última sesión para verificar inactividad
+      const { data: messages } = await this.supabaseSvc.getMessagesByRoom(latestSession.id);
+      
+      let shouldCreateNew = false;
+      if (messages && messages.length > 0) {
+        const lastMsg = messages[messages.length - 1];
+        const lastMsgTime = new Date(lastMsg.created_at || '').getTime();
+        const currentTime = new Date().getTime();
+        const diffMinutes = (currentTime - lastMsgTime) / (1000 * 60);
+        
+        // Si han pasado más de 30 minutos de inactividad, iniciamos una nueva sesión
+        if (diffMinutes >= 30) {
+          shouldCreateNew = true;
+        }
+      }
+      
+      if (shouldCreateNew) {
+        await this.createNewSession();
+      } else {
+        await this.loadSession(latestSession.id);
+      }
     } else {
       await this.createNewSession();
     }
   }
 
   async createNewSession() {
-    this.menuCtrl.close();
+    await this.menuCtrl.close();
     const res = await this.supabaseSvc.createAiSession();
     if (res.data) {
       this.roomId = res.data.id;
@@ -106,15 +128,20 @@ export class ChatPage implements OnDestroy {
   }
 
   async loadSession(roomId: string) {
-    this.menuCtrl.close();
+    await this.menuCtrl.close();
     this.roomId = roomId;
     const { data, error } = await this.supabaseSvc.getMessagesByRoom(roomId);
     
     if (data) {
       this.messages = data;
       this.groqSvc.setConversationHistory(data);
-      this.scrollToBottom();
+      this.scrollToBottom(0);
     }
+  }
+
+  async openMenu() {
+    await this.menuCtrl.enable(true, 'chat-menu');
+    await this.menuCtrl.open('chat-menu');
   }
 
   ngOnDestroy() {
@@ -201,12 +228,47 @@ export class ChatPage implements OnDestroy {
     await this.supabaseSvc.sendMessage(this.roomId, botResponseText, 'AI');
   }
 
-  scrollToBottom() {
-    setTimeout(() => {
-      if (this.content) {
-        this.content.scrollToBottom(300);
-      }
-    }, 100);
+  scrollToBottom(duration: number = 300) {
+    // Forzar detección de cambios inmediatamente
+    this.cdr.detectChanges();
+
+    // Hacemos múltiples intentos progresivos (a los 10ms, 100ms, 300ms, 600ms, 1000ms)
+    // para asegurar que el scroll se mueva al final bajo cualquier circunstancia o contenedor de scroll
+    const intervals = [10, 100, 300, 600, 1000];
+    intervals.forEach(delay => {
+      setTimeout(async () => {
+        if (this.content) {
+          try {
+            // Estrategia 1: Scroll en el elemento de scroll interno de Ionic
+            const el = await this.content.getScrollElement();
+            if (el) {
+              el.scrollTop = el.scrollHeight;
+            }
+          } catch (e) {}
+
+          try {
+            // Estrategia 2: Scroll en el propio elemento ion-content
+            const contentEl = document.querySelector('ion-content');
+            if (contentEl) {
+              contentEl.scrollTop = contentEl.scrollHeight;
+            }
+          } catch (e) {}
+
+          try {
+            // Estrategia 3: Scroll clásico en el scroll de Ionic
+            this.content.scrollToBottom(0);
+          } catch (e) {}
+        }
+
+        try {
+          // Estrategia 4: Scroll a nivel de ventana global (Window y Document)
+          window.scrollTo(0, document.body.scrollHeight);
+          if (document.documentElement) {
+            document.documentElement.scrollTop = document.documentElement.scrollHeight;
+          }
+        } catch (e) {}
+      }, delay);
+    });
   }
 
   isMine(msg: ChatMessage): boolean {

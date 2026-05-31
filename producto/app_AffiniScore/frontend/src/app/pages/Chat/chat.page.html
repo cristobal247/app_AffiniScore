@@ -2,13 +2,13 @@
 <ion-menu contentId="main-chat-content" side="start" menuId="chat-menu">
   <ion-header class="ion-no-border">
     <ion-toolbar mode="ios">
-      <ion-title style="font-size: 16px; font-weight: 700;">Historial de Chats</ion-title>
+      <div style="font-size: 15px; font-weight: 700; text-align: center; color: #3a3a3a; width: 100%; letter-spacing: -0.5px;">Historial de Chats</div>
     </ion-toolbar>
   </ion-header>
   <ion-content>
-    <ion-button expand="block" fill="outline" class="new-chat-btn" (click)="createNewSession()" style="margin: 16px; --border-radius: 8px;">
-      <ion-icon name="add-circle-outline" slot="start"></ion-icon>
-      Nuevo Chat
+    <ion-button expand="block" fill="outline" class="new-chat-btn" (click)="createNewSession()" style="margin: 16px 8px; --border-radius: 8px; position: relative; color: #df5b61; --color: #df5b61;">
+      <ion-icon name="add-circle-outline" style="position: absolute; left: 16px; font-size: 18px; color: #df5b61;"></ion-icon>
+      <span style="width: 100%; text-align: center; color: #df5b61; font-weight: 700;">Nuevo Chat</span>
     </ion-button>
     <ion-list lines="none">
       <ion-item *ngFor="let session of aiSessions" (click)="loadSession(session.id)" button detail="false" [class.active-session]="session.id === roomId" style="--border-radius: 8px; margin: 4px 8px; font-size: 14px;">
@@ -39,7 +39,9 @@
         </ion-title>
         
         <ion-buttons slot="end">
-          <div style="width: 48px;"></div>
+          <ion-button (click)="openMenu()" style="--color: #df5b61; margin-right: 8px;">
+            <ion-icon name="menu-outline" slot="icon-only" style="font-size: 24px;"></ion-icon>
+          </ion-button>
         </ion-buttons>
       </div>
     </ion-toolbar>

@@ -1,30 +1,253 @@
-<ion-header>
-  <ion-toolbar>
-    <ion-title>Recuerdos & Galería</ion-title>
-  </ion-toolbar>
-</ion-header>
+<ion-content class="notebook-bg" [fullscreen]="true">
+  <!-- Cabecera Personalizada -->
+  <div class="custom-header">
+    <ion-button fill="clear" (click)="goHome()" class="back-circle-btn">
+      <ion-icon name="chevron-back-outline"></ion-icon>
+    </ion-button>
+    
+    <div class="avatar-stack">
+      <img [src]="userAvatarUrl || 'assets/images/user.png'" class="stack-av user-av" />
+      <img *ngIf="partnerAvatarUrl" [src]="partnerAvatarUrl" class="stack-av partner-av" />
+    </div>
+  </div>
 
-<ion-content>
-  <div style="padding: 16px;">
-    <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+  <!-- Título principal -->
+  <div class="title-container">
+    <h1 class="highlight-title">Nuestros Recuerdos</h1>
+  </div>
+
+  <!-- Botón de Cámara Flotante -->
+  <div class="retro-camera-wrapper" (click)="openUploadModal()">
+    <div class="retro-camera">
+      <div class="camera-lens"></div>
+      <div class="camera-viewfinder"></div>
+      <div class="camera-flash"></div>
+    </div>
+    <div class="plus-badge">+</div>
+  </div>
+
+  <!-- Input de archivos oculto -->
+  <input #fileInput type="file" accept="image/*" (change)="onFileSelected($event)" hidden />
+
+  <!-- Grid / Contenedor de Polaroids -->
+  <div class="polaroids-canvas">
+    <div *ngIf="images.length === 0" class="empty-notebook">
       <ion-icon name="images-outline"></ion-icon>
-      <h3 style="margin:0;">Galería de Recuerdos</h3>
-      <div style="flex:1"></div>
-      <label style="display:inline-flex; align-items:center; gap:8px; cursor:pointer;">
-        <input type="file" accept="image/*" (change)="onFileSelected($event)" style="display:none" />
-        <ion-button size="small">
-          <ion-icon name="cloud-upload-outline"></ion-icon>
-          Subir imagen
-        </ion-button>
-      </label>
+      <h3>No hay recuerdos todavía</h3>
+      <p>Toca la cámara de arriba para capturar y guardar tu primer momento especial.</p>
     </div>
 
-    <div class="grid">
-      <div *ngIf="images.length === 0" style="color: #7e7e7e;">No hay recuerdos disponibles.</div>
-      <div class="grid-item" *ngFor="let img of images">
-        <ion-card>
-          <img [src]="img.publicUrl" alt="recuerdo" />
-        </ion-card>
+    <div 
+      *ngFor="let img of images; let i = index" 
+      class="polaroid-card" 
+      [style.transform]="getRotationStyle(i)"
+      (click)="openImage(img)"
+    >
+      <div class="polaroid-sticker" *ngIf="img.location_name">
+        <span>{{ img.location_name }}</span>
+      </div>
+      
+      <div class="polaroid-photo">
+        <img [src]="img.image_url" [alt]="img.title || 'recuerdo'" />
+      </div>
+
+      <div class="polaroid-footer">
+        <span class="polaroid-date">{{ formatDateShort(img.created_at) }}</span>
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- Modal de Carga de Recuerdos -->
+  <ion-modal [isOpen]="showUploadModal" (didDismiss)="closeUploadModal()" class="upload-memory-modal">
+    <ng-template>
+      <div class="modal-notebook-new">
+        <!-- Botón Volver Atrás superior izquierdo -->
+        <div class="modal-nav-header">
+          <ion-button fill="clear" (click)="closeUploadModal()" class="back-circle-btn">
+            <ion-icon name="chevron-back-outline"></ion-icon>
+          </ion-button>
+        </div>
+
+        <!-- Cámara Retro Gigante arriba -->
+        <div class="modal-camera-header">
+          <div class="header-lens"></div>
+          <div class="header-rainbow-stripe"></div>
+          <div class="header-photo-slit"></div>
+        </div>
+
+        <div class="modal-body-content">
+          <!-- Polaroid emergiendo de la ranura -->
+          <div class="polaroid-slit-container">
+            <div class="polaroid-print-card" (click)="fileInput.click()">
+              <!-- Si no hay foto seleccionada, muestra el estado inicial (Broccoli + Añadir Foto) -->
+              <div *ngIf="!pendingPreviewUrl" class="placeholder-polaroid-content">
+                <img src="assets/images/mascota_camara.png" class="mascot-illust" alt="Añadir recuerdo" />
+                <button type="button" class="btn-add-photo">Añadir Foto</button>
+              </div>
+
+              <!-- Si hay foto seleccionada, muestra la foto -->
+              <div *ngIf="pendingPreviewUrl" class="photo-polaroid-content">
+                <img [src]="pendingPreviewUrl" class="preview-img-tag" alt="Vista previa" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Formulario inferior -->
+          <div class="modal-form-container">
+            <!-- Selector de Fecha estilo Pill -->
+            <div class="form-pill date-pill" (click)="triggerDatePicker(modalDateInput)">
+              <span class="pill-label">Fecha</span>
+              <div class="pill-value-wrapper">
+                <span class="pill-value">{{ formatDate(uploadForm.created_at) }}</span>
+                <ion-icon name="chevron-forward-outline"></ion-icon>
+              </div>
+              <input #modalDateInput type="date" [(ngModel)]="uploadForm.created_at" class="hidden-date-picker" />
+            </div>
+
+            <!-- Caja de Detalles / Nombre y descripción -->
+            <div class="details-card">
+              <div class="detail-row title-row">
+                <span class="heart-icon">💗</span>
+                <input type="text" [(ngModel)]="uploadForm.location_name" placeholder="La primera Cita" class="input-title" />
+              </div>
+              <div class="card-divider"></div>
+              <div class="detail-row desc-row">
+                <textarea [(ngModel)]="uploadForm.description" placeholder="Añade detalles de este día (Opcional)" class="input-desc" rows="3"></textarea>
+              </div>
+            </div>
+
+            <!-- Botón Guardar el día -->
+            <div class="submit-container">
+              <button 
+                type="button" 
+                class="btn-submit-day" 
+                [class.active]="pendingFile !== null"
+                [disabled]="!pendingFile || isUploading"
+                (click)="confirmUpload()"
+              >
+                {{ isUploading ? 'Guardando...' : 'Guardar el día' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ng-template>
+  </ion-modal>
+
+  <!-- Modal de Detalle de Recuerdo -->
+  <!-- Modal de Detalle de Recuerdo -->
+  <ion-modal [isOpen]="selectedImage !== null" (didDismiss)="closeImage()" class="detail-memory-modal">
+    <ng-template>
+      <div class="modal-notebook-new">
+        <!-- Cabecera de Navegación del Detalle -->
+        <div class="detail-header-nav">
+          <ion-button fill="clear" (click)="closeImage()" class="back-circle-btn">
+            <ion-icon name="chevron-back-outline"></ion-icon>
+          </ion-button>
+          
+          <div class="right-actions" *ngIf="!isEditingDetails">
+            <ion-button fill="clear" class="action-btn">
+              <ion-icon name="share-outline"></ion-icon>
+            </ion-button>
+            <ion-button fill="clear" (click)="toggleEditDetails()" class="action-btn">
+              <ion-icon name="ellipsis-horizontal-outline"></ion-icon>
+            </ion-button>
+          </div>
+        </div>
+
+        <div class="modal-body-content detail-body-content">
+          <!-- Vista de Visualización Normal (Polaroid + Contadores) -->
+          <div class="detail-display-view" *ngIf="!isEditingDetails && selectedImage">
+            <div class="detail-polaroid-wrapper">
+              <div class="polaroid-card detail-polaroid-card">
+                <div class="polaroid-sticker" *ngIf="selectedImage.location_name">
+                  <span>{{ getMemoryTitle(selectedImage.location_name) }}</span>
+                </div>
+                <div class="polaroid-photo">
+                  <img [src]="selectedImage.image_url" alt="Recuerdo" />
+                </div>
+                <div class="polaroid-footer">
+                  <span class="polaroid-date">{{ formatDateShort(selectedImage.created_at) }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Información del Recuerdo -->
+            <div class="detail-info-container">
+              <span class="info-subtitle">Sobre el día</span>
+              
+              <h2 class="info-description">
+                {{ getMemoryDescription(selectedImage.location_name) || getMemoryTitle(selectedImage.location_name) }}
+              </h2>
+              
+              <div class="info-divider"></div>
+              
+              <span class="info-creator">
+                Momento de {{ selectedImage.user_id === currentUserId ? userDisplayName : partnerDisplayName }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Vista de Edición de Detalles -->
+          <div class="detail-edit-view" *ngIf="isEditingDetails">
+            <!-- Selector de Fecha estilo Pill -->
+            <div class="form-pill date-pill" (click)="triggerDatePicker(editDateInput)">
+              <span class="pill-label">Fecha</span>
+              <div class="pill-value-wrapper">
+                <span class="pill-value">{{ formatDate(editForm.created_at) }}</span>
+                <ion-icon name="chevron-forward-outline"></ion-icon>
+              </div>
+              <input #editDateInput type="date" [(ngModel)]="editForm.created_at" class="hidden-date-picker" />
+            </div>
+
+            <!-- Caja de Detalles / Nombre y descripción -->
+            <div class="details-card">
+              <div class="detail-row title-row">
+                <span class="heart-icon">💗</span>
+                <input type="text" [(ngModel)]="editForm.location_name" placeholder="Título" class="input-title" />
+              </div>
+              <div class="card-divider"></div>
+              <div class="detail-row desc-row">
+                <textarea [(ngModel)]="editForm.description" placeholder="Añade detalles de este día (Opcional)" class="input-desc" rows="3"></textarea>
+              </div>
+            </div>
+
+            <!-- Botones de Acción de Edición -->
+            <div class="edit-actions-container">
+              <button type="button" class="btn-cancel-edit" (click)="cancelEditDetails()">Cancelar</button>
+              <button type="button" class="btn-save-edit" (click)="saveDetails()" [disabled]="isSavingDetails">
+                {{ isSavingDetails ? 'Guardando...' : 'Guardar' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ng-template>
+  </ion-modal>
+
+  <!-- Overlay de Animación de Éxito al Guardar Recuerdo -->
+  <div class="success-animation-overlay" *ngIf="showSuccessAnimation">
+    <div class="camera-print-wrapper">
+      <!-- Cámara retro polaroid.png -->
+      <img src="assets/images/polaroid.png" class="polaroid-camera-img" alt="Cámara Polaroid" />
+
+      <!-- Foto saliendo de la ranura -->
+      <div class="ejected-photo-container">
+        <div class="polaroid-card ejected-card">
+          <div class="polaroid-sticker" *ngIf="newlyCreatedMemory?.location_name">
+            <span>{{ newlyCreatedMemory?.location_name }}</span>
+          </div>
+          
+          <div class="polaroid-photo">
+            <img [src]="newlyCreatedMemory?.image_url" alt="Recuerdo guardado" />
+          </div>
+
+          <div class="polaroid-footer">
+            <span class="polaroid-date">{{ formatDateShort(newlyCreatedMemory?.created_at) }}</span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
