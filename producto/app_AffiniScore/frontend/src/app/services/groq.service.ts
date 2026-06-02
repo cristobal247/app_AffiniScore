@@ -113,6 +113,53 @@ Restricciones:
     ];
   }
 
+  // Analizar acción personalizada, clasificar en categorías y asignar puntaje automáticamente
+  async analyzeCustomAction(actionText: string): Promise<{ category: string, points: number, description: string }> {
+    try {
+      const response = await fetch(this.apiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${(environment as any).apiKeyGroq}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [
+            {
+              role: 'system',
+              content: 'Eres el motor clasificador y evaluador de la app AffiniScore. Tu labor es analizar la acción registrada por el usuario y clasificarla estrictamente en una de las siguientes categorías válidas: "Social", "Detalles", "Cita", "Aventura", "Hogar", "Cuidado", "Cultura", "Salud". También debes asignarle un puntaje entero del 10 al 100 de acuerdo al esfuerzo físico, de tiempo, económico o emocional involucrado en dicha acción (con un máximo absoluto de 100 puntos y un mínimo de 10). Por último, genera una breve y cálida descripción de 1 frase que valide el valor de ese gesto. Responde EXCLUSIVAMENTE con un objeto JSON válido, sin formato de markdown ni explicaciones, por ejemplo: {"category": "Detalles", "points": 35, "description": "Compraste un rico pie de limón para consentir a tu pareja."}'
+            },
+            { role: 'user', content: actionText }
+          ],
+          temperature: 0.3,
+          max_tokens: 150
+        })
+      });
+
+      if (!response.ok) throw new Error('API Error');
+      const data = await response.json();
+      const rawText = data.choices[0]?.message?.content?.trim() || '';
+      
+      const match = rawText.match(/\{[\s\S]*\}/);
+      if (match) {
+        const parsed = JSON.parse(match[0]);
+        const validCategories = ["Social", "Detalles", "Cita", "Aventura", "Hogar", "Cuidado", "Cultura", "Salud"];
+        let matchedCategory = validCategories.find(c => c.toLowerCase() === (parsed.category || '').toLowerCase().trim());
+        if (!matchedCategory) matchedCategory = "Detalles";
+
+        return {
+          category: matchedCategory,
+          points: Math.min(Math.max(Number(parsed.points) || 15, 10), 100),
+          description: parsed.description || 'Una acción especial registrada.'
+        };
+      }
+      throw new Error('JSON not found');
+    } catch (e) {
+      console.error('Error analyzing action with IA:', e);
+      return { category: 'Detalles', points: 15, description: 'Acción personalizada registrada con éxito.' };
+    }
+  }
+
   // Cargar historial desde la base de datos para mantener el contexto
   setConversationHistory(dbMessages: any[]) {
     this.resetConversation();

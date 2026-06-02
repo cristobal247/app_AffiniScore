@@ -66,15 +66,18 @@
         <ion-icon src="/assets/icons/hero/outline/plus-circle.svg" class="red-icon"></ion-icon>
         <span>¿Hiciste algo más?</span>
       </div>
-      <div class="pill-input-container">
+      <div class="pill-input-container" style="display: flex !important; align-items: center !important; padding: 4px 4px 4px 16px !important; background: #F5F5F7 !important; border-radius: 50px !important; border: 1px solid #EAEAEA !important;">
         <ion-input 
           placeholder="Escribe tu acción aquí..." 
           class="custom-input"
+          style="flex: 1 !important; --padding-start: 0px !important; margin: 0 !important; --color: #000000 !important; color: #000000 !important; font-size: 15px !important; font-weight: 400 !important;"
           aria-label="Nueva acción"
           [(ngModel)]="newActionName"
           (keyup.enter)="addCustomAction()">
         </ion-input>
-        <ion-button class="btn-registrar-solid" (click)="addCustomAction()">Registrar</ion-button>
+        <button class="btn-registrar-solid" style="background: linear-gradient(135deg, #FA8072 0%, #f07162 100%) !important; border-radius: 20px !important; color: #ffffff !important; height: 38px !important; margin: 0 !important; font-weight: 700 !important; font-size: 14px !important; text-transform: none !important; padding: 0 20px !important; border: none !important; outline: none !important; box-shadow: 0 4px 10px rgba(250, 128, 114, 0.2) !important; cursor: pointer; display: flex !important; align-items: center !important; justify-content: center !important;" (click)="addCustomAction()">
+          Registrar
+        </button>
       </div>
     </div>
 

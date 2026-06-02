@@ -1,15 +1,17 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 import { 
   IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, 
   IonBackButton, IonSearchbar, IonList, IonIcon, 
-  LoadingController, AlertController 
+  LoadingController, AlertController, IonButton 
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { 
   restaurantOutline, homeOutline, giftOutline, heartOutline, 
-  flashOutline, searchOutline, search, lockClosed, chevronForwardOutline 
+  flashOutline, searchOutline, search, lockClosed, chevronForwardOutline,
+  chevronBackOutline
 } from 'ionicons/icons';
 import { SupabaseService, Activity } from '../../services/supabase';
 import { EmojiPipe } from '../../pipes/emoji.pipe';
@@ -21,8 +23,8 @@ import { EmojiPipe } from '../../pipes/emoji.pipe';
   standalone: true,
   imports: [
     IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, 
-    IonBackButton, IonSearchbar, IonIcon, 
-    CommonModule, FormsModule, EmojiPipe
+    IonBackButton, IonSearchbar, IonIcon, IonButton,
+    CommonModule, FormsModule, EmojiPipe, RouterModule
   ]
 })
 export class CatalogPage implements OnInit {
@@ -37,7 +39,8 @@ export class CatalogPage implements OnInit {
     // IMPORTANTE: Registrar iconos de búsqueda
     addIcons({ 
       restaurantOutline, homeOutline, giftOutline, heartOutline, 
-      flashOutline, searchOutline, search, lockClosed, chevronForwardOutline 
+      flashOutline, searchOutline, search, lockClosed, chevronForwardOutline,
+      chevronBackOutline
     });
   }
 

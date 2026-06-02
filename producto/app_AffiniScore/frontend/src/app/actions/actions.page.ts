@@ -174,17 +174,36 @@ export class ActionsPage implements OnInit {
       return;
     }
 
-    const loading = await this.loadingCtrl.create({ message: 'Guardando...', spinner: 'crescent' });
+    const loading = await this.loadingCtrl.create({ 
+      message: 'AffiniCoach IA evaluando tu acción...', 
+      spinner: 'crescent',
+      mode: 'ios'
+    });
     await loading.present();
 
-    // Valores base para el catalogo; ajusta segun tu modelo de datos.
-    const { error } = await this.supabaseSvc.createCatalogAction(trimmed, 'Detalles', 10);
+    // 1. Consultar a la IA para clasificar y puntuar
+    const aiResult = await this.groqSvc.analyzeCustomAction(trimmed);
+
+    // 2. Registrar la acción en Supabase con los datos de la IA, marcándola con la subcategoría 'CUSTOM'
+    const { error } = await this.supabaseSvc.createCatalogAction(
+      trimmed, 
+      aiResult.category, 
+      aiResult.points,
+      'ROUTINE',
+      aiResult.description,
+      'CUSTOM'
+    );
     loading.dismiss();
 
+    // 3. Mostrar alerta con la evaluación y feedback de la IA
     const alert = await this.alertCtrl.create({
-      header: error ? 'Error' : '¡Listo!',
-      message: error ? 'No se pudo guardar la acción.' : 'Acción agregada al catálogo.',
-      buttons: ['OK']
+      header: '¡Acción Evaluada con IA! ✨',
+      subHeader: `Categoría: ${aiResult.category} | +${aiResult.points} Pts`,
+      message: error 
+        ? 'No se pudo guardar la acción.' 
+        : `AffiniCoach analizó "${trimmed}" y generó:\n\n"${aiResult.description}"`,
+      buttons: ['¡Genial!'],
+      mode: 'ios'
     });
     await alert.present();
 

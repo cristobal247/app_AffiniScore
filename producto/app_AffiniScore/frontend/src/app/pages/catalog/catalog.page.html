@@ -1,12 +1,18 @@
 <ion-header class="ion-no-border">
-  <ion-toolbar mode="ios" class="catalog-header">
-    <ion-buttons slot="start">
-      <ion-back-button defaultHref="/actions" text="Atrás" color="danger"></ion-back-button>
-    </ion-buttons>
-    <ion-title>Catálogo de Servicios</ion-title>
+  <ion-toolbar mode="ios" class="catalog-header" style="--background: #F5F3F3 !important;">
+    <div class="header-content-wrapper">
+      <ion-button fill="clear" routerLink="/actions" routerDirection="back" class="back-circle-btn">
+        <ion-icon name="chevron-back-outline"></ion-icon>
+      </ion-button>
+      <!-- Div personalizado para evitar el truncamiento automático de ion-title en Ionic -->
+      <div class="custom-toolbar-title">Catálogo de Acciones de Servicio</div>
+      <div style="width: 38px;"></div>
+    </div>
   </ion-toolbar>
+</ion-header>
 
-  <ion-toolbar mode="ios" class="search-toolbar">
+<ion-content class="catalog-bg" [fullscreen]="true">
+  <div class="search-scroll-container">
     <ion-searchbar 
       mode="ios"
       placeholder="¿Qué hiciste hoy?" 
@@ -15,10 +21,7 @@
       show-clear-button="always"
       class="custom-search">
     </ion-searchbar>
-  </ion-toolbar>
-</ion-header>
-
-<ion-content class="catalog-bg" [fullscreen]="true">
+  </div>
   <div class="catalog-list">
     <div class="action-item" *ngFor="let item of filteredActions" (click)="registerAction(item)">
       <div class="icon-box">
@@ -26,7 +29,7 @@
       </div>
       <div class="info">
         <h3>{{ item.name }}</h3>
-        <p class="category-text">{{ item.subcategory || item.category }}</p>
+        <p class="category-text">{{ (item.subcategory === 'CUSTOM' ? item.category : (item.subcategory || item.category)) | titlecase }}</p>
         <p class="desc-text" *ngIf="item.description">{{ item.description }}</p>
       </div>
       <div class="points-tag">+{{ item.default_points }}</div>

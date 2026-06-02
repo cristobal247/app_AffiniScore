@@ -16,23 +16,68 @@
 
 /* --- HEADER Y BUSCADOR --- */
 .catalog-header {
-  --background: transparent;
+  --background: #F5F3F3;
   --border-style: none !important;
   --border-width: 0 !important;
-  box-shadow: none !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03) !important;
+  --min-height: 56px;
+  position: relative;
+  
   ion-title {
+    font-size: 10px;
     font-weight: 700;
-    letter-spacing: -0.5px;
-    color: #1A1A1A;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: #4A4A4A; /* Gris carbón premium muy elegante */
+  }
+  
+  ion-back-button {
+    --color: #FA8072;
+    --icon-font-size: 26px;
+    margin-left: 8px;
   }
 }
 
-.search-toolbar {
+.back-circle-btn {
   --background: transparent;
-  --border-style: none !important;
-  --border-width: 0 !important;
-  box-shadow: none !important;
-  padding: 0 8px 12px;
+  --background-hover: transparent;
+  --background-focused: transparent;
+  --background-activated: transparent;
+  --color: #FA8072;
+  --box-shadow: none;
+  --padding-start: 0px !important;
+  --padding-end: 0px !important;
+  --padding-top: 0px !important;
+  --padding-bottom: 0px !important;
+  width: 38px;
+  height: 38px;
+  margin: 0;
+  padding: 0;
+  margin-left: 4px !important;
+  
+  ion-icon {
+    font-size: 24px;
+  }
+}
+
+.custom-toolbar-title {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  text-align: center;
+  font-size: 17px;
+  font-weight: 700;
+  color: #1A1A1A;
+  pointer-events: none;
+  z-index: 0;
+  padding: 0 60px;
+}
+
+.search-scroll-container {
+  padding: 12px 16px 4px;
 }
 
 // Estilo Premium para el Searchbar

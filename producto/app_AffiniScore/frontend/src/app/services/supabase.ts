@@ -112,8 +112,8 @@ export class SupabaseService {
     // Usamos el environment o un predeterminado de FastAPI local
     this.apiUrl = (environment as any).apiUrl || 'http://localhost:8000';
 
-    // Inicializar modo devAuth solo cuando no hay credenciales válidas de Supabase
-    if ((environment as any).devAuth && !this.supabaseEnabled) {
+    // Inicializar modo devAuth cuando esté activado en el entorno
+    if ((environment as any).devAuth) {
       this._devMode = true;
       this._devUser = {
         id: 'dev-user',
@@ -574,6 +574,7 @@ export class SupabaseService {
       .from('user_actions_log')
       .select('*')
       .eq('user_id', user.id)
+      .neq('status', 'REJECTED')
       .gte('created_at', startOfWeek.toISOString())
       .order('created_at', { ascending: true });
 
@@ -602,6 +603,7 @@ export class SupabaseService {
       .from('user_actions_log')
       .select('*')
       .eq('user_id', user.id)
+      .neq('status', 'REJECTED')
       .order('created_at', { ascending: false })
       .limit(20);
 
@@ -1216,17 +1218,38 @@ export class SupabaseService {
 
   // Traer 6 acciones para la vista rápida
   async getCatalog(activityType: 'ROUTINE' | 'CHALLENGE' = 'ROUTINE') {
-    return await this.supabase
+    const partnership = await this.getActivePartnership();
+    let query = this.supabase
       .from('activity_catalog')
       .select('*')
       .eq('activity_type', activityType)
+      .neq('category', 'BINGO');
+
+    if (partnership) {
+      query = query.or(`partnership_id.is.null,partnership_id.eq.${partnership.id}`);
+    } else {
+      query = query.is('partnership_id', null);
+    }
+
+    return await query
       .limit(6)
       .order('default_points', { ascending: false });
   }
 
   // Traer el catálogo completo para el buscador
   async getFullCatalog(activityType?: 'ROUTINE' | 'CHALLENGE') {
-    let query = this.supabase.from('activity_catalog').select('*');
+    const partnership = await this.getActivePartnership();
+    let query = this.supabase
+      .from('activity_catalog')
+      .select('*')
+      .neq('category', 'BINGO');
+
+    if (partnership) {
+      query = query.or(`partnership_id.is.null,partnership_id.eq.${partnership.id}`);
+    } else {
+      query = query.is('partnership_id', null);
+    }
+
     if (activityType) {
       query = query.eq('activity_type', activityType);
     }
@@ -1238,10 +1261,17 @@ export class SupabaseService {
     const user = await this.getCurrentUser();
     if (!user) return { error: 'Usuario no autenticado' };
 
-    // Verificamos si es un acto de servicio
-    const { data: catalog } = await this.getFullCatalog();
-    const actionDetails = catalog?.find(c => c.id === actionId);
-    const isServiceAction = actionDetails?.category === 'ACTO_SERVICIO';
+    // Verificamos si es un acto de servicio o una acción personalizada creada por el usuario
+    const { data: actionDetails } = await this.supabase
+      .from('activity_catalog')
+      .select('*')
+      .eq('id', actionId)
+      .single();
+
+    const isServiceAction = 
+      actionDetails?.category === 'ACTO_SERVICIO' || 
+      actionDetails?.category === 'Actos de Servicio' || 
+      actionDetails?.subcategory === 'CUSTOM';
     const initialStatus = isServiceAction ? 'PENDING' : 'CONFIRMED';
 
     // 1. Insertamos el log del evento con el estado correspondiente
@@ -1376,14 +1406,18 @@ export class SupabaseService {
   }
 
   // Crear una nueva acción en el catálogo
-  async createCatalogAction(name: string, category: string, defaultPoints: number, activityType: 'ROUTINE' | 'CHALLENGE' = 'ROUTINE') {
+  async createCatalogAction(name: string, category: string, defaultPoints: number, activityType: 'ROUTINE' | 'CHALLENGE' = 'ROUTINE', description?: string, subcategory?: string) {
+    const partnership = await this.getActivePartnership();
     return await this.supabase
       .from('activity_catalog')
       .insert({
         name,
         category,
         default_points: defaultPoints,
-        activity_type: activityType
+        activity_type: activityType,
+        description,
+        subcategory,
+        partnership_id: partnership?.id || null
       })
       .select('*')
       .single();
