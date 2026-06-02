@@ -2,12 +2,12 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonBadge, IonButton, IonCard, IonCardContent, IonContent, IonHeader, IonIcon, IonImg, IonModal, IonTitle, IonToolbar, ToastController } from '@ionic/angular/standalone';
+import { IonBadge, IonButton, IonCard, IonCardContent, IonContent, IonHeader, IonIcon, IonImg, IonModal, IonTitle, IonToolbar, ToastController, ActionSheetController, AlertController } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { imagesOutline, cloudUploadOutline, expandOutline, closeOutline, locationOutline, timeOutline, heartOutline, chevronBackOutline, cameraOutline, sparklesOutline, gameControllerOutline, chevronForwardOutline, shareOutline, ellipsisHorizontalOutline } from 'ionicons/icons';
+import { imagesOutline, cloudUploadOutline, expandOutline, closeOutline, locationOutline, timeOutline, heartOutline, chevronBackOutline, cameraOutline, sparklesOutline, gameControllerOutline, chevronForwardOutline, shareOutline, ellipsisHorizontalOutline, trashOutline, createOutline } from 'ionicons/icons';
 import { SupabaseService } from '../../services/supabase';
 
-addIcons({ imagesOutline, cloudUploadOutline, expandOutline, closeOutline, locationOutline, timeOutline, heartOutline, chevronBackOutline, cameraOutline, sparklesOutline, gameControllerOutline, chevronForwardOutline, shareOutline, ellipsisHorizontalOutline });
+addIcons({ imagesOutline, cloudUploadOutline, expandOutline, closeOutline, locationOutline, timeOutline, heartOutline, chevronBackOutline, cameraOutline, sparklesOutline, gameControllerOutline, chevronForwardOutline, shareOutline, ellipsisHorizontalOutline, trashOutline, createOutline });
 
 @Component({
   selector: 'app-memories',
@@ -45,7 +45,13 @@ export class MemoriesPage implements OnInit {
     created_at: '',
   };
 
-  constructor(private supabaseSvc: SupabaseService, private toastCtrl: ToastController, private router: Router) {}
+  constructor(
+    private supabaseSvc: SupabaseService,
+    private toastCtrl: ToastController,
+    private router: Router,
+    private actionSheetCtrl: ActionSheetController,
+    private alertCtrl: AlertController
+  ) {}
 
   openGame(path: string) {
     this.showGamesMenu = false;
@@ -262,6 +268,102 @@ export class MemoriesPage implements OnInit {
   closeImage() {
     this.selectedImage = null;
     this.isEditingDetails = false;
+  }
+
+  async openMemoryOptions() {
+    if (!this.selectedImage) return;
+
+    const actionSheet = await this.actionSheetCtrl.create({
+      header: 'Opciones de Recuerdo',
+      mode: 'ios',
+      buttons: [
+        {
+          text: 'Editar recuerdo',
+          icon: 'create-outline',
+          handler: () => {
+            this.isEditingDetails = true;
+          }
+        },
+        {
+          text: 'Eliminar recuerdo',
+          role: 'destructive',
+          icon: 'trash-outline',
+          handler: () => {
+            this.confirmDeleteMemory();
+          }
+        },
+        {
+          text: 'Cancelar',
+          role: 'cancel',
+          icon: 'close-outline'
+        }
+      ]
+    });
+    await actionSheet.present();
+  }
+
+  async confirmDeleteMemory() {
+    if (!this.selectedImage) return;
+
+    const alert = await this.alertCtrl.create({
+      header: 'Eliminar Recuerdo',
+      message: '¿Estás seguro de que quieres eliminar este recuerdo? Esta acción no se puede deshacer.',
+      mode: 'ios',
+      buttons: [
+        {
+          text: 'Cancelar',
+          role: 'cancel'
+        },
+        {
+          text: 'Eliminar',
+          role: 'destructive',
+          handler: async () => {
+            await this.deleteMemoryExecution();
+          }
+        }
+      ]
+    });
+    await alert.present();
+  }
+
+  async deleteMemoryExecution() {
+    if (!this.selectedImage) return;
+
+    try {
+      const result = await this.supabaseSvc.deleteMemory(
+        this.selectedImage.id,
+        this.selectedImage.image_url,
+        this.selectedImage.file_name
+      );
+
+      if (result?.error) {
+        const errorMsg = typeof result.error === 'string' ? result.error : (result.error as any).message;
+        const toast = await this.toastCtrl.create({
+          message: 'Error al eliminar recuerdo: ' + errorMsg,
+          duration: 2500,
+          color: 'danger'
+        });
+        await toast.present();
+        return;
+      }
+
+      const toast = await this.toastCtrl.create({
+        message: 'Recuerdo eliminado correctamente',
+        duration: 2000,
+        color: 'success'
+      });
+      await toast.present();
+
+      this.closeImage();
+      await this.loadImages();
+    } catch (e: any) {
+      const toast = await this.toastCtrl.create({
+        message: 'Error al eliminar recuerdo: ' + (e.message || String(e)),
+        duration: 2500,
+        color: 'danger'
+      });
+      await toast.present();
+    }
   }
 
   toggleEditDetails() {

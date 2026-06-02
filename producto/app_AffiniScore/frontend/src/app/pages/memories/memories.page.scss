@@ -289,6 +289,8 @@ ion-content.notebook-bg::part(background) {
 
 /* Estado de libreca vacía */
 .empty-notebook {
+  grid-column: 1 / -1;
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1026,7 +1028,7 @@ ion-content.notebook-bg::part(background) {
     opacity: 1;
   }
   100% {
-    transform: translateY(60px) scaleY(1) rotate(0deg); /* Deslizado derecho sin rotación */
+    transform: translateY(170px) scaleY(1) rotate(0deg); /* Deslizado derecho sin rotación */
     opacity: 1;
   }
 }

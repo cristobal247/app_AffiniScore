@@ -968,6 +968,50 @@ export class SupabaseService {
     }
   }
 
+  async deleteMemory(memoryId: string, imageUrl?: string, fileName?: string) {
+    const user = await this.getCurrentUser();
+    if (!user) return { error: 'Usuario no autenticado' };
+
+    let deleteQuery = this.supabase.from('memories').delete();
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(memoryId);
+    if (isUUID) {
+      deleteQuery = deleteQuery.eq('id', memoryId);
+    } else {
+      deleteQuery = deleteQuery.or(`id.eq.${memoryId},file_name.eq.${memoryId},file_url.like.%${memoryId}%`);
+    }
+
+    const { error: dbError } = await deleteQuery;
+    if (dbError) {
+      console.error('Error deleting from db:', dbError);
+    }
+
+    let fileToDelete = fileName || memoryId;
+    if (imageUrl && !fileName) {
+      try {
+        const parts = imageUrl.split('/');
+        const lastPart = parts[parts.length - 1];
+        if (lastPart) {
+          fileToDelete = lastPart;
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    try {
+      const { error: storageError } = await this.supabase.storage
+        .from('memories')
+        .remove([fileToDelete]);
+      if (storageError) {
+        console.warn('Error deleting from storage:', storageError);
+      }
+    } catch (e) {
+      console.warn('Exception deleting from storage:', e);
+    }
+
+    return { error: dbError || null };
+  }
+
   // Listar imágenes públicas del bucket 'memories' (simple list pública)
   async listMemoriesPublic() {
     try {
