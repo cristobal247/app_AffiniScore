@@ -198,6 +198,13 @@ $white: #ffffff;
   background: $white;
   box-shadow: 0 8px 24px rgba(0,0,0,0.03);
   overflow: hidden;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease;
+  cursor: pointer;
+
+  &:active {
+    transform: scale(0.98);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+  }
 
   .memory-image-container {
     width: 100%;

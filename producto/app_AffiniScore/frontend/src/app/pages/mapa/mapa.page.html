@@ -12,11 +12,13 @@
       <ion-icon name="chevron-back-outline"></ion-icon>
     </button>
 
-    <!-- Lado Derecho: Acciones (Agregar lugar especial) -->
-    <div class="actions-floating-group">
-      <!-- Botón de ingresar dirección del lugar visitado -->
+    <!-- Lado Derecho: Acciones (Agregar lugar especial / Historial SOS) -->
+    <div class="actions-floating-group" style="display: flex; gap: 8px;">
       <button class="action-floating-btn" (click)="abrirRegistrarLugar()" title="Registrar lugar de primera cita">
         <ion-icon name="add-circle-outline"></ion-icon>
+      </button>
+      <button class="action-floating-btn" (click)="abrirHistorialSos()" title="Historial de SOS y audios">
+        <ion-icon name="ellipsis-horizontal-outline" style="color: #FA8072 !important;"></ion-icon>
       </button>
     </div>
   </div>
@@ -178,6 +180,62 @@
               </div>
             </div>
           </div>
+        </div>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+
+  <!-- Modal de Historial SOS -->
+  <ion-modal [isOpen]="isSosModalOpen" (didDismiss)="isSosModalOpen = false" [initialBreakpoint]="0.75" [breakpoints]="[0, 0.5, 0.75, 1.0]" class="premium-search-modal">
+    <ng-template>
+      <ion-header class="ion-no-border">
+        <ion-toolbar class="modal-toolbar" style="--background: #fff;">
+          <ion-title style="color: #FA8072; text-align: center; font-weight: 800;">Historial Alertas SOS 🚨</ion-title>
+          <ion-buttons slot="end">
+            <ion-button (click)="closeSosModal()" style="font-weight: 600; color: #FA8072; --color: #FA8072;">Cerrar</ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+      <ion-content class="modal-content ion-padding" style="--background: #f7f9fc;">
+        <div *ngIf="sosAlerts.length === 0" style="text-align: center; margin-top: 80px; color: #888;">
+          <div style="background: #fff0ee; border-radius: 50%; width: 80px; height: 80px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+            <ion-icon name="alert-circle-outline" style="font-size: 40px; color: #FA8072;"></ion-icon>
+          </div>
+          <h3 style="font-weight: 700; color: #495057; margin: 0 0 8px 0;">Sin alertas SOS</h3>
+          <p style="font-size: 14px; margin: 0; padding: 0 20px; line-height: 1.4;">No se han registrado alertas SOS en esta cuenta.</p>
+        </div>
+
+        <div *ngIf="sosAlerts.length > 0">
+          <ion-card *ngFor="let alert of sosAlerts" style="margin: 0 0 12px 0; border-radius: 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.04); background: #ffffff; border: 1px solid #eaeaea;">
+            <div style="padding: 16px; display: flex; gap: 14px;">
+              <div style="background: #fff0ee; border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <ion-icon name="alert-circle" style="font-size: 24px; color: #FA8072;"></ion-icon>
+              </div>
+              <div style="flex: 1;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px;">
+                  <h4 style="margin: 0; font-size: 15px; font-weight: 800; color: #212529;">SOS de {{ alert.user_id === userId ? 'Ti' : 'Tu pareja' }}</h4>
+                  <span style="font-size: 11px; color: #868e96;">{{ alert.created_at | date:'medium' }}</span>
+                </div>
+                <p style="margin: 0 0 12px 0; font-size: 13px; color: #495057; line-height: 1.4;">
+                  Coordenadas: {{ alert.latitude | number:'1.6-6' }}, {{ alert.longitude | number:'1.6-6' }}
+                </p>
+                
+                <!-- Audio SOS -->
+                <div *ngIf="alert.audio_url" style="margin-bottom: 8px;">
+                  <ion-button size="small" style="--background: #FA8072; --border-radius: 8px; font-weight: 700; color: #fff;" (click)="toggleAudio(alert.audio_url)">
+                    <ion-icon [name]="playingAudioUrl === alert.audio_url ? 'pause-outline' : 'play-outline'" slot="start"></ion-icon>
+                    {{ playingAudioUrl === alert.audio_url ? 'Pausar SOS' : 'Reproducir Audio SOS' }}
+                  </ion-button>
+                </div>
+
+                <!-- Ver en mapa -->
+                <ion-button size="small" fill="outline" style="--color: #FA8072; --border-color: #FA8072; --border-radius: 8px; font-weight: 700;" (click)="centrarAlertaEnMapa(alert)">
+                  <ion-icon name="location-outline" slot="start"></ion-icon>
+                  Ubicar en mapa
+                </ion-button>
+              </div>
+            </div>
+          </ion-card>
         </div>
       </ion-content>
     </ng-template>

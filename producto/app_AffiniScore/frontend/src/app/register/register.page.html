@@ -14,7 +14,7 @@
       <p>Estamos aquí para ayudarte a fortalecer tu relación.<br>¿Estás listo(a)?</p>
     </div>
 
-    <form (ngSubmit)="onRegister()" #registerForm="ngForm" autocomplete="off" class="form-container">
+    <div class="form-container">
       <div class="input-group">
         <ion-item lines="none" class="custom-input-item">
           <ion-input 
@@ -67,7 +67,7 @@
         </ion-item>
       </div>
 
-      <ion-button expand="block" type="submit" class="main-btn">
+      <ion-button expand="block" (click)="onRegister()" class="main-btn">
         Comenzar
       </ion-button>
 
@@ -90,6 +90,6 @@
       <div class="footer-text">
         <p>¿Ya tienes una cuenta? <span class="register-link" (click)="goToLogin()">Inicia sesión</span></p>
       </div>
-    </form>
+    </div>
   </div>
 </ion-content>

@@ -7,18 +7,20 @@ import {
   IonContent, IonHeader, IonToolbar, IonGrid, IonRow, IonCol, 
   IonIcon, IonLabel, IonButtons, IonButton, 
   IonAvatar, IonInput, IonCard, IonCardTitle,
-  LoadingController, AlertController, IonSpinner, IonModal
+  LoadingController, AlertController, IonSpinner, IonModal,
+  IonBadge, IonTitle
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { 
   restaurantOutline, homeOutline, giftOutline, heartOutline, flashOutline, 
   settingsSharp, addCircle, starSharp, headsetOutline, mapOutline, flash,
   chevronForwardOutline, lockClosed, personOutline, checkmarkCircle, chatbubblesOutline,
-  cartOutline, timeOutline, phonePortraitOutline, closeCircleOutline, sparkles
+  cartOutline, timeOutline, phonePortraitOutline, closeCircleOutline, sparkles, notificationsOutline
 } from 'ionicons/icons';
 import { SupabaseService, Activity, DisconnectChallenge } from '../services/supabase';
 import { GroqService } from '../services/groq.service';
 import { EmojiPipe } from '../pipes/emoji.pipe';
+import { NotificationService } from '../services/notification.service';
 
 @Component({
   selector: 'app-actions',
@@ -29,7 +31,7 @@ import { EmojiPipe } from '../pipes/emoji.pipe';
     IonContent, IonHeader, IonToolbar, IonGrid, IonRow, IonCol, 
     IonIcon, IonLabel, IonButtons, IonButton, 
     IonAvatar, IonInput, RouterModule, IonCard, IonCardTitle,
-    IonSpinner, IonModal,
+    IonSpinner, IonModal, IonBadge, IonTitle,
     CommonModule, FormsModule, EmojiPipe
   ]
 })
@@ -57,18 +59,25 @@ export class ActionsPage implements OnInit {
     'https://lh3.googleusercontent.com/aida-public/AB6AXuBlu1dSU7bWRjUMbvwG4E8P2SZd8_3pPaUOF2IRsljbalik6aZRsuYjvC-xuEJwSyuMSvk2LKHoON5MmtccjZBaTJEjh_TRi1FzJYaljUKTNgaVcl0usDYOL6y-UQqgVHxMVTVXq6qGSK_F2RhWYYP2R1_tfU_KxprF0LIuQlDSUItASzZKGNV03b37KQjU3D1bb729uvHn67BbBeTJLWM2-GpMK3E9Oj7jK_irXvkCZp2xRmzO1GP2KxjVD_nPwCotAAinmZv9kqA'
   ];
 
+  notifications: any[] = [];
+  unreadCount = 0;
+  isNotificationsOpen = false;
+  playingAudioUrl: string | null = null;
+  audioObj: HTMLAudioElement | null = null;
+
   constructor(
     private supabaseSvc: SupabaseService,
     private groqSvc: GroqService,
     private navCtrl: NavController,
     private loadingCtrl: LoadingController,
-    private alertCtrl: AlertController
+    private alertCtrl: AlertController,
+    private notificationSvc: NotificationService
   ) {
     addIcons({ 
       restaurantOutline, homeOutline, giftOutline, heartOutline, flashOutline, 
       settingsSharp, addCircle, starSharp, headsetOutline, mapOutline, flash,
       chevronForwardOutline, lockClosed, personOutline, checkmarkCircle, chatbubblesOutline,
-      cartOutline, timeOutline, phonePortraitOutline, closeCircleOutline, sparkles
+      cartOutline, timeOutline, phonePortraitOutline, closeCircleOutline, sparkles, notificationsOutline
     });
   }
 
@@ -76,6 +85,49 @@ export class ActionsPage implements OnInit {
     await this.refreshCatalog();
     await this.cargarDatosAfinidad();
     await this.loadDisconnectChallenges();
+
+    await this.notificationSvc.init();
+    this.notificationSvc.notifications$.subscribe(notifs => {
+      this.notifications = notifs;
+    });
+    this.notificationSvc.pendingCount$.subscribe(count => {
+      this.unreadCount = count;
+    });
+  }
+
+  async validateActionNotification(logId: string, confirm: boolean) {
+    const loading = await this.loadingCtrl.create({ message: 'Procesando...', spinner: 'crescent' });
+    await loading.present();
+    await this.notificationSvc.validateAction(logId, confirm);
+    loading.dismiss();
+    await this.cargarDatosAfinidad();
+  }
+
+  toggleAudio(url: string) {
+    if (this.playingAudioUrl === url) {
+      if (this.audioObj) {
+        this.audioObj.pause();
+      }
+      this.playingAudioUrl = null;
+      this.audioObj = null;
+    } else {
+      if (this.audioObj) {
+        this.audioObj.pause();
+      }
+      this.playingAudioUrl = url;
+      this.audioObj = new Audio(url);
+      this.audioObj.play();
+      this.audioObj.onended = () => {
+        this.playingAudioUrl = null;
+        this.audioObj = null;
+      };
+    }
+  }
+
+  ngOnDestroy() {
+    if (this.audioObj) {
+      this.audioObj.pause();
+    }
   }
 
   async ionViewWillEnter() {

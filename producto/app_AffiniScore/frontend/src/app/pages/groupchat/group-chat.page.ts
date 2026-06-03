@@ -76,7 +76,11 @@ export class GroupChatPage implements OnDestroy {
   cleanupRealtime() {
     if (this.subscription) {
       console.log('DEBUG Realtime: Desuscribiendo canal para la sala:', this.partnershipId);
-      this.supabaseSvc.supabase.removeChannel(this.subscription);
+      try {
+        this.subscription.unsubscribe();
+      } catch (e) {
+        console.warn('Error al desuscribir canal:', e);
+      }
       this.subscription = null;
     }
   }
@@ -116,38 +120,23 @@ export class GroupChatPage implements OnDestroy {
 
   setupRealtime() {
     this.cleanupRealtime();
+    if (!this.partnershipId) return;
+    
     console.log('DEBUG Realtime: Iniciando suscripción para la sala:', this.partnershipId);
     
-    this.subscription = this.supabaseSvc.supabase
-      .channel(`room:${this.partnershipId}`)
-      .on('postgres_changes', { 
-        event: 'INSERT', 
-        schema: 'public', 
-        table: 'chat_messages',
-        filter: `room_id=eq.${this.partnershipId}`
-      }, (payload: any) => {
-        console.log('DEBUG Realtime: Evento recibido:', payload);
-        const newMsg = payload.new as ChatMessage;
-        if (newMsg.sender_id !== this.currentUserId) {
-          console.log('DEBUG Realtime: Añadiendo nuevo mensaje de otro emisor:', newMsg);
-          this.zone.run(() => {
-            if (!this.messages.find(m => m.id === newMsg.id)) {
-              this.messages.push(newMsg);
-              this.isLoading = false;
-              this.scrollToBottom();
-              this.cdr.detectChanges();
-            }
-          });
-        } else {
-          console.log('DEBUG Realtime: Mensaje ignorado porque es del usuario actual.');
-        }
-      })
-      .subscribe((status, err) => {
-        console.log(`DEBUG Realtime: Estado de la suscripción = ${status}`, err ? err : '');
-        if (status === 'CHANNEL_ERROR') {
-          console.error('DEBUG Realtime: Error en el canal. Posible falta de replicación o bloqueo de RLS.');
-        }
-      });
+    this.subscription = this.supabaseSvc.subscribeToRoomMessages(this.partnershipId, (newMsg: ChatMessage) => {
+      console.log('DEBUG Realtime: Evento recibido:', newMsg);
+      if (newMsg && newMsg.sender_id !== this.currentUserId) {
+        this.zone.run(() => {
+          if (!this.messages.find(m => m.id === newMsg.id)) {
+            this.messages.push(newMsg);
+            this.isLoading = false;
+            this.scrollToBottom();
+            this.cdr.detectChanges();
+          }
+        });
+      }
+    });
   }
 
   ngOnDestroy() {

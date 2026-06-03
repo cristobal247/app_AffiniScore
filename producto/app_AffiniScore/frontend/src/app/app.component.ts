@@ -16,6 +16,7 @@ export class AppComponent implements OnInit, OnDestroy {
   private partnerName: string = 'Pareja';
   private sosSub: any = null;
   private currentUserId: string | null = null;
+  private activeValidationAlerts = new Set<string>();
 
   constructor(
     private router: Router, 
@@ -98,6 +99,13 @@ export class AppComponent implements OnInit, OnDestroy {
       console.warn('DEBUG: El usuario denegó los permisos. No se podrán recibir notificaciones.');
     }
 
+    // Limpiar listeners previos para evitar alertas duplicadas al reconectar o cambiar estado de auth
+    try {
+      await PushNotifications.removeAllListeners();
+    } catch (e) {
+      console.warn('No se pudieron remover los listeners de PushNotifications:', e);
+    }
+
     // 2. Registrar el dispositivo en Firebase (FCM)
     console.log('DEBUG: Registrando dispositivo en FCM...');
     await PushNotifications.register();
@@ -140,6 +148,12 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   async showValidationAlert(logId: string, actionName: string) {
+    if (this.activeValidationAlerts.has(logId)) {
+      console.log('Alerta de validación ya mostrada para logId:', logId);
+      return;
+    }
+    this.activeValidationAlerts.add(logId);
+
     const alert = await this.alertCtrl.create({
       header: '¡Acción por confirmar!',
       message: `¿Confirmas que tu pareja realizó esta acción: "${actionName}"?`,
@@ -150,6 +164,7 @@ export class AppComponent implements OnInit, OnDestroy {
           handler: () => {
             console.log('Acción denegada');
             this.supabaseSvc.validateAction(logId, false);
+            this.activeValidationAlerts.delete(logId);
           }
         },
         {
@@ -157,9 +172,13 @@ export class AppComponent implements OnInit, OnDestroy {
           handler: () => {
             console.log('Acción confirmada');
             this.supabaseSvc.validateAction(logId, true);
+            this.activeValidationAlerts.delete(logId);
           }
         }
       ]
+    });
+    alert.onDidDismiss().then(() => {
+      this.activeValidationAlerts.delete(logId);
     });
     await alert.present();
   }

@@ -1693,6 +1693,20 @@ export class SupabaseService {
     return result;
   }
 
+  async getSosAlerts(): Promise<{ data: any[] | null, error: any }> {
+    const user = await this.getCurrentUser();
+    if (!user) return { data: null, error: 'Usuario no autenticado' };
+
+    const partnership = await this.getActivePartnership();
+    const partnerIds = partnership ? [partnership.user1_id, partnership.user2_id] : [user.id];
+
+    return await this.supabase
+      .from('sos_alerts')
+      .select('*')
+      .in('user_id', partnerIds)
+      .order('created_at', { ascending: false });
+  }
+
   // Suscribirse a alertas SOS en tiempo real
   subscribeToSosAlerts(callback: (payload: any) => void) {
     const channel = this.supabase

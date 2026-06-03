@@ -19,7 +19,8 @@ import {
   IonInput,
   IonTitle,
   IonSegment,
-  IonSegmentButton
+  IonSegmentButton,
+  IonCard
 } from '@ionic/angular/standalone';
 import { SupabaseService } from '../../services/supabase';
 import { GeolocationService } from '../../services/geolocation.service';
@@ -27,7 +28,7 @@ import { Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { addIcons } from 'ionicons';
-import { addCircleOutline, cogOutline, warningOutline, square, locationOutline, checkmarkCircleOutline, closeOutline, trashOutline, chevronBackOutline } from 'ionicons/icons';
+import { addCircleOutline, cogOutline, warningOutline, square, locationOutline, checkmarkCircleOutline, closeOutline, trashOutline, chevronBackOutline, alertCircleOutline, alertCircle, playOutline, pauseOutline, musicalNotesOutline, ellipsisHorizontalOutline } from 'ionicons/icons';
 import { environment } from '../../../environments/environment';
 import { FormsModule } from '@angular/forms';
 
@@ -56,6 +57,7 @@ declare var mapboxgl: any;
     IonTitle,
     IonSegment,
     IonSegmentButton,
+    IonCard,
     CommonModule,
     RouterModule,
     FormsModule
@@ -116,6 +118,13 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
   registeredGeozones: any[] = [];
   private geozoneMarkers: Map<string, any> = new Map();
 
+  // Variables de SOS
+  isSosModalOpen: boolean = false;
+  sosAlerts: any[] = [];
+  playingAudioUrl: string | null = null;
+  audioObj: HTMLAudioElement | null = null;
+  userId: string = '';
+
   constructor(
     private supabaseSvc: SupabaseService,
     private geolocationService: GeolocationService,
@@ -132,6 +141,12 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
       checkmarkCircleOutline, 
       closeOutline,
       trashOutline,
+      alertCircleOutline,
+      alertCircle,
+      playOutline,
+      pauseOutline,
+      musicalNotesOutline,
+      ellipsisHorizontalOutline,
       'chevron-back-outline': chevronBackOutline
     });
   }
@@ -756,6 +771,81 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
       this.showToast('No se pudo guardar el lugar especial en la base de datos.', 'warning');
     } finally {
       await loading.dismiss();
+    }
+  }
+
+  async abrirHistorialSos() {
+    const loading = await this.loadingCtrl.create({
+      message: 'Cargando historial SOS...',
+      spinner: 'crescent'
+    });
+    await loading.present();
+
+    try {
+      const user = await this.supabaseSvc.getCurrentUser();
+      if (user) {
+        this.userId = user.id;
+      }
+      
+      const { data, error } = await this.supabaseSvc.getSosAlerts();
+      if (!error && data) {
+        // Map raw audio field if needed. The database stores it in alert.audio_url.
+        // If audio_url is base64, we can play base64 audio directly in browsers.
+        // Let's normalize base64 strings so they are playable:
+        this.sosAlerts = data.map((alert: any) => {
+          let audio_url = alert.audio_url;
+          if (audio_url && !audio_url.startsWith('http') && !audio_url.startsWith('data:')) {
+            // It is raw base64 data, convert to data URI:
+            audio_url = `data:audio/webm;base64,${audio_url}`;
+          }
+          return {
+            ...alert,
+            audio_url
+          };
+        });
+      }
+    } catch (err) {
+      console.error('Error fetching SOS alerts:', err);
+    } finally {
+      await loading.dismiss();
+    }
+
+    this.isSosModalOpen = true;
+  }
+
+  closeSosModal() {
+    this.isSosModalOpen = false;
+  }
+
+  toggleAudio(url: string) {
+    if (this.playingAudioUrl === url) {
+      if (this.audioObj) {
+        this.audioObj.pause();
+      }
+      this.playingAudioUrl = null;
+      this.audioObj = null;
+    } else {
+      if (this.audioObj) {
+        this.audioObj.pause();
+      }
+      this.playingAudioUrl = url;
+      this.audioObj = new Audio(url);
+      this.audioObj.play();
+      this.audioObj.onended = () => {
+        this.playingAudioUrl = null;
+        this.audioObj = null;
+      };
+    }
+  }
+
+  centrarAlertaEnMapa(alert: any) {
+    this.isSosModalOpen = false;
+    if (this.map) {
+      this.map.flyTo({ center: [alert.longitude, alert.latitude], zoom: 17, duration: 1200 });
+      new mapboxgl.Popup({ offset: 25 })
+        .setLngLat([alert.longitude, alert.latitude])
+        .setHTML(`<p style="margin:0;font-weight:700;color:#FA8072;font-size:13px;text-align:center;">🚨 Alerta SOS</p>`)
+        .addTo(this.map);
     }
   }
 

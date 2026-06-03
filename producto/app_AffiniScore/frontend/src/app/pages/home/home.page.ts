@@ -5,7 +5,7 @@ import { Router, RouterModule } from '@angular/router';
 import {
   IonContent, IonHeader, IonTitle, IonToolbar, IonText,
   IonCard, IonItem, IonLabel, IonIcon, IonBadge, IonButton,
-  IonAvatar, IonButtons, ToastController
+  IonAvatar, IonButtons, ToastController, IonSpinner, IonModal
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { 
@@ -20,9 +20,11 @@ import {
   imagesOutline,
   sparkles,
   gridOutline,
-  timeOutline
+  timeOutline,
+  notificationsOutline
 } from 'ionicons/icons';
 import { SupabaseService } from '../../services/supabase'; // Ajusta la ruta si es necesario
+import { NotificationService } from '../../services/notification.service';
 
 import { NavController } from '@ionic/angular/standalone';
 
@@ -35,7 +37,7 @@ import { NavController } from '@ionic/angular/standalone';
     CommonModule, FormsModule, RouterModule,
     IonContent, IonHeader, IonTitle, IonToolbar, IonText,
     IonCard, IonItem, IonLabel, IonIcon, IonBadge, IonButton,
-    IonAvatar, IonButtons
+    IonAvatar, IonButtons, IonSpinner, IonModal
   ]
 })
 export class HomePage implements OnInit {
@@ -49,11 +51,18 @@ export class HomePage implements OnInit {
   reflectionAuthor: string = '';
   reflectionsCatalog: { phrase: string; author: string }[] = [];
 
+  notifications: any[] = [];
+  unreadCount = 0;
+  isNotificationsOpen = false;
+  playingAudioUrl: string | null = null;
+  audioObj: HTMLAudioElement | null = null;
+
   constructor(
     private supabaseSvc: SupabaseService,
     private router: Router,
     private navCtrl: NavController,
-    private toastCtrl: ToastController
+    private toastCtrl: ToastController,
+    private notificationSvc: NotificationService
   ) {
     addIcons({ 
       heart, 
@@ -67,17 +76,17 @@ export class HomePage implements OnInit {
       imagesOutline,
       sparkles,
       gridOutline,
-      timeOutline
+      timeOutline,
+      notificationsOutline
     });
   }
 
   private pointsSub?: import('rxjs').Subscription;
   private realtimeChannels: any[] = [];
-
   async ngOnInit() {
     await this.cargarDatosAfinidad();
 
-    // Revisar si cambió el mes al iniciar la app y rotar registros si aplica
+    // Reisar si cambió el mes al iniciar la app y rotar registros si aplica
     try {
       await this.supabaseSvc.checkAndRotateMonthlyAffinity();
     } catch (e) {
@@ -98,7 +107,6 @@ export class HomePage implements OnInit {
         await this.cargarDatosAfinidad();
         
         // Solo mostramos el Toast si la acción ya está CONFIRMADA (puntos sumados)
-        // Si está PENDING, el PushNotification/Alert ya se encarga de avisar
         if (payload.new.status === 'CONFIRMED') {
           const toast = await this.toastCtrl.create({
             message: '¡Tu pareja ha ganado puntos!',
@@ -115,6 +123,41 @@ export class HomePage implements OnInit {
     if (channels) {
       this.realtimeChannels = channels;
     }
+
+    // Inicializar y suscribirse al NotificationService
+    await this.notificationSvc.init();
+    this.notificationSvc.notifications$.subscribe(notifs => {
+      this.notifications = notifs;
+    });
+    this.notificationSvc.pendingCount$.subscribe(count => {
+      this.unreadCount = count;
+    });
+  }
+
+  async validateActionNotification(logId: string, confirm: boolean) {
+    await this.notificationSvc.validateAction(logId, confirm);
+    await this.cargarDatosAfinidad();
+  }
+
+  toggleAudio(url: string) {
+    if (this.playingAudioUrl === url) {
+      if (this.audioObj) {
+        this.audioObj.pause();
+      }
+      this.playingAudioUrl = null;
+      this.audioObj = null;
+    } else {
+      if (this.audioObj) {
+        this.audioObj.pause();
+      }
+      this.playingAudioUrl = url;
+      this.audioObj = new Audio(url);
+      this.audioObj.play();
+      this.audioObj.onended = () => {
+        this.playingAudioUrl = null;
+        this.audioObj = null;
+      };
+    }
   }
 
   ngOnDestroy() {
@@ -128,9 +171,11 @@ export class HomePage implements OnInit {
         this.supabaseSvc['supabase'].removeChannel(channel);
       }
     });
-  }
 
-  // Se ejecuta cada vez que el usuario vuelve a esta pestaña
+    if (this.audioObj) {
+      this.audioObj.pause();
+    }
+  }  // Se ejecuta cada vez que el usuario vuelve a esta pestaña
   async ionViewWillEnter() {
     await this.cargarDatosAfinidad();
   }
