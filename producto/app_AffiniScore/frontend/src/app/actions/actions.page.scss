@@ -333,3 +333,79 @@ ion-content {
 .bounce-animation {
   animation: bounce 2s ease-in-out infinite;
 }
+
+.tienda-promo-card {
+  border-radius: 28px;
+  padding: 0 0 0 24px;
+  margin: 16px 16px 36px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.03);
+  border: 1px solid #EAEAEA;
+  overflow: hidden;
+  position: relative;
+  min-height: 125px;
+
+  .promo-card-bg-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: url('/assets/images/tienda/banner_gift.png') no-repeat;
+    background-position: 95% center;
+    background-size: cover;
+    z-index: 1;
+    transform: scale(1.11);
+  }
+
+  .promo-card-left {
+    flex: 1.2;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 16px 0;
+    z-index: 2;
+
+    .promo-card-title {
+      font-size: 22px;
+      font-weight: 800;
+      color: #111827;
+      margin: 0 0 4px 0;
+      letter-spacing: -0.5px;
+    }
+
+    .promo-card-subtitle {
+      font-size: 12.5px;
+      color: #4b5563;
+      margin: 0 0 14px 0;
+      line-height: 1.35;
+      font-weight: 500;
+      max-width: 170px;
+    }
+
+    .btn-promo-go {
+      background: linear-gradient(135deg, #FA8072 0%, #f07162 100%);
+      color: #ffffff;
+      border-radius: 9999px;
+      padding: 9px 20px;
+      font-weight: 700;
+      font-size: 12.5px;
+      border: none;
+      outline: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 10px rgba(250, 128, 114, 0.25);
+      transition: transform 0.2s, background 0.2s;
+
+      &:active {
+        background: #f07162;
+        transform: scale(0.96);
+      }
+    }
+  }
+}

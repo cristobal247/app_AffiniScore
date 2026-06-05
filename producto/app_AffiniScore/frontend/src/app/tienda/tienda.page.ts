@@ -5,6 +5,7 @@ import {
   IonContent, IonHeader, IonToolbar, IonTitle, IonButtons, 
   IonBackButton, IonCard, IonIcon, IonButton, ToastController, AlertController
 } from '@ionic/angular/standalone';
+import { NavController } from '@ionic/angular';
 import { SupabaseService } from '../services/supabase';
 import { addIcons } from 'ionicons';
 import { star, filmOutline, footballOutline, wineOutline, restaurantOutline, airplaneOutline, bedOutline, gameControllerOutline, arrowForwardOutline, checkmarkCircleOutline, checkmarkOutline, sparklesOutline, addOutline, chevronBackOutline } from 'ionicons/icons';
@@ -47,9 +48,14 @@ export class TiendaPage implements OnInit {
   constructor(
     private supabaseSvc: SupabaseService,
     private toastCtrl: ToastController,
-    private alertCtrl: AlertController
+    private alertCtrl: AlertController,
+    private navCtrl: NavController
   ) {
     addIcons({ star, filmOutline, footballOutline, wineOutline, restaurantOutline, airplaneOutline, bedOutline, gameControllerOutline, arrowForwardOutline, checkmarkCircleOutline, checkmarkOutline, sparklesOutline, addOutline, chevronBackOutline });
+  }
+
+  goBack() {
+    this.navCtrl.back();
   }
 
   ngOnInit() {
