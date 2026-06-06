@@ -132,13 +132,28 @@
           <p class="reto-desc">{{ item.description }}</p>
           
           <div style="margin-top: auto; width: 100%;">
-            <ion-button expand="block" class="btn-aceptar-reto" *ngIf="!item.myAccepted" (click)="startFocusMode(item)">
+            <!-- Disponible: Ambos pueden empezar/proponer -->
+            <ion-button expand="block" class="btn-aceptar-reto" *ngIf="item.status === 'disponible'" (click)="empezarReto(item)">
               <ion-icon name="time-outline" slot="start"></ion-icon> Empezar
             </ion-button>
-            <ion-button expand="block" class="btn-aceptar-reto" *ngIf="item.myAccepted && !item.partnerAccepted" (click)="confirmJointAcceptance(item)" style="--background: transparent; color: #FA8072; border: 1px solid #FA8072;">
-              Confirmar Pareja
+
+            <!-- Pendiente y propuesto por mí: Esperando al partner -->
+            <ion-button expand="block" class="btn-aceptar-reto" *ngIf="item.status === 'pendiente' && item.myAccepted" disabled style="--background: #E8E8E5; color: #767775; opacity: 1;">
+              Esperando pareja...
             </ion-button>
-            <ion-button expand="block" class="btn-aceptar-reto" *ngIf="item.partnerAccepted" disabled style="--background: #E8E8E5; color: #767775; opacity: 1;">
+
+            <!-- Pendiente y propuesto por el partner: Yo puedo confirmar/aceptar -->
+            <ion-button expand="block" class="btn-aceptar-reto" *ngIf="item.status === 'pendiente' && !item.myAccepted" (click)="confirmarReto(item)">
+              Aceptar Reto
+            </ion-button>
+
+            <!-- Activo: Ambos aceptaron, listos para entrar al Modo Enfoque -->
+            <ion-button expand="block" class="btn-aceptar-reto" *ngIf="item.status === 'activo'" (click)="startFocusMode(item)" style="--background: linear-gradient(135deg, #FF8C00 0%, #FF4500 100%) !important;">
+              Modo Enfoque
+            </ion-button>
+
+            <!-- Aceptado: Completado con éxito -->
+            <ion-button expand="block" class="btn-aceptar-reto" *ngIf="item.status === 'aceptado'" disabled style="--background: #E8E8E5; color: #767775; opacity: 1;">
               Completado
             </ion-button>
           </div>
@@ -157,6 +172,8 @@
         </button>
       </div>
     </div>
+
+    <input type="file" id="actions-challenge-file-input" style="display: none" accept="image/*" (change)="onChallengeFileSelected($event)">
 
 
 
@@ -267,9 +284,12 @@
               </div>
 
               <!-- Challenge navigation -->
-              <div *ngIf="notif.type === 'challenge_invite'" style="margin-top: 8px;">
-                <ion-button size="small" style="--background: #FA8072; --border-radius: 8px; font-weight: 700; color: #fff;" routerLink="/tabs/actions" (click)="isNotificationsOpen = false">
-                  Ver reto
+              <div *ngIf="notif.type === 'challenge_invite'" style="display: flex; gap: 8px;">
+                <ion-button size="small" style="--background: #FA8072; --border-radius: 8px; font-weight: 700; color: #fff;" (click)="validateActionNotification(notif.action_id, true); isNotificationsOpen = false;">
+                  Aceptar Reto
+                </ion-button>
+                <ion-button size="small" fill="outline" style="--color: #868e96; --border-color: #ced4da; --border-radius: 8px; font-weight: 700;" (click)="validateActionNotification(notif.action_id, false)">
+                  Rechazar
                 </ion-button>
               </div>
             </div>

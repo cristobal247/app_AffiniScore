@@ -71,6 +71,10 @@ export class NotificationService {
 
         for (const log of pendingLogs) {
           const actionDetails = catalogMap.get(log.action_id);
+          if (actionDetails?.activity_type === 'CHALLENGE') {
+            // Ignorar propuestas de retos en este bloque de validación rápida de acciones de servicio
+            continue;
+          }
           allNotifications.push({
             id: `action_${log.id}`,
             type: 'action_validation',
@@ -146,7 +150,8 @@ export class NotificationService {
             title: '🎯 Reto de desconexión pendiente',
             body: `Tu pareja aceptó "${challenge.title}" y te espera para empezar juntos.`,
             created_at: new Date().toISOString(), // Usamos hora actual
-            raw_data: challenge
+            raw_data: challenge,
+            action_id: challenge.logId
           });
         }
       }
@@ -211,6 +216,35 @@ export class NotificationService {
   }
 
   async validateAction(logId: string, confirm: boolean) {
+    try {
+      const { data: log } = await this.supabaseSvc.supabase
+        .from('user_actions_log')
+        .select('action_id')
+        .eq('id', logId)
+        .maybeSingle();
+
+      if (log) {
+        const { data: catalogItem } = await this.supabaseSvc.supabase
+          .from('activity_catalog')
+          .select('activity_type')
+          .eq('id', log.action_id)
+          .maybeSingle();
+
+        if (catalogItem?.activity_type === 'CHALLENGE') {
+          let res;
+          if (confirm) {
+            res = await this.supabaseSvc.acceptProposedChallenge(logId);
+          } else {
+            res = await this.supabaseSvc.abandonProposedChallenge(logId);
+          }
+          await this.fetchNotifications();
+          return res;
+        }
+      }
+    } catch (e) {
+      console.warn('Error intercepting challenge validation:', e);
+    }
+
     const res = await this.supabaseSvc.validateAction(logId, confirm);
     await this.fetchNotifications();
     return res;

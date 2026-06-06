@@ -144,16 +144,32 @@ async def validate_challenge_photo(request: ChallengeValidateRequest):
         }
         supabase.table("points_ledger").insert(ledger_row).execute()
 
-        # C) Registrar en user_actions_log
-        action_log_row = {
-            "user_id": request.user_id,
-            "action_id": request.challenge_id,
-            "points_earned": points_awarded,
-            "status": "CONFIRMED",
-            "created_at": datetime.utcnow().isoformat(),
-            "updated_at": datetime.utcnow().isoformat()
-        }
-        supabase.table("user_actions_log").insert(action_log_row).execute()
+        # C) Registrar o actualizar en user_actions_log
+        existing_log = None
+        try:
+            log_res = supabase.table("user_actions_log").select("*").eq("partnership_id", partnership_id).eq("action_id", request.challenge_id).in_("status", ["PENDING", "ACTIVE"]).execute()
+            if log_res.data:
+                existing_log = log_res.data[0]
+        except Exception as e:
+            print(f"Error al buscar log existente: {e}")
+
+        if existing_log:
+            supabase.table("user_actions_log").update({
+                "status": "CONFIRMED",
+                "points_earned": points_awarded,
+                "updated_at": datetime.utcnow().isoformat()
+            }).eq("id", existing_log["id"]).execute()
+        else:
+            action_log_row = {
+                "user_id": request.user_id,
+                "action_id": request.challenge_id,
+                "points_earned": points_awarded,
+                "status": "CONFIRMED",
+                "created_at": datetime.utcnow().isoformat(),
+                "updated_at": datetime.utcnow().isoformat(),
+                "partnership_id": partnership_id
+            }
+            supabase.table("user_actions_log").insert(action_log_row).execute()
 
         # D) Actualizar total_points en profiles
         profile_res = supabase.table("profiles").select("total_points").eq("id", request.user_id).execute()

@@ -267,37 +267,48 @@ export class ActionsPage implements OnInit {
   }
 
   async loadDisconnectChallenges() {
-    const challenges = await this.supabaseSvc.getDisconnectChallenges();
-    this.disconnectChallenges = challenges.map(c => ({
-      ...c,
-      myAccepted: false,
-      partnerAccepted: false,
-      status: 'disponible'
-    }));
+    this.disconnectChallenges = await this.supabaseSvc.getDisconnectChallenges();
   }
 
-  async acceptChallenge(item: DisconnectChallenge) {
-    this.disconnectChallenges = await this.supabaseSvc.acceptDisconnectChallenge(item.id);
+  async empezarReto(item: DisconnectChallenge) {
+    const loading = await this.loadingCtrl.create({ message: 'Enviando propuesta...', spinner: 'crescent' });
+    await loading.present();
+    const res = await this.supabaseSvc.proposeDisconnectChallenge(item.id, item.points);
+    loading.dismiss();
+
+    if (res.error) {
+      const alert = await this.alertCtrl.create({
+        header: 'Error',
+        message: 'No se pudo proponer el reto: ' + (res.error?.message || JSON.stringify(res.error)),
+        buttons: ['OK'],
+        mode: 'ios'
+      });
+      await alert.present();
+      return;
+    }
+
+    await this.loadDisconnectChallenges();
 
     const alert = await this.alertCtrl.create({
-      header: 'Reto aceptado',
-      message: `"${item.title}" quedó pendiente de aceptación de tu pareja.`,
-      buttons: ['OK'],
+      header: 'Reto Propuesto 🎯',
+      message: `Le enviamos una invitación a tu pareja para hacer "${item.title}". Cuando acepte, comenzará el Modo Enfoque.`,
+      buttons: ['Entendido'],
       mode: 'ios'
     });
     await alert.present();
   }
 
-  async confirmJointAcceptance(item: DisconnectChallenge) {
-    this.disconnectChallenges = await this.supabaseSvc.confirmJointAcceptance(item.id);
+  async confirmarReto(item: DisconnectChallenge) {
+    if (!item.logId) return;
+    const loading = await this.loadingCtrl.create({ message: 'Iniciando Modo Enfoque...', spinner: 'crescent' });
+    await loading.present();
+    await this.supabaseSvc.acceptProposedChallenge(item.logId);
+    loading.dismiss();
 
-    const alert = await this.alertCtrl.create({
-      header: 'Aceptación conjunta lista',
-      message: `"${item.title}" ya está aceptado por ambos. Ya pueden completarlo juntos.`,
-      buttons: ['Genial'],
-      mode: 'ios'
-    });
-    await alert.present();
+    await this.loadDisconnectChallenges();
+
+    // Iniciar Modo Enfoque localmente de inmediato
+    this.startFocusMode(item);
   }
 
   getChallengeImage(index: number): string {
@@ -434,27 +445,92 @@ export class ActionsPage implements OnInit {
 
   abandonFocus() {
     clearInterval(this.focusInterval);
+    if (this.activeChallenge?.logId) {
+      this.supabaseSvc.abandonProposedChallenge(this.activeChallenge.logId);
+    }
     this.activeChallenge = null;
+    this.loadDisconnectChallenges();
   }
+
+  completedChallengeForUpload: DisconnectChallenge | null = null;
 
   async finishFocusEarly() {
     clearInterval(this.focusInterval);
-    const pts = this.activeChallenge?.points || 0;
+    const item = this.activeChallenge;
     this.activeChallenge = null;
 
-    // Para la demo, guardamos el punto como accion
-    await this.supabaseSvc.saveActionPoint('cat_dc_focus_mode', pts);
-    
-    const alert = await this.alertCtrl.create({
-      header: '¡Reto Completado!',
-      message: `¡Lo lograron! Han ganado +${pts} AffiniPoints.`,
-      buttons: ['Genial'],
+    if (!item) return;
+
+    this.completedChallengeForUpload = item;
+
+    // Trigger file selection input
+    setTimeout(() => {
+      const fileInput = document.getElementById('actions-challenge-file-input') as HTMLInputElement;
+      if (fileInput) {
+        fileInput.click();
+      }
+    }, 100);
+  }
+
+  async onChallengeFileSelected(ev: any) {
+    const file = ev.target?.files?.[0];
+    if (!file || !this.completedChallengeForUpload) return;
+
+    const item = this.completedChallengeForUpload;
+    this.completedChallengeForUpload = null;
+
+    const loading = await this.loadingCtrl.create({
+      message: 'Subiendo e iniciando análisis con AffiniCoach IA...',
+      spinner: 'crescent',
       mode: 'ios'
     });
-    await alert.present();
+    await loading.present();
 
-    this.points += pts;
-    this.calcularNivel();
+    try {
+      const res = await this.supabaseSvc.validateChallengePhoto(
+        item.id,
+        item.title,
+        item.description,
+        item.points,
+        file
+      );
+
+      await loading.dismiss();
+
+      if (res.success && res.data) {
+        const valData = res.data;
+        await this.loadDisconnectChallenges();
+        await this.cargarDatosAfinidad(); // Refresh total points
+
+        const alert = await this.alertCtrl.create({
+          header: '¡Reto Validado por la IA! 🎉',
+          subHeader: `Puntos obtenidos: +${valData.points_awarded} / ${valData.max_points}`,
+          message: valData.feedback,
+          buttons: ['¡Genial!'],
+          mode: 'ios'
+        });
+        await alert.present();
+      } else {
+        const alert = await this.alertCtrl.create({
+          header: 'Error al validar',
+          message: res.error || 'No se pudo subir o validar la imagen. Inténtalo de nuevo.',
+          buttons: ['OK'],
+          mode: 'ios'
+        });
+        await alert.present();
+      }
+    } catch (e: any) {
+      await loading.dismiss();
+      const alert = await this.alertCtrl.create({
+        header: 'Error inesperado',
+        message: e.message || String(e),
+        buttons: ['OK'],
+        mode: 'ios'
+      });
+      await alert.present();
+    } finally {
+      ev.target.value = '';
+    }
   }
 
   formatTime(seconds: number): string {

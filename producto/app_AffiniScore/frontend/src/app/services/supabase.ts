@@ -42,8 +42,9 @@ export interface DisconnectChallenge {
   category: string;
   myAccepted: boolean;
   partnerAccepted: boolean;
-  status: 'disponible' | 'pendiente' | 'aceptado';
+  status: 'disponible' | 'pendiente' | 'aceptado' | 'activo';
   image?: string;
+  logId?: string;
 }
 
 export interface HistoricMemoryImage {
@@ -1923,80 +1924,185 @@ export class SupabaseService {
   }
 
   async getDisconnectChallenges(): Promise<DisconnectChallenge[]> {
-    const key = await this.getStorageKey('affiniscore:disconnect-challenges');
     const user = await this.getCurrentUser();
+    if (!user) return [];
 
-    if (!user) {
-      return this.readLocalJson<DisconnectChallenge[]>(key, this.baseDisconnectChallenges);
-    }
-
-    // 1. Obtener retos personalizados creados en activity_catalog para esta pareja
     const partnership = await this.getActivePartnership();
     const partnershipId = partnership?.id || null;
-    
-    let dbCustomChallenges: any[] = [];
+
+    // 1. Obtener todos los retos desde activity_catalog
+    let query = this.supabase
+      .from('activity_catalog')
+      .select('*')
+      .eq('activity_type', 'CHALLENGE');
+
+    // Filtrar por vinculación activa si corresponde
     if (partnershipId) {
-      const { data: customData } = await this.supabase
-        .from('activity_catalog')
-        .select('*')
-        .eq('activity_type', 'CHALLENGE')
-        .eq('subcategory', 'DISCONNECT')
-        .eq('partnership_id', partnershipId);
-      dbCustomChallenges = customData || [];
+      query = query.or(`partnership_id.is.null,partnership_id.eq.${partnershipId}`);
+    } else {
+      query = query.is('partnership_id', null);
     }
 
-    const customChallengesMapped: DisconnectChallenge[] = dbCustomChallenges.map(row => ({
-      id: row.id.toString(),
-      title: row.name,
-      description: row.description || '',
-      points: row.default_points || 100,
-      difficulty: 'Medio',
-      category: 'Manual',
-      myAccepted: false,
-      partnerAccepted: false,
-      status: 'disponible'
-    }));
-
-    // Combinar los retos base con los personalizados de la base de datos
-    const allChallenges = [...this.baseDisconnectChallenges, ...customChallengesMapped];
-
-    // 2. Obtener estado de aceptación desde user_disconnect_challenges
-    const { data, error } = await this.supabase
-      .from('user_disconnect_challenges')
-      .select('challenge_id, my_accepted, partner_accepted');
-
-    if (error || !data) {
-      return allChallenges;
+    const { data: dbChallenges, error: challengesError } = await query;
+    if (challengesError || !dbChallenges) {
+      return [];
     }
 
-    const stateById = new Map<string, { my_accepted: boolean; partner_accepted: boolean }>();
-    data.forEach((row: { challenge_id: string; my_accepted: boolean; partner_accepted: boolean }) => {
-      stateById.set(row.challenge_id, {
-        my_accepted: row.my_accepted,
-        partner_accepted: row.partner_accepted,
+    // 2. Obtener logs activos/pendientes/confirmados de user_actions_log para esta pareja
+    let partnerIds = [user.id];
+    if (partnership) {
+      partnerIds = [partnership.user1_id, partnership.user2_id];
+    }
+
+    const { data: logs, error: logsError } = await this.supabase
+      .from('user_actions_log')
+      .select('*')
+      .in('user_id', partnerIds)
+      .in('status', ['PENDING', 'ACTIVE', 'CONFIRMED']);
+
+    const logByActionId = new Map<string, any>();
+    if (!logsError && logs) {
+      // Ordenar por created_at desc para quedarnos con el último estado del reto
+      const sortedLogs = [...logs].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+      sortedLogs.forEach(log => {
+        logByActionId.set(log.action_id, log);
       });
-    });
+    }
 
-    const merged: DisconnectChallenge[] = allChallenges.map((challenge) => {
-      const state = stateById.get(challenge.id);
-      if (!state) return challenge;
+    const mapped: DisconnectChallenge[] = dbChallenges.map((row) => {
+      const log = logByActionId.get(row.id);
+      
+      let myAccepted = false;
+      let partnerAccepted = false;
+      let status: DisconnectChallenge['status'] = 'disponible';
+      let logId: string | undefined = undefined;
 
-      const status: DisconnectChallenge['status'] = state.partner_accepted
-        ? 'aceptado'
-        : state.my_accepted
-          ? 'pendiente'
-          : 'disponible';
+      if (log) {
+        logId = log.id;
+        if (log.status === 'CONFIRMED') {
+          myAccepted = true;
+          partnerAccepted = true;
+          status = 'aceptado';
+        } else if (log.status === 'ACTIVE') {
+          myAccepted = true;
+          partnerAccepted = true;
+          status = 'activo';
+        } else if (log.status === 'PENDING') {
+          if (log.user_id === user.id) {
+            myAccepted = true;
+            partnerAccepted = false;
+            status = 'pendiente';
+          } else {
+            myAccepted = false;
+            partnerAccepted = true;
+            status = 'pendiente';
+          }
+        }
+      }
 
       return {
-        ...challenge,
-        myAccepted: state.my_accepted,
-        partnerAccepted: state.partner_accepted,
+        id: row.id,
+        title: row.name,
+        description: row.description || '',
+        points: row.default_points || 100,
+        difficulty: 'Medio',
+        category: row.category || 'Desconexión',
+        myAccepted,
+        partnerAccepted,
         status,
+        logId,
+        image: row.subcategory === 'DISCONNECT' ? undefined : undefined
       };
     });
 
-    this.writeLocalJson(key, merged);
-    return merged;
+    return mapped;
+  }
+
+  async proposeDisconnectChallenge(challengeId: string, points: number): Promise<any> {
+    const user = await this.getCurrentUser();
+    if (!user) return { error: 'Usuario no autenticado' };
+
+    const partnership = await this.getActivePartnership();
+    const partnershipId = partnership?.id || null;
+
+    // 1. Insertar el log del reto con estado PENDING
+    const { data: log, error: logError } = await this.supabase
+      .from('user_actions_log')
+      .insert({
+        user_id: user.id,
+        action_id: challengeId,
+        points_earned: points,
+        status: 'PENDING',
+        partnership_id: partnershipId
+      })
+      .select()
+      .single();
+
+    if (logError) return { error: logError };
+
+    // 2. Enviar notificación push / in-app al partner
+    if (partnership) {
+      const partnerId = partnership.user1_id === user.id ? partnership.user2_id : partnership.user1_id;
+      if (partnerId) {
+        try {
+          const { data: session } = await this.supabase.auth.getSession();
+          const tokenHeader = session?.session?.access_token || '';
+
+          // Buscamos detalles del reto para la notificación
+          const { data: challengeDetails } = await this.supabase
+            .from('activity_catalog')
+            .select('name')
+            .eq('id', challengeId)
+            .single();
+
+          await firstValueFrom(
+            this.http.post<any>(`${this.apiUrl}/api/v1/notifications/send`, {
+              partner_id: partnerId,
+              action_name: `Reto: ${challengeDetails?.name || 'Reto de Desconexión'}`,
+              log_id: log.id
+            }, {
+              headers: {
+                'Authorization': `Bearer ${tokenHeader}`,
+                'Content-Type': 'application/json'
+              }
+            })
+          );
+        } catch (e) {
+          console.error('Error al enviar notificación de invitación a reto:', e);
+        }
+      }
+    }
+
+    return { data: log };
+  }
+
+  async acceptProposedChallenge(logId: string): Promise<any> {
+    const user = await this.getCurrentUser();
+    if (!user) return { error: 'Usuario no autenticado' };
+
+    // Cambiar estado a ACTIVE para iniciar Modo Enfoque
+    const res = await this.supabase
+      .from('user_actions_log')
+      .update({
+        status: 'ACTIVE',
+        validated_by: user.id
+      })
+      .eq('id', logId)
+      .select()
+      .single();
+
+    this.pointsUpdated.next();
+    return res;
+  }
+
+  async abandonProposedChallenge(logId: string): Promise<any> {
+    const res = await this.supabase
+      .from('user_actions_log')
+      .delete()
+      .eq('id', logId);
+
+    this.pointsUpdated.next();
+    return res;
   }
 
   async createDisconnectChallenge(title: string, description: string, points: number): Promise<DisconnectChallenge[]> {
@@ -2015,76 +2121,6 @@ export class SupabaseService {
         });
     }
     return await this.getDisconnectChallenges();
-  }
-
-  private async saveLocalChallenges(challenges: DisconnectChallenge[]): Promise<void> {
-    const key = await this.getStorageKey('affiniscore:disconnect-challenges');
-    this.writeLocalJson(key, challenges);
-  }
-
-  async acceptDisconnectChallenge(challengeId: string): Promise<DisconnectChallenge[]> {
-    const challenges = await this.getDisconnectChallenges();
-    const updated: DisconnectChallenge[] = challenges.map((challenge) => {
-      if (challenge.id !== challengeId) return challenge;
-
-      const status: DisconnectChallenge['status'] = challenge.partnerAccepted ? 'aceptado' : 'pendiente';
-
-      return {
-        ...challenge,
-        myAccepted: true,
-        status,
-      };
-    });
-
-    await this.saveLocalChallenges(updated);
-
-    const user = await this.getCurrentUser();
-    if (!user) return updated;
-
-    await this.supabase
-      .from('user_disconnect_challenges')
-      .upsert({
-        user_id: user.id,
-        challenge_id: challengeId,
-        my_accepted: true,
-        partner_accepted: updated.find((item) => item.id === challengeId)?.partnerAccepted ?? false,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'user_id,challenge_id' });
-
-    return updated;
-  }
-
-  async confirmJointAcceptance(challengeId: string): Promise<DisconnectChallenge[]> {
-    const challenges = await this.getDisconnectChallenges();
-    const updated: DisconnectChallenge[] = challenges.map((challenge) => {
-      if (challenge.id !== challengeId) return challenge;
-
-      const status: DisconnectChallenge['status'] = 'aceptado';
-
-      return {
-        ...challenge,
-        myAccepted: true,
-        partnerAccepted: true,
-        status,
-      };
-    });
-
-    await this.saveLocalChallenges(updated);
-
-    const user = await this.getCurrentUser();
-    if (!user) return updated;
-
-    await this.supabase
-      .from('user_disconnect_challenges')
-      .upsert({
-        user_id: user.id,
-        challenge_id: challengeId,
-        my_accepted: true,
-        partner_accepted: true,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'user_id,challenge_id' });
-
-    return updated;
   }
 
   // Obtener el perfil de la pareja

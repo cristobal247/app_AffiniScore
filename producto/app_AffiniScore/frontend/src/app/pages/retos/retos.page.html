@@ -47,18 +47,69 @@
           
           <p class="card-desc">{{ item.description }}</p>
           
-          <button class="action-btn" *ngIf="!item.myAccepted" (click)="triggerChallengeUpload(item)">
+          <!-- Disponible: Ambos pueden empezar/proponer -->
+          <button class="action-btn" *ngIf="item.status === 'disponible'" (click)="empezarReto(item)">
+            Empezar
+          </button>
+
+          <!-- Pendiente y propuesto por mí: Esperando al partner -->
+          <button class="action-btn done-btn" *ngIf="item.status === 'pendiente' && item.myAccepted" disabled style="background: #E8E8E5; color: #767775; opacity: 1;">
+            Esperando pareja...
+          </button>
+
+          <!-- Pendiente y propuesto por el partner: Yo puedo confirmar/aceptar -->
+          <button class="action-btn" *ngIf="item.status === 'pendiente' && !item.myAccepted" (click)="confirmarReto(item)">
             Aceptar Reto
           </button>
-          <button class="action-btn outline-btn" *ngIf="item.myAccepted && !item.partnerAccepted" (click)="confirmJointAcceptance(item)">
-            Confirmar Pareja
+
+          <!-- Activo: Ambos aceptaron, listos para entrar al Modo Enfoque -->
+          <button class="action-btn" *ngIf="item.status === 'activo'" (click)="startFocusMode(item)" style="background: linear-gradient(135deg, #FF8C00 0%, #FF4500 100%) !important; color: white;">
+            Modo Enfoque
           </button>
-          <button class="action-btn done-btn" *ngIf="item.partnerAccepted" disabled>
+
+          <!-- Aceptado: Completado con éxito -->
+          <button class="action-btn done-btn" *ngIf="item.status === 'aceptado'" disabled style="background: #E8E8E5; color: #767775; opacity: 1;">
             Completado
           </button>
         </div>
       </div>
     </div>
-    <input type="file" id="challenge-file-input" style="display: none" accept="image/*" (change)="onChallengeFileSelected($event)">
+    
+    <input type="file" id="catalog-challenge-file-input" style="display: none" accept="image/*" (change)="onChallengeFileSelected($event)">
   </div>
 </ion-content>
+
+<!-- Modal de Modo Enfoque en Catálogo -->
+<ion-modal [isOpen]="!!activeChallenge" [backdropDismiss]="false" class="focus-modal">
+  <ng-template>
+    <div class="focus-mode-bg" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); min-height: 100%; display: flex; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box; text-align: center;">
+      <div class="focus-container" style="width: 100%; max-width: 320px; color: #ffffff;">
+        <div class="focus-header" style="margin-bottom: 20px;">
+          <ion-icon name="phone-portrait-outline" style="font-size: 80px; color: #FA8072; margin-bottom: 16px; animation: bounce 2s infinite;"></ion-icon>
+        </div>
+        <h1 class="focus-title" style="font-size: 26px; font-weight: 800; margin: 0 0 8px 0; letter-spacing: -0.5px; font-family: 'Montserrat', sans-serif;">Modo Enfoque</h1>
+        <h2 class="focus-challenge-title" style="font-size: 18px; font-weight: 700; color: #FA8072; margin: 0 0 16px 0; font-family: 'Montserrat', sans-serif;">{{ activeChallenge?.title }}</h2>
+        <p class="focus-subtitle" style="font-size: 14px; line-height: 1.5; color: rgba(255,255,255,0.7); margin: 0 0 24px 0;">Deja tu dispositivo a un lado. Es momento de conectar en la vida real.</p>
+        
+        <div class="timer-circle" style="width: 160px; height: 160px; border-radius: 50%; border: 4px solid rgba(250, 128, 114, 0.3); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 20px; background: rgba(0,0,0,0.2);">
+          <span class="timer-text" style="font-size: 32px; font-weight: 800; font-family: monospace; color: #ffffff;">{{ formatTime(focusTimeLeft) }}</span>
+        </div>
+        <p style="color: rgba(255,255,255,0.7); font-size: 13px; margin: 0 0 24px 0;">Ganan +{{ activeChallenge?.points }} Pts al terminar</p>
+        
+        <div class="focus-actions" style="display: flex; flex-direction: column; gap: 12px; align-items: center;">
+          <ion-button style="--color: #ffffff; font-weight: 700; text-transform: none; font-size: 14px;" fill="clear" (click)="abandonFocus()">
+            <ion-icon name="close-circle-outline" slot="start" style="font-size: 18px; color: #FA8072;"></ion-icon>
+            Abandonar Reto
+          </ion-button>
+          
+          <!-- Botón de Demo -->
+          <div style="margin-top: 30px;">
+            <ion-button fill="clear" color="light" size="small" style="opacity: 0.5; font-size: 11px; text-transform: none;" (click)="finishFocusEarly()">
+              [Demo] Finalizar Ahora
+            </ion-button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-template>
+</ion-modal>
