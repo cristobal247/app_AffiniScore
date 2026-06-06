@@ -68,11 +68,7 @@ export const routes: Routes = [
         path: 'memory-history',
         loadComponent: () => import('./pages/memory-history/memory-history.page').then(m => m.MemoryHistoryPage)
       },
-      {
-        path: 'retos',
-        redirectTo: 'actions',
-        pathMatch: 'full'
-      },
+
       {
         path: '',
         redirectTo: 'dashboard',
@@ -142,8 +138,8 @@ export const routes: Routes = [
   },
   {
     path: 'retos',
-    redirectTo: 'tabs/actions',
-    pathMatch: 'full'
+    loadComponent: () => import('./pages/retos/retos.page').then(m => m.RetosPage),
+    canActivate: [authGuard]
   },
   {
     path: 'qr',

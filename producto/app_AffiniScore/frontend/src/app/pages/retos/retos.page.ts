@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { 
   IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, 
-  IonBackButton, IonIcon, AlertController, IonAvatar, IonButton
+  IonBackButton, IonIcon, AlertController, IonAvatar, IonButton, IonSearchbar, LoadingController
 } from '@ionic/angular/standalone';
+import { NavController } from '@ionic/angular';
 import { DisconnectChallenge, SupabaseService } from '../../services/supabase';
 import { addIcons } from 'ionicons';
-import { menuOutline, flash } from 'ionicons/icons';
+import { menuOutline, flash, chevronBackOutline, searchOutline, closeOutline } from 'ionicons/icons';
 
 @Component({
   selector: 'app-retos',
@@ -16,7 +17,7 @@ import { menuOutline, flash } from 'ionicons/icons';
   standalone: true,
   imports: [
     IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, 
-    IonBackButton, IonIcon, IonAvatar, IonButton, CommonModule, FormsModule
+    IonBackButton, IonIcon, IonAvatar, IonButton, IonSearchbar, CommonModule, FormsModule
   ]
 })
 export class RetosPage implements OnInit {
@@ -29,11 +30,21 @@ export class RetosPage implements OnInit {
     'https://lh3.googleusercontent.com/aida-public/AB6AXuBlu1dSU7bWRjUMbvwG4E8P2SZd8_3pPaUOF2IRsljbalik6aZRsuYjvC-xuEJwSyuMSvk2LKHoON5MmtccjZBaTJEjh_TRi1FzJYaljUKTNgaVcl0usDYOL6y-UQqgVHxMVTVXq6qGSK_F2RhWYYP2R1_tfU_KxprF0LIuQlDSUItASzZKGNV03b37KQjU3D1bb729uvHn67BbBeTJLWM2-GpMK3E9Oj7jK_irXvkCZp2xRmzO1GP2KxjVD_nPwCotAAinmZv9kqA'
   ];
 
+  isSearching = false;
+  searchTerm = '';
+  filteredChallenges: DisconnectChallenge[] = [];
+
   constructor(
     private supabaseSvc: SupabaseService,
-    private alertCtrl: AlertController
+    private alertCtrl: AlertController,
+    private navCtrl: NavController,
+    private loadingCtrl: LoadingController
   ) { 
-    addIcons({ menuOutline, flash });
+    addIcons({ menuOutline, flash, chevronBackOutline, searchOutline, closeOutline });
+  }
+
+  goBack() {
+    this.navCtrl.back();
   }
 
   async ngOnInit() {
@@ -42,10 +53,32 @@ export class RetosPage implements OnInit {
 
   async loadDisconnectChallenges() {
     this.disconnectChallenges = await this.supabaseSvc.getDisconnectChallenges();
+    this.filterChallenges();
+  }
+
+  toggleSearch() {
+    this.isSearching = !this.isSearching;
+    if (!this.isSearching) {
+      this.searchTerm = '';
+      this.filteredChallenges = [...this.disconnectChallenges];
+    }
+  }
+
+  filterChallenges() {
+    const term = this.searchTerm.trim().toLowerCase();
+    if (!term) {
+      this.filteredChallenges = [...this.disconnectChallenges];
+    } else {
+      this.filteredChallenges = this.disconnectChallenges.filter(c => 
+        c.title.toLowerCase().includes(term) || 
+        c.description.toLowerCase().includes(term)
+      );
+    }
   }
 
   async acceptChallenge(item: DisconnectChallenge) {
     this.disconnectChallenges = await this.supabaseSvc.acceptDisconnectChallenge(item.id);
+    this.filterChallenges();
 
     const alert = await this.alertCtrl.create({
       header: 'Reto aceptado',
@@ -58,6 +91,7 @@ export class RetosPage implements OnInit {
 
   async confirmJointAcceptance(item: DisconnectChallenge) {
     this.disconnectChallenges = await this.supabaseSvc.confirmJointAcceptance(item.id);
+    this.filterChallenges();
 
     const alert = await this.alertCtrl.create({
       header: 'Aceptación conjunta lista',
@@ -70,5 +104,79 @@ export class RetosPage implements OnInit {
 
   getChallengeImage(index: number): string {
     return this.challengeImages[index % this.challengeImages.length];
+  }
+
+  selectedChallengeForItem: DisconnectChallenge | null = null;
+
+  async triggerChallengeUpload(item: DisconnectChallenge) {
+    this.selectedChallengeForItem = item;
+    const fileInput = document.getElementById('challenge-file-input') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.click();
+    }
+  }
+
+  async onChallengeFileSelected(ev: any) {
+    const file = ev.target?.files?.[0];
+    if (!file || !this.selectedChallengeForItem) return;
+
+    const item = this.selectedChallengeForItem;
+    this.selectedChallengeForItem = null; // Clear selected
+
+    const loading = await this.loadingCtrl.create({
+      message: 'Subiendo e iniciando análisis con AffiniCoach IA...',
+      spinner: 'crescent',
+      mode: 'ios'
+    });
+    await loading.present();
+
+    try {
+      const res = await this.supabaseSvc.validateChallengePhoto(
+        item.id,
+        item.title,
+        item.description,
+        item.points,
+        file
+      );
+
+      await loading.dismiss();
+
+      if (res.success && res.data) {
+        const valData = res.data;
+        // Update local status of the challenge
+        item.myAccepted = true;
+        item.partnerAccepted = true;
+        item.status = 'aceptado';
+        this.filterChallenges();
+
+        const alert = await this.alertCtrl.create({
+          header: '¡Reto Validado por la IA! 🎉',
+          subHeader: `Puntos obtenidos: +${valData.points_awarded} / ${valData.max_points}`,
+          message: valData.feedback,
+          buttons: ['¡Genial!'],
+          mode: 'ios'
+        });
+        await alert.present();
+      } else {
+        const alert = await this.alertCtrl.create({
+          header: 'Error al validar',
+          message: res.error || 'No se pudo subir o validar la imagen. Inténtalo de nuevo.',
+          buttons: ['OK'],
+          mode: 'ios'
+        });
+        await alert.present();
+      }
+    } catch (e: any) {
+      await loading.dismiss();
+      const alert = await this.alertCtrl.create({
+        header: 'Error inesperado',
+        message: e.message || String(e),
+        buttons: ['OK'],
+        mode: 'ios'
+      });
+      await alert.present();
+    } finally {
+      ev.target.value = '';
+    }
   }
 }

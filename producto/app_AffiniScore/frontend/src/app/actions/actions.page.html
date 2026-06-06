@@ -82,34 +82,43 @@
       </div>
     </div>
 
-    <h3 style="padding-left: 16px; font-weight: 800; color: #1e293b; margin-top: 24px; font-size: 24px;">Retos de Desconexión</h3>
-    <p style="padding-left: 16px; color: #666; font-size: 14px; margin-top: -10px; margin-bottom: 16px; line-height: 1.4; padding-right: 16px;">
+    <div class="challenge-menu-container">
+      <h3 style="padding-left: 16px; font-weight: 800; color: #1e293b; margin: 0; font-size: 20px;">Retos de Desconexión</h3>
+      <button (click)="toggleChallengeMenu()" style="background: #ffffff; color: #FA8072; border-radius: 50%; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border: none; margin: 0; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); cursor: pointer; outline: none; padding: 0;">
+        <ion-icon [name]="showChallengeMenu ? 'close-outline' : 'add-outline'" style="font-size: 20px; color: #FA8072;"></ion-icon>
+      </button>
+
+      <!-- Menú de Píldoras -->
+      <div *ngIf="showChallengeMenu" class="challenge-pill-menu">
+        <div class="menu-pill-item" (click)="selectCreateManualChallenge()">
+          <ion-icon name="create-outline" style="margin-right: 6px; font-size: 14px; color: #FA8072;"></ion-icon>
+          <span>Crear Reto</span>
+        </div>
+        <div class="menu-pill-item" (click)="selectViewCatalog()">
+          <ion-icon name="list-outline" style="margin-right: 6px; font-size: 14px; color: #FA8072;"></ion-icon>
+          <span>Ver Catálogo</span>
+        </div>
+      </div>
+    </div>
+    <p style="padding-left: 16px; color: #666; font-size: 14px; margin-top: 8px; margin-bottom: 16px; line-height: 1.4; padding-right: 16px;">
       Elijan un reto juntos, dejen el celular y ganen puntos. Construyan momentos reales, libres de notificaciones.
     </p>
 
-    <!-- Stats -->
-    <div style="background: linear-gradient(135deg, #CF303B, #F6676D); border-radius: 24px; padding: 20px; color: white; margin: 16px 16px 24px 16px; box-shadow: 0 12px 24px rgba(207, 48, 59, 0.2);">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-        <div style="background: rgba(255, 255, 255, 0.2); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
-          <ion-icon name="flash" style="font-size: 20px; color: white;"></ion-icon>
-        </div>
-        <div style="background: rgba(255, 255, 255, 0.25); padding: 4px 12px; border-radius: 20px; font-size: 10px; font-weight: 800; letter-spacing: 0.5px;">RACHA: 5 DÍAS</div>
-      </div>
-      <h2 style="font-size: 22px; font-weight: 800; margin: 0 0 4px 0; letter-spacing: -0.5px;">Modo Presente</h2>
-      <p style="font-size: 13px; font-weight: 500; opacity: 0.95; margin: 0; line-height: 1.4;">Han compartido 12 horas sin pantallas esta semana.</p>
-    </div>
+
 
     <div class="horizontal-scroll-container">
       <!-- Tarjeta para Generar con IA -->
-      <div class="reto-card-ios ai-card" (click)="generateAiChallenge()">
+      <div class="reto-card-ios ai-card">
         <div class="ai-card-bg"></div>
         <div class="ai-card-content">
           <ion-icon name="sparkles" class="ai-sparkles"></ion-icon>
-          <h2 class="reto-title" style="color: white; margin-bottom: 4px;">Reto Mágico IA</h2>
-          <p class="reto-desc" style="color: rgba(255,255,255,0.9);">Deja que nuestra IA cree un reto único para ustedes.</p>
-          <div style="margin-top: auto; display: flex; align-items: center; justify-content: center;">
-            <ion-spinner *ngIf="isGeneratingAi" name="crescent" color="light"></ion-spinner>
-            <span *ngIf="!isGeneratingAi" class="ai-badge">Generar Ahora</span>
+          <h2 class="reto-title" style="color: #1A1A1A; margin-bottom: 4px;">Reto Mágico IA</h2>
+          <p class="reto-desc" style="color: #4b5563;">Deja que nuestra IA cree un reto único para ustedes.</p>
+          <div style="margin-top: auto; width: 100%;">
+            <ion-spinner *ngIf="isGeneratingAi" name="crescent" color="primary" style="margin: 0 auto; display: block;"></ion-spinner>
+            <ion-button expand="block" class="btn-aceptar-reto" *ngIf="!isGeneratingAi" (click)="generateAiChallenge()">
+              <ion-icon name="sparkles" slot="start"></ion-icon> Generar Ahora
+            </ion-button>
           </div>
         </div>
       </div>
@@ -126,7 +135,7 @@
             <ion-button expand="block" class="btn-aceptar-reto" *ngIf="!item.myAccepted" (click)="startFocusMode(item)">
               <ion-icon name="time-outline" slot="start"></ion-icon> Empezar
             </ion-button>
-            <ion-button expand="block" class="btn-aceptar-reto" *ngIf="item.myAccepted && !item.partnerAccepted" (click)="confirmJointAcceptance(item)" style="--background: transparent; color: #EA5556; border: 1px solid #EA5556;">
+            <ion-button expand="block" class="btn-aceptar-reto" *ngIf="item.myAccepted && !item.partnerAccepted" (click)="confirmJointAcceptance(item)" style="--background: transparent; color: #FA8072; border: 1px solid #FA8072;">
               Confirmar Pareja
             </ion-button>
             <ion-button expand="block" class="btn-aceptar-reto" *ngIf="item.partnerAccepted" disabled style="--background: #E8E8E5; color: #767775; opacity: 1;">

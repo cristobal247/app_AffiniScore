@@ -1,18 +1,22 @@
 <ion-header class="ion-no-border">
-  <ion-toolbar mode="ios" class="main-header-toolbar">
-    <div class="header-content-wrapper">
-      <ion-buttons slot="start">
-        <ion-button class="profile-avatar-btn" routerLink="/profile">
-          <ion-avatar class="user-avatar-top">
-            <img src="assets/images/user.png" alt="Perfil" />
-          </ion-avatar>
-        </ion-button>
-      </ion-buttons>
-      <div class="brand-group">
-        <h1 class="brand-title-gradient"></h1>
+  <ion-toolbar mode="ios" class="main-header-toolbar" style="padding-top: calc(var(--ion-safe-area-top, 20px) + 15px) !important; --background: #F8F8F8;">
+    <div style="display: flex; align-items: center; width: 100%; padding: 0 16px; position: relative; min-height: 44px;">
+      <button *ngIf="!isSearching" (click)="goBack()" style="background: #ffffff; color: #FA8072; border-radius: 50%; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border: none; margin: 0; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); cursor: pointer; outline: none; padding: 0; position: absolute; left: 16px; z-index: 10;">
+        <ion-icon name="chevron-back-outline" style="font-size: 20px; color: #FA8072;"></ion-icon>
+      </button>
+      <div style="flex: 1; text-align: center; width: 100%; padding: 0 40px;">
+        <span *ngIf="!isSearching" style="font-size: 17px; font-weight: 800; color: #111827; letter-spacing: -0.5px; font-family: 'Montserrat', sans-serif;">Catálogo de Retos</span>
+        <ion-searchbar *ngIf="isSearching" 
+                       [(ngModel)]="searchTerm" 
+                       (ionInput)="filterChallenges()" 
+                       placeholder="Buscar retos..." 
+                       show-cancel-button="never"
+                       style="--background: #ffffff; --border-radius: 12px; --box-shadow: 0 2px 8px rgba(0,0,0,0.04); height: 38px; padding: 0; margin: 0; font-family: 'Montserrat', sans-serif;">
+        </ion-searchbar>
       </div>
-      <ion-buttons slot="end">
-      </ion-buttons>
+      <button (click)="toggleSearch()" style="background: #ffffff; color: #FA8072; border-radius: 50%; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border: none; margin: 0; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); cursor: pointer; outline: none; padding: 0; position: absolute; right: 16px; z-index: 10;">
+        <ion-icon [name]="isSearching ? 'close-outline' : 'search-outline'" style="font-size: 18px; color: #FA8072;"></ion-icon>
+      </button>
     </div>
   </ion-toolbar>
 </ion-header>
@@ -21,20 +25,8 @@
   <div class="content-wrapper">
     <!-- Hero -->
     <div class="hero-section">
-      <h1>Retos de<br>Desconexión</h1>
+      <h1 style="font-size: 26px;">Retos de<br>Desconexión</h1>
       <p>Elijan un reto juntos, dejen el celular y ganen puntos. Construyan momentos reales, libres de notificaciones.</p>
-    </div>
-
-    <!-- Stats -->
-    <div class="modo-presente-card">
-      <div class="card-top">
-        <div class="icon-circle">
-          <ion-icon name="flash"></ion-icon>
-        </div>
-        <div class="racha-pill">RACHA: 5 DÍAS</div>
-      </div>
-      <h2>Modo Presente</h2>
-      <p>Han compartido 12 horas sin pantallas esta semana.</p>
     </div>
 
     <div class="puntos-card">
@@ -44,7 +36,7 @@
 
     <!-- Challenges Grid -->
     <div class="challenges-grid">
-      <div class="grid-card" *ngFor="let item of disconnectChallenges; let i = index">
+      <div class="grid-card" *ngFor="let item of filteredChallenges; let i = index">
         <img [src]="getChallengeImage(i)" class="card-image" />
         <div class="card-body">
           <h3>{{ item.title }}</h3>
@@ -55,7 +47,7 @@
           
           <p class="card-desc">{{ item.description }}</p>
           
-          <button class="action-btn" *ngIf="!item.myAccepted" (click)="acceptChallenge(item)">
+          <button class="action-btn" *ngIf="!item.myAccepted" (click)="triggerChallengeUpload(item)">
             Aceptar Reto
           </button>
           <button class="action-btn outline-btn" *ngIf="item.myAccepted && !item.partnerAccepted" (click)="confirmJointAcceptance(item)">
@@ -67,5 +59,6 @@
         </div>
       </div>
     </div>
+    <input type="file" id="challenge-file-input" style="display: none" accept="image/*" (change)="onChallengeFileSelected($event)">
   </div>
 </ion-content>

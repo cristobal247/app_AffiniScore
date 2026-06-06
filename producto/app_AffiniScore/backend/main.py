@@ -50,6 +50,9 @@ app.include_router(chat_router)
 from routers.memory_games import router as memory_games_router
 app.include_router(memory_games_router)
 
+from routers.challenges import router as challenges_router
+app.include_router(challenges_router)
+
 # Modelo solo para cuando el Usuario A invita
 class InviteRequest(BaseModel):
     user1_id: str

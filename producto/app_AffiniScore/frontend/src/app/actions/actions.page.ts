@@ -15,7 +15,7 @@ import {
   restaurantOutline, homeOutline, giftOutline, heartOutline, flashOutline, 
   settingsSharp, addCircle, starSharp, headsetOutline, mapOutline, flash,
   chevronForwardOutline, lockClosed, personOutline, checkmarkCircle, chatbubblesOutline,
-  cartOutline, timeOutline, phonePortraitOutline, closeCircleOutline, sparkles, notificationsOutline
+  cartOutline, timeOutline, phonePortraitOutline, closeCircleOutline, sparkles, notificationsOutline, addOutline, closeOutline, createOutline, listOutline
 } from 'ionicons/icons';
 import { SupabaseService, Activity, DisconnectChallenge } from '../services/supabase';
 import { GroqService } from '../services/groq.service';
@@ -50,6 +50,7 @@ export class ActionsPage implements OnInit {
   points: number = 0;
   nivelAfinidad: number = 1;
   userAvatarUrl: string | null = null;
+  showChallengeMenu = false;
 
   disconnectChallenges: DisconnectChallenge[] = [];
   challengeImages = [
@@ -77,7 +78,7 @@ export class ActionsPage implements OnInit {
       restaurantOutline, homeOutline, giftOutline, heartOutline, flashOutline, 
       settingsSharp, addCircle, starSharp, headsetOutline, mapOutline, flash,
       chevronForwardOutline, lockClosed, personOutline, checkmarkCircle, chatbubblesOutline,
-      cartOutline, timeOutline, phonePortraitOutline, closeCircleOutline, sparkles, notificationsOutline
+      cartOutline, timeOutline, phonePortraitOutline, closeCircleOutline, sparkles, notificationsOutline, addOutline, closeOutline, createOutline, listOutline
     });
   }
 
@@ -266,7 +267,13 @@ export class ActionsPage implements OnInit {
   }
 
   async loadDisconnectChallenges() {
-    this.disconnectChallenges = await this.supabaseSvc.getDisconnectChallenges();
+    const challenges = await this.supabaseSvc.getDisconnectChallenges();
+    this.disconnectChallenges = challenges.map(c => ({
+      ...c,
+      myAccepted: false,
+      partnerAccepted: false,
+      status: 'disponible'
+    }));
   }
 
   async acceptChallenge(item: DisconnectChallenge) {
@@ -331,6 +338,87 @@ export class ActionsPage implements OnInit {
       console.error('Error generando IA:', err);
     }
     this.isGeneratingAi = false;
+  }
+
+  toggleChallengeMenu() {
+    this.showChallengeMenu = !this.showChallengeMenu;
+  }
+
+  selectCreateManualChallenge() {
+    this.showChallengeMenu = false;
+    this.openCreateManualChallengeAlert();
+  }
+
+  selectViewCatalog() {
+    this.showChallengeMenu = false;
+    this.navCtrl.navigateForward('/retos');
+  }
+
+  async openCreateManualChallengeAlert() {
+    const alert = await this.alertCtrl.create({
+      header: 'Nuevo Reto Manual',
+      subHeader: 'Establece tus propias reglas',
+      inputs: [
+        {
+          name: 'title',
+          type: 'text',
+          placeholder: 'Título (ej: Picnic sin pantallas)'
+        },
+        {
+          name: 'description',
+          type: 'textarea',
+          placeholder: 'Descripción y reglas del reto'
+        },
+        {
+          name: 'points',
+          type: 'number',
+          placeholder: 'Puntos de recompensa (ej: 150)',
+          min: 10,
+          max: 1000
+        }
+      ],
+      buttons: [
+        {
+          text: 'Cancelar',
+          role: 'cancel'
+        },
+        {
+          text: 'Crear',
+          handler: (data) => {
+            const title = data.title?.trim();
+            const description = data.description?.trim();
+            const points = parseInt(data.points) || 100;
+            
+            if (!title || !description) {
+              this.showToast('Por favor, completa todos los campos.', 'warning');
+              return false;
+            }
+            
+            this.supabaseSvc.createDisconnectChallenge(title, description, points).then(challenges => {
+              this.disconnectChallenges = challenges.map(c => ({
+                ...c,
+                myAccepted: false,
+                partnerAccepted: false,
+                status: 'disponible'
+              }));
+            });
+            return true;
+          }
+        }
+      ],
+      mode: 'ios'
+    });
+    await alert.present();
+  }
+
+  private async showToast(message: string, color: string) {
+    const alert = await this.alertCtrl.create({
+      header: 'Atención',
+      message: message,
+      buttons: ['OK'],
+      mode: 'ios'
+    });
+    await alert.present();
   }
 
   startFocusMode(item: DisconnectChallenge) {

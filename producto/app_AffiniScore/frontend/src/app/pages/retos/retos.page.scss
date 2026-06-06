@@ -1,7 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
 
 :host {
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: 'Montserrat', sans-serif;
   --ion-background-color: #F8F8F8;
 }
 
@@ -15,7 +15,7 @@
   }
   
   .app-title {
-    font-family: 'Manrope', sans-serif;
+    font-family: 'Montserrat', sans-serif;
     font-weight: 800;
     font-size: 20px;
     color: #F06292;
@@ -51,7 +51,7 @@
   margin-top: 10px;
 
   h1 {
-    font-family: 'Manrope', sans-serif;
+    font-family: 'Montserrat', sans-serif;
     font-size: 36px;
     font-weight: 800;
     color: #2E2F2D;
@@ -101,7 +101,7 @@
   }
 
   h2 {
-    font-family: 'Manrope', sans-serif;
+    font-family: 'Montserrat', sans-serif;
     font-size: 28px;
     font-weight: 800;
     margin: 0 0 8px 0;
@@ -128,10 +128,10 @@
   box-shadow: 0 4px 20px rgba(0,0,0,0.03);
 
   h2 {
-    font-family: 'Manrope', sans-serif;
-    font-size: 52px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 36px;
     font-weight: 800;
-    color: #9E1424;
+    color: #FA8072;
     margin: 0 0 4px 0;
     letter-spacing: -1px;
   }
@@ -174,7 +174,7 @@
   }
 
   h3 {
-    font-family: 'Manrope', sans-serif;
+    font-family: 'Montserrat', sans-serif;
     font-size: 16px;
     font-weight: 800;
     color: #2E2F2D;
@@ -211,15 +211,15 @@
 
   .action-btn {
     width: 100%;
-    background: linear-gradient(90deg, #DE3E4A, #F56B72);
+    background: linear-gradient(90deg, #FA8072, #FFA07A);
     color: white;
     border: none;
     border-radius: 20px;
     padding: 12px 0;
     font-weight: 700;
     font-size: 12px;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    box-shadow: 0 6px 16px rgba(221, 62, 74, 0.25);
+    font-family: 'Montserrat', sans-serif;
+    box-shadow: 0 6px 16px rgba(250, 128, 114, 0.25);
     margin-top: auto;
     transition: transform 0.2s;
 
@@ -229,8 +229,8 @@
     
     &.outline-btn {
       background: white;
-      color: #DE3E4A;
-      border: 1px solid #DE3E4A;
+      color: #FA8072;
+      border: 1px solid #FA8072;
       box-shadow: none;
     }
 

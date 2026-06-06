@@ -1930,12 +1930,43 @@ export class SupabaseService {
       return this.readLocalJson<DisconnectChallenge[]>(key, this.baseDisconnectChallenges);
     }
 
+    // 1. Obtener retos personalizados creados en activity_catalog para esta pareja
+    const partnership = await this.getActivePartnership();
+    const partnershipId = partnership?.id || null;
+    
+    let dbCustomChallenges: any[] = [];
+    if (partnershipId) {
+      const { data: customData } = await this.supabase
+        .from('activity_catalog')
+        .select('*')
+        .eq('activity_type', 'CHALLENGE')
+        .eq('subcategory', 'DISCONNECT')
+        .eq('partnership_id', partnershipId);
+      dbCustomChallenges = customData || [];
+    }
+
+    const customChallengesMapped: DisconnectChallenge[] = dbCustomChallenges.map(row => ({
+      id: row.id.toString(),
+      title: row.name,
+      description: row.description || '',
+      points: row.default_points || 100,
+      difficulty: 'Medio',
+      category: 'Manual',
+      myAccepted: false,
+      partnerAccepted: false,
+      status: 'disponible'
+    }));
+
+    // Combinar los retos base con los personalizados de la base de datos
+    const allChallenges = [...this.baseDisconnectChallenges, ...customChallengesMapped];
+
+    // 2. Obtener estado de aceptación desde user_disconnect_challenges
     const { data, error } = await this.supabase
       .from('user_disconnect_challenges')
       .select('challenge_id, my_accepted, partner_accepted');
 
     if (error || !data) {
-      return this.readLocalJson<DisconnectChallenge[]>(key, this.baseDisconnectChallenges);
+      return allChallenges;
     }
 
     const stateById = new Map<string, { my_accepted: boolean; partner_accepted: boolean }>();
@@ -1946,7 +1977,7 @@ export class SupabaseService {
       });
     });
 
-    const merged: DisconnectChallenge[] = this.baseDisconnectChallenges.map((challenge) => {
+    const merged: DisconnectChallenge[] = allChallenges.map((challenge) => {
       const state = stateById.get(challenge.id);
       if (!state) return challenge;
 
@@ -1966,6 +1997,24 @@ export class SupabaseService {
 
     this.writeLocalJson(key, merged);
     return merged;
+  }
+
+  async createDisconnectChallenge(title: string, description: string, points: number): Promise<DisconnectChallenge[]> {
+    const partnership = await this.getActivePartnership();
+    if (partnership) {
+      await this.supabase
+        .from('activity_catalog')
+        .insert({
+          name: title,
+          description: description,
+          default_points: points,
+          activity_type: 'CHALLENGE',
+          subcategory: 'DISCONNECT',
+          category: 'Desconexión',
+          partnership_id: partnership.id
+        });
+    }
+    return await this.getDisconnectChallenges();
   }
 
   private async saveLocalChallenges(challenges: DisconnectChallenge[]): Promise<void> {
@@ -2136,5 +2185,44 @@ export class SupabaseService {
       return 0;
     }
     return count || 0;
+  }
+
+  async validateChallengePhoto(challengeId: string, title: string, description: string, points: number, file: File | Blob) {
+    const user = await this.getCurrentUser();
+    if (!user) return { error: 'Usuario no autenticado' };
+
+    // 1. Subir la imagen
+    const up = await this.uploadMemory(file);
+    if (!up || !up.publicUrl) {
+      return { error: up?.error || 'Error al subir la imagen a Supabase' };
+    }
+
+    // 2. Obtener sesión para autenticación en backend
+    const { data: session } = await this.supabase.auth.getSession();
+    const tokenHeader = session?.session?.access_token || '';
+
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${tokenHeader}`,
+      'Content-Type': 'application/json'
+    });
+
+    // 3. Llamar al endpoint del backend
+    try {
+      const response = await firstValueFrom(
+        this.http.post<any>(`${this.apiUrl}/api/v1/challenges/validate`, {
+          challenge_id: challengeId,
+          challenge_title: title,
+          challenge_description: description,
+          points: points,
+          image_url: up.publicUrl,
+          user_id: user.id
+        }, { headers })
+      );
+      this.pointsUpdated.next();
+      return { success: true, data: response };
+    } catch (e: any) {
+      console.error('Error llamando a validate endpoint:', e);
+      return { error: e.error?.detail || e.message || 'Error al validar con IA' };
+    }
   }
 }
