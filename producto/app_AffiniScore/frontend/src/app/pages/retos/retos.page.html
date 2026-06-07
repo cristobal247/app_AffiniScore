@@ -68,8 +68,8 @@
           </button>
 
           <!-- Aceptado: Completado con éxito -->
-          <button class="action-btn done-btn" *ngIf="item.status === 'aceptado'" disabled style="background: #E8E8E5; color: #767775; opacity: 1;">
-            Completado
+          <button class="action-btn" *ngIf="item.status === 'aceptado'" (click)="empezarReto(item)" style="background: #FA8072 !important; color: white;">
+            Volver a hacer
           </button>
         </div>
       </div>

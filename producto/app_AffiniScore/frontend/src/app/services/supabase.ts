@@ -1934,7 +1934,8 @@ export class SupabaseService {
     let query = this.supabase
       .from('activity_catalog')
       .select('*')
-      .eq('activity_type', 'CHALLENGE');
+      .eq('activity_type', 'CHALLENGE')
+      .neq('category', 'BINGO');
 
     // Filtrar por vinculación activa si corresponde
     if (partnershipId) {
