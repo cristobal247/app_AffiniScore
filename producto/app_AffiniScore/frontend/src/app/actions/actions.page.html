@@ -292,6 +292,13 @@
                   Rechazar
                 </ion-button>
               </div>
+
+              <!-- Challenge invitation sent (Demo helper) -->
+              <div *ngIf="notif.type === 'challenge_invite_sent'" style="margin-top: 8px;">
+                <ion-button size="small" style="--background: #FF8C00; --border-radius: 8px; font-weight: 700; color: #fff;" (click)="validateActionNotification(notif.action_id, true); isNotificationsOpen = false;">
+                  (Demo: Aceptar Reto de Desconexión)
+                </ion-button>
+              </div>
             </div>
           </div>
         </ion-card>

@@ -1,0 +1,117 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/retos" mode="ios"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Validar Reto</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <!-- Progress Header -->
+  <div class="progress-bar-container">
+    <div class="progress-step" [class.active]="currentStep >= 1" [class.completed]="currentStep > 1">
+      <div class="step-num">1</div>
+      <span class="step-label">Subir Foto</span>
+    </div>
+    <div class="progress-line" [class.active]="currentStep >= 2"></div>
+    <div class="progress-step" [class.active]="currentStep >= 2" [class.completed]="currentStep > 2">
+      <div class="step-num">2</div>
+      <span class="step-label">Validando</span>
+    </div>
+    <div class="progress-line" [class.active]="currentStep >= 3"></div>
+    <div class="progress-step" [class.active]="currentStep >= 3">
+      <div class="step-num">3</div>
+      <span class="step-label">Resultado</span>
+    </div>
+  </div>
+
+  <div class="container ion-padding">
+    <!-- Challenge Info Header Card -->
+    <ion-card class="challenge-info-card" *ngIf="challenge">
+      <ion-card-header>
+        <ion-card-title>{{ challenge.title }}</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <p>{{ challenge.description }}</p>
+        <div class="points-badge">Recompensa: +{{ challenge.points }} Pts</div>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- STEP 1: UPLOAD AND PREVIEW -->
+    <div class="step-content animated fadeIn" *ngIf="currentStep === 1">
+      <h3 class="step-title">Paso 1: Sube una foto de tu experiencia</h3>
+      <p class="step-subtitle">Para validar el reto de desconexión con tu pareja, comparte una foto juntos realizando la
+        actividad.</p>
+
+      <div class="upload-area" (click)="fileInput.click()">
+        <input type="file" #fileInput (change)="onFileSelected($event)" accept="image/*" style="display: none;">
+
+        <ng-container *ngIf="!imagePreview">
+          <ion-icon name="image-outline" class="upload-icon"></ion-icon>
+          <p class="upload-text">Toca aquí para tomar o subir una foto</p>
+          <span class="upload-subtext">Formatos permitidos: JPG, PNG</span>
+        </ng-container>
+
+        <ng-container *ngIf="imagePreview">
+          <img [src]="imagePreview" class="image-preview" alt="Vista previa">
+          <div class="change-photo-overlay">
+            <ion-icon name="camera-outline"></ion-icon>
+            <span>Cambiar Foto</span>
+          </div>
+        </ng-container>
+      </div>
+
+      <div class="action-buttons ion-margin-top">
+        <ion-button expand="block" shape="round" class="salmon-button" [disabled]="!selectedFile"
+          (click)="verifyChallenge()">
+          <ion-icon name="sparkles-outline" slot="start"></ion-icon>
+          Validar con AffiniCoach IA
+        </ion-button>
+      </div>
+    </div>
+
+    <!-- STEP 2: VERIFICATION RUNNING -->
+    <div class="step-content animated fadeIn text-center" *ngIf="currentStep === 2">
+      <div class="loading-wrapper">
+        <div class="pulse-ring"></div>
+        <ion-icon name="sparkles-outline" class="ai-sparkle-icon"></ion-icon>
+      </div>
+
+      <h3 class="step-title mt-4">Analizando tu imagen con IA</h3>
+      <p class="step-subtitle">AffiniCoach IA está verificando la foto del reto para comprobar el cumplimiento y asignar
+        vuestros puntos. Esto puede demorar unos segundos...</p>
+
+      <div class="spinner-container">
+        <ion-spinner name="crescent" class="salmon-spinner"></ion-spinner>
+      </div>
+    </div>
+
+    <!-- STEP 3: SUCCESS AND FEEDBACK -->
+    <div class="step-content animated fadeIn text-center" *ngIf="currentStep === 3">
+      <div class="success-icon-wrapper">
+        <ion-icon name="checkmark-circle-outline" color="success" class="success-icon"></ion-icon>
+      </div>
+
+      <h3 class="step-title">¡Felicidades! Reto Completado</h3>
+
+      <div class="points-won-card">
+        <span class="points-label">Puntos Obtenidos</span>
+        <span class="points-value">+{{ pointsAwarded }} Pts</span>
+      </div>
+
+      <ion-card class="feedback-card">
+        <ion-card-header>
+          <ion-card-title class="feedback-title">Feedback del AffiniCoach IA 🤖</ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          <p class="feedback-text">{{ feedback }}</p>
+        </ion-card-content>
+      </ion-card>
+
+      <ion-button expand="block" shape="round" class="salmon-button" (click)="finish()">
+        Finalizar e ir a Retos
+      </ion-button>
+    </div>
+  </div>
+</ion-content>

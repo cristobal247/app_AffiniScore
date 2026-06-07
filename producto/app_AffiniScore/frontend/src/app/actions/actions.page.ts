@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NavController } from '@ionic/angular';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { 
   IonContent, IonHeader, IonToolbar, IonGrid, IonRow, IonCol, 
   IonIcon, IonLabel, IonButtons, IonButton, 
@@ -72,7 +72,8 @@ export class ActionsPage implements OnInit {
     private navCtrl: NavController,
     private loadingCtrl: LoadingController,
     private alertCtrl: AlertController,
-    private notificationSvc: NotificationService
+    private notificationSvc: NotificationService,
+    private router: Router
   ) {
     addIcons({ 
       restaurantOutline, homeOutline, giftOutline, heartOutline, flashOutline, 
@@ -292,7 +293,42 @@ export class ActionsPage implements OnInit {
     const alert = await this.alertCtrl.create({
       header: 'Reto Propuesto 🎯',
       message: `Le enviamos una invitación a tu pareja para hacer "${item.title}". Cuando acepte, comenzará el Modo Enfoque.`,
-      buttons: ['Entendido'],
+      buttons: [
+        {
+          text: 'Entendido',
+          role: 'cancel'
+        },
+        {
+          text: 'Demo: Aceptar Reto',
+          handler: async () => {
+            if (res.data) {
+              const loading = await this.loadingCtrl.create({ message: 'Simulando aceptación de pareja...', spinner: 'crescent' });
+              await loading.present();
+              
+              const partnership = await this.supabaseSvc.getActivePartnership();
+              if (partnership) {
+                const partnerId = partnership.user1_id === res.data.user_id ? partnership.user2_id : partnership.user1_id;
+                await this.supabaseSvc.supabase
+                  .from('user_actions_log')
+                  .update({
+                    status: 'ACTIVE',
+                    validated_by: partnerId
+                  })
+                  .eq('id', res.data.id);
+              }
+              
+              await this.loadDisconnectChallenges();
+              loading.dismiss();
+              
+              const updatedChallenges = await this.supabaseSvc.getDisconnectChallenges();
+              const updatedItem = updatedChallenges.find(c => c.id === item.id);
+              if (updatedItem) {
+                this.startFocusMode(updatedItem);
+              }
+            }
+          }
+        }
+      ],
       mode: 'ios'
     });
     await alert.present();
@@ -461,15 +497,10 @@ export class ActionsPage implements OnInit {
 
     if (!item) return;
 
-    this.completedChallengeForUpload = item;
-
-    // Trigger file selection input
-    setTimeout(() => {
-      const fileInput = document.getElementById('actions-challenge-file-input') as HTMLInputElement;
-      if (fileInput) {
-        fileInput.click();
-      }
-    }, 100);
+    // Navigate to challenge validation page passing challenge in extras state
+    this.router.navigate(['/challenge-validation'], {
+      state: { challenge: item }
+    });
   }
 
   async onChallengeFileSelected(ev: any) {

@@ -6,6 +6,7 @@ import {
   IonBackButton, IonIcon, AlertController, IonAvatar, IonButton, IonSearchbar, LoadingController, IonModal
 } from '@ionic/angular/standalone';
 import { NavController } from '@ionic/angular';
+import { Router } from '@angular/router';
 import { DisconnectChallenge, SupabaseService } from '../../services/supabase';
 import { addIcons } from 'ionicons';
 import { menuOutline, flash, chevronBackOutline, searchOutline, closeOutline, phonePortraitOutline, closeCircleOutline } from 'ionicons/icons';
@@ -38,8 +39,9 @@ export class RetosPage implements OnInit {
     private supabaseSvc: SupabaseService,
     private alertCtrl: AlertController,
     private navCtrl: NavController,
-    private loadingCtrl: LoadingController
-  ) { 
+    private loadingCtrl: LoadingController,
+    private router: Router
+  ) {  
     addIcons({ menuOutline, flash, chevronBackOutline, searchOutline, closeOutline, phonePortraitOutline, closeCircleOutline });
   }
 
@@ -98,7 +100,42 @@ export class RetosPage implements OnInit {
     const alert = await this.alertCtrl.create({
       header: 'Reto Propuesto 🎯',
       message: `Le enviamos una invitación a tu pareja para hacer "${item.title}". Cuando acepte, comenzará el Modo Enfoque.`,
-      buttons: ['Entendido'],
+      buttons: [
+        {
+          text: 'Entendido',
+          role: 'cancel'
+        },
+        {
+          text: 'Demo: Aceptar Reto',
+          handler: async () => {
+            if (res.data) {
+              const loading = await this.loadingCtrl.create({ message: 'Simulando aceptación de pareja...', spinner: 'crescent' });
+              await loading.present();
+              
+              const partnership = await this.supabaseSvc.getActivePartnership();
+              if (partnership) {
+                const partnerId = partnership.user1_id === res.data.user_id ? partnership.user2_id : partnership.user1_id;
+                await this.supabaseSvc.supabase
+                  .from('user_actions_log')
+                  .update({
+                    status: 'ACTIVE',
+                    validated_by: partnerId
+                  })
+                  .eq('id', res.data.id);
+              }
+              
+              await this.loadDisconnectChallenges();
+              loading.dismiss();
+              
+              const updatedChallenges = await this.supabaseSvc.getDisconnectChallenges();
+              const updatedItem = updatedChallenges.find(c => c.id === item.id);
+              if (updatedItem) {
+                this.startFocusMode(updatedItem);
+              }
+            }
+          }
+        }
+      ],
       mode: 'ios'
     });
     await alert.present();
@@ -154,15 +191,10 @@ export class RetosPage implements OnInit {
 
     if (!item) return;
 
-    this.completedChallengeForUpload = item;
-
-    // Trigger file selection input
-    setTimeout(() => {
-      const fileInput = document.getElementById('catalog-challenge-file-input') as HTMLInputElement;
-      if (fileInput) {
-        fileInput.click();
-      }
-    }, 100);
+    // Navigate to challenge validation page passing challenge in extras state
+    this.router.navigate(['/challenge-validation'], {
+      state: { challenge: item }
+    });
   }
 
   async onChallengeFileSelected(ev: any) {

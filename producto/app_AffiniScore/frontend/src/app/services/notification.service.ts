@@ -4,7 +4,7 @@ import { BehaviorSubject } from 'rxjs';
 
 export interface AppNotification {
   id: string;
-  type: 'action_validation' | 'sos_alert' | 'new_memory' | 'challenge_invite';
+  type: 'action_validation' | 'sos_alert' | 'new_memory' | 'challenge_invite' | 'challenge_invite_sent';
   title: string;
   body: string;
   created_at: string;
@@ -150,6 +150,17 @@ export class NotificationService {
             title: '🎯 Reto de desconexión pendiente',
             body: `Tu pareja aceptó "${challenge.title}" y te espera para empezar juntos.`,
             created_at: new Date().toISOString(), // Usamos hora actual
+            raw_data: challenge,
+            action_id: challenge.logId
+          });
+        }
+        if (challenge.myAccepted && !challenge.partnerAccepted) {
+          allNotifications.push({
+            id: `challenge_sent_${challenge.id}`,
+            type: 'challenge_invite_sent',
+            title: '🎯 Reto propuesto (Esperando pareja)',
+            body: `Has propuesto el reto "${challenge.title}". Esperando confirmación de tu pareja.`,
+            created_at: new Date().toISOString(),
             raw_data: challenge,
             action_id: challenge.logId
           });

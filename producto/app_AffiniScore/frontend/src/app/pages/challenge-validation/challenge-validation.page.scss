@@ -1,0 +1,340 @@
+ion-toolbar {
+  --background: transparent;
+  --color: var(--ion-color-dark);
+}
+
+.progress-bar-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background: rgba(var(--ion-color-light-rgb), 0.4);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(var(--ion-color-dark-rgb), 0.08);
+  margin-bottom: 16px;
+}
+
+.progress-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 2;
+
+  .step-num {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--ion-color-step-300, #e0e0e0);
+    color: var(--ion-color-step-700, #757575);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 13px;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+  }
+
+  .step-label {
+    font-size: 10px;
+    font-weight: 500;
+    margin-top: 6px;
+    color: var(--ion-color-step-600, #8a8a8a);
+    transition: all 0.3s ease;
+  }
+
+  &.active {
+    .step-num {
+      background: #FA8072;
+      color: white;
+      box-shadow: 0 0 10px rgba(250, 128, 114, 0.4);
+    }
+    .step-label {
+      color: #FA8072;
+      font-weight: 600;
+    }
+  }
+
+  &.completed {
+    .step-num {
+      background: var(--ion-color-success);
+      color: white;
+    }
+    .step-label {
+      color: var(--ion-color-success);
+    }
+  }
+}
+
+.progress-line {
+  flex: 1;
+  height: 2px;
+  background: var(--ion-color-step-300, #e0e0e0);
+  margin: 0 12px;
+  margin-top: -16px;
+  transition: all 0.3s ease;
+
+  &.active {
+    background: #FA8072;
+  }
+}
+
+.challenge-info-card {
+  margin: 0 0 20px 0;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(250, 128, 114, 0.08), rgba(250, 128, 114, 0.03));
+  box-shadow: none;
+  border: 1px solid rgba(250, 128, 114, 0.15);
+
+  ion-card-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--ion-color-dark);
+  }
+
+  p {
+    margin: 0 0 12px 0;
+    color: var(--ion-color-step-600, #666);
+    line-height: 1.4;
+  }
+
+  .points-badge {
+    display: inline-block;
+    font-weight: 700;
+    color: #FA8072;
+    font-size: 14px;
+  }
+}
+
+.step-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ion-color-dark);
+  margin: 0 0 8px 0;
+}
+
+.step-subtitle {
+  font-size: 13px;
+  color: var(--ion-color-step-600, #666);
+  line-height: 1.4;
+  margin: 0 0 20px 0;
+}
+
+.upload-area {
+  width: 100%;
+  height: 240px;
+  border: 2px dashed rgba(250, 128, 114, 0.3);
+  border-radius: 20px;
+  background: rgba(250, 128, 114, 0.02);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
+  transition: all 0.25s ease;
+
+  &:active {
+    transform: scale(0.98);
+    background: rgba(250, 128, 114, 0.05);
+  }
+
+  .upload-icon {
+    font-size: 48px;
+    color: #FA8072;
+    margin-bottom: 12px;
+  }
+
+  .upload-text {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--ion-color-dark);
+    margin: 0 0 4px 0;
+  }
+
+  .upload-subtext {
+    font-size: 11px;
+    color: var(--ion-color-step-500, #999);
+  }
+
+  .image-preview {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .change-photo-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    gap: 6px;
+  }
+}
+
+// STEP 2: VERIFICATION LOADING STYLE
+.loading-wrapper {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  margin: 40px auto 20px auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .ai-sparkle-icon {
+    font-size: 48px;
+    color: #FA8072;
+    animation: spin 3s infinite linear;
+    z-index: 2;
+  }
+
+  .pulse-ring {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: rgba(250, 128, 114, 0.15);
+    animation: pulse 1.8s infinite ease-out;
+  }
+}
+
+.spinner-container {
+  margin-top: 30px;
+  display: flex;
+  justify-content: center;
+}
+
+// STEP 3: RESULT STYLE
+.success-icon-wrapper {
+  margin: 20px auto;
+  
+  .success-icon {
+    font-size: 80px;
+    color: var(--ion-color-success);
+    animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+}
+
+.points-won-card {
+  background: linear-gradient(135deg, var(--ion-color-success), #2e7d32);
+  color: white;
+  border-radius: 16px;
+  padding: 16px;
+  margin: 20px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 4px 15px rgba(var(--ion-color-success-rgb), 0.3);
+
+  .points-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.9;
+  }
+
+  .points-value {
+    font-size: 32px;
+    font-weight: 800;
+    margin-top: 4px;
+  }
+}
+
+.feedback-card {
+  margin: 0 0 24px 0;
+  border-radius: 16px;
+  background: var(--ion-color-step-50, #fcfcfc);
+  border: 1px solid rgba(var(--ion-color-dark-rgb), 0.06);
+  box-shadow: none;
+
+  .feedback-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--ion-color-dark);
+    text-align: left;
+  }
+
+  .feedback-text {
+    font-size: 13px;
+    color: var(--ion-color-step-700, #333);
+    line-height: 1.5;
+    text-align: left;
+    white-space: pre-line;
+  }
+}
+
+.salmon-button {
+  --background: #FA8072;
+  --background-hover: #e07062;
+  --background-activated: #c96458;
+  --color: #ffffff;
+  font-weight: 700;
+  height: 48px;
+  --box-shadow: none;
+  margin: 16px 0;
+}
+
+.salmon-spinner {
+  color: #FA8072;
+}
+
+.verify-button, .finish-button {
+  --box-shadow: none;
+  font-weight: 600;
+  height: 48px;
+}
+
+// Animations
+@keyframes pulse {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.2);
+    opacity: 0;
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes pop {
+  0% { transform: scale(0.3); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.animated {
+  animation-duration: 0.3s;
+  animation-fill-mode: both;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fadeIn {
+  animation-name: fadeIn;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.mt-4 {
+  margin-top: 16px;
+}

@@ -142,6 +142,11 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'challenge-validation',
+    loadComponent: () => import('./pages/challenge-validation/challenge-validation.page').then(m => m.ChallengeValidationPage),
+    canActivate: [authGuard]
+  },
+  {
     path: 'qr',
     loadComponent: () => import('./pages/QR/qr.page').then( m => m.QrPage),
     canActivate: [authGuard]
