@@ -142,13 +142,13 @@ $text-light: #6b7280;
 
   // Tarjeta de Creación Especial
   &.custom-add-card {
-    background: linear-gradient(135deg, #fffbeb 0%, #fae8ff 100%);
-    border: 2px dashed rgba(31, 41, 55, 0.15);
+    background: linear-gradient(135deg, #fff5f4 0%, #fbecec 100%);
+    border: 2px dashed rgba(250, 128, 114, 0.4);
     cursor: pointer;
 
     &.active {
       border-style: solid;
-      border-color: rgba(124, 58, 237, 0.15);
+      border-color: rgba(250, 128, 114, 0.25);
       background: #ffffff;
       cursor: default;
     }
@@ -174,13 +174,13 @@ $text-light: #6b7280;
 
       .custom-sparkle-icon {
         font-size: 16px;
-        color: #7c3aed;
+        color: #FA8072;
       }
 
       .custom-add-subtitle {
         font-size: 10px;
         font-weight: 700;
-        color: #6b7280;
+        color: #FA8072;
         text-transform: uppercase;
         letter-spacing: 0.8px;
       }
@@ -222,7 +222,7 @@ $text-light: #6b7280;
           font-family: inherit;
 
           &:focus {
-            border-color: rgba(124, 58, 237, 0.3);
+            border-color: rgba(250, 128, 114, 0.5);
             background: #ffffff;
           }
         }
@@ -253,9 +253,9 @@ $text-light: #6b7280;
         }
 
         .btn-form-ai {
-          background: #7c3aed;
+          background: linear-gradient(135deg, #fb8d80 0%, #FA8072 100%);
           color: white;
-          box-shadow: 0 4px 10px rgba(124, 58, 237, 0.25);
+          box-shadow: 0 4px 10px rgba(250, 128, 114, 0.25);
         }
       }
     }
@@ -276,8 +276,8 @@ $text-light: #6b7280;
         .custom-spinner {
           width: 32px;
           height: 32px;
-          border: 3px solid rgba(124, 58, 237, 0.15);
-          border-top-color: #7c3aed;
+          border: 3px solid rgba(250, 128, 114, 0.15);
+          border-top-color: #FA8072;
           border-radius: 50%;
           animation: spin 0.8s linear infinite;
         }
@@ -285,7 +285,7 @@ $text-light: #6b7280;
         .loading-label {
           font-size: 11px;
           font-weight: 800;
-          color: #7c3aed;
+          color: #FA8072;
           text-transform: uppercase;
           letter-spacing: 0.8px;
         }
@@ -450,11 +450,11 @@ $text-light: #6b7280;
     }
 
     &.checked {
-      background: #7c3aed; // Checked color from reference style
+      background: #FA8072; // Checked color from reference style
     }
 
     &.pending-check {
-      background: #a78bfa;
+      background: #fb8d80;
       animation: pulseCheckbox 1.5s infinite;
     }
   }
@@ -625,9 +625,9 @@ $text-light: #6b7280;
 }
 
 @keyframes pulseCheckbox {
-  0% { box-shadow: 0 0 0 0 rgba(167, 139, 250, 0.4); }
-  70% { box-shadow: 0 0 0 6px rgba(167, 139, 250, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(167, 139, 250, 0); }
+  0% { box-shadow: 0 0 0 0 rgba(250, 128, 114, 0.4); }
+  70% { box-shadow: 0 0 0 6px rgba(250, 128, 114, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(250, 128, 114, 0); }
 }
 
 @keyframes spin {

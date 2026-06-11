@@ -18,7 +18,7 @@
         <ion-button class="btn-settings" routerLink="/tienda">
           <ion-icon name="cart-outline"></ion-icon>
         </ion-button>
-        <ion-button class="btn-settings" style="position: relative;" (click)="isNotificationsOpen = true">
+        <ion-button class="btn-settings" style="position: relative;" (click)="openNotifications()">
           <ion-icon name="notifications-outline"></ion-icon>
           <ion-badge *ngIf="unreadCount > 0" style="position: absolute; top: -5px; right: -5px; font-size: 10px; --padding-start: 4px; --padding-end: 4px; --padding-top: 2px; --padding-bottom: 2px; border-radius: 50%; height: 16px; min-width: 16px; display: flex; align-items: center; justify-content: center; background: #FA8072; color: #ffffff;">{{ unreadCount }}</ion-badge>
         </ion-button>

@@ -24,7 +24,7 @@ ion-toolbar {
 
   .chat-title {
     font-weight: 800;
-    color: #a83f43; // Color rojo oscuro parecido a la imagen
+    color: #FA8072; // Color salmón
     font-size: 16px;
     margin-bottom: 4px;
     letter-spacing: -0.3px;
@@ -50,7 +50,7 @@ ion-toolbar {
     }
     
     .chat-badge {
-      background: #bd343a;
+      background: #FA8072;
       color: white;
       border-radius: 50%;
       width: 20px;
@@ -66,8 +66,8 @@ ion-toolbar {
 }
 
 .custom-fab {
-  --background: #bd343a;
-  --box-shadow: 0 6px 16px rgba(189, 52, 58, 0.4);
+  --background: #FA8072;
+  --box-shadow: 0 6px 16px rgba(250, 128, 114, 0.4);
   width: 56px;
   height: 56px;
   border-radius: 50%;

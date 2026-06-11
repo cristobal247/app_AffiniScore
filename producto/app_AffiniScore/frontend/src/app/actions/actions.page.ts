@@ -103,6 +103,11 @@ export class ActionsPage implements OnInit {
     });
   }
 
+  openNotifications() {
+    this.isNotificationsOpen = true;
+    this.notificationSvc.markAsReviewed();
+  }
+
   async validateActionNotification(logId: string, confirm: boolean) {
     const loading = await this.loadingCtrl.create({ message: 'Procesando...', spinner: 'crescent' });
     await loading.present();

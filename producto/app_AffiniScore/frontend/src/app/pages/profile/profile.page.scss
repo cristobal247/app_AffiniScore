@@ -47,7 +47,7 @@ ion-content {
 
       ion-icon {
         font-size: 80px;
-        color: #B0232A;
+        color: #FA8072;
       }
     }
 
@@ -55,7 +55,7 @@ ion-content {
       position: absolute;
       bottom: 0;
       right: 0;
-      background: #B0232A;
+      background: #FA8072;
       color: white;
       width: 32px;
       height: 32px;
@@ -160,7 +160,7 @@ ion-content {
     }
 
     .scan-btn {
-      --background: #B0232A;
+      --background: #FA8072;
       --border-radius: 12px;
       margin: 0;
       width: 100%;
@@ -185,7 +185,7 @@ ion-content {
     margin-bottom: 10px;
 
     ion-icon {
-      color: #B0232A;
+      color: #FA8072;
       margin-right: 10px;
     }
 
@@ -205,7 +205,7 @@ ion-content {
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
 
     ion-icon[slot="start"] {
-      color: #B0232A;
+      color: #FA8072;
       margin-right: 16px;
     }
 
@@ -233,7 +233,7 @@ ion-content {
 
     ion-toggle {
       padding-left: 10px;
-      --track-background-checked: #B0232A;
+      --track-background-checked: #FA8072;
     }
   }
 }
@@ -282,7 +282,7 @@ ion-toolbar {
 }
 
 ion-back-button {
-  --color: #B0232A; // El rojo de tu marca
+  --color: #FA8072; // El rojo de tu marca
   font-weight: 600;
 }
 

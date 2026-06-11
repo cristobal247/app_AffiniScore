@@ -33,7 +33,7 @@
         <ion-title mode="ios">
           <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
             <span style="font-weight: 800; font-size: 16px; color: #3a3a3a; letter-spacing: -0.5px;">AffiniCoach IA</span>
-            <span *ngIf="!isLoading" style="font-size: 11px; color: #bd343a; font-weight: 700;">EN LÍNEA</span>
+            <span *ngIf="!isLoading" style="font-size: 11px; color: #FA8072; font-weight: 700;">EN LÍNEA</span>
             <span *ngIf="isLoading" style="font-size: 11px; color: #7e7e7e; font-weight: 600;">ESCRIBIENDO...</span>
           </div>
         </ion-title>
@@ -53,7 +53,7 @@
       
       <!-- Avatar de la IA -->
       <div *ngIf="!isMine(msg)" class="message-avatar" style="width: 28px; height: 28px; border-radius: 50%; overflow: hidden; background: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-right: 8px; flex-shrink: 0; align-self: flex-end; margin-bottom: 5px;">
-        <ion-icon name="sparkles" style="font-size: 14px; color: #bd343a;"></ion-icon>
+        <ion-icon name="sparkles" style="font-size: 14px; color: #FA8072;"></ion-icon>
       </div>
 
       <div class="message-bubble">
@@ -117,7 +117,7 @@
           <ion-icon name="camera-outline" style="font-size: 22px;"></ion-icon>
         </ion-button>
       </div>
-      <div class="send-btn-container" (click)="sendMessage()" style="background: linear-gradient(135deg, #df5b61 0%, #bd343a 100%); border-radius: 50%; width: 44px; height: 44px; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 10px rgba(189, 52, 58, 0.3); flex-shrink: 0;">
+      <div class="send-btn-container" (click)="sendMessage()" style="background: linear-gradient(135deg, #fb8d80 0%, #FA8072 100%); border-radius: 50%; width: 44px; height: 44px; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 10px rgba(250, 128, 114, 0.3); flex-shrink: 0;">
         <ion-icon name="send" style="color: white; font-size: 20px;"></ion-icon>
       </div>
     </div>

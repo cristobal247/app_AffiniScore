@@ -84,8 +84,8 @@
 .custom-search {
   --background: #F2F2F2;
   --border-radius: 14px;
-  --icon-color: #B0232A; // Lupa roja AffiniScore
-  --clear-button-color: #B0232A;
+  --icon-color: #FA8072; // Lupa roja AffiniScore
+  --clear-button-color: #FA8072;
   --placeholder-color: #8E8E93;
   --color: #1A1A1A;
   font-family: 'Montserrat', sans-serif;
@@ -129,7 +129,7 @@
     flex-shrink: 0; // Evita que el icono se aplaste si el texto es largo
 
     ion-icon {
-      color: #B0232A;
+      color: #FA8072;
       font-size: 22px;
     }
   }
@@ -147,7 +147,7 @@
     .category-text {
       margin: 2px 0 0;
       font-size: 12px;
-      color: #B0232A;
+      color: #FA8072;
       font-weight: 600;
     }
     .desc-text {
@@ -161,7 +161,7 @@
 
   .points-tag {
     background: #FEEEEE;
-    color: #B0232A;
+    color: #FA8072;
     padding: 5px 12px;
     border-radius: 12px;
     font-weight: 800;

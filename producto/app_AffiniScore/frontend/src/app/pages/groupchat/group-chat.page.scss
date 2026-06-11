@@ -47,10 +47,10 @@ ion-header {
 }
 
 .message-wrapper.mine .message-bubble {
-  background: linear-gradient(135deg, #df5b61 0%, #bd343a 100%) !important;
+  background: linear-gradient(135deg, #fb8d80 0%, #FA8072 100%) !important;
   color: #ffffff !important;
   border-radius: 20px 20px 4px 20px;
-  box-shadow: 0 4px 10px rgba(189, 52, 58, 0.2);
+  box-shadow: 0 4px 10px rgba(250, 128, 114, 0.2);
   
   p { color: #ffffff !important; }
   .message-time { color: rgba(255, 255, 255, 0.8) !important; }
@@ -70,7 +70,7 @@ ion-header {
 .sender-name {
   font-size: 11px;
   font-weight: 700;
-  color: #bd343a;
+  color: #FA8072;
   margin-bottom: 4px;
   margin-left: 36px; /* Offset to align with bubble after avatar */
   text-transform: uppercase;

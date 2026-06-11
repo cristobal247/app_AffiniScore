@@ -26,6 +26,9 @@ export class NotificationService {
   private pendingCountSubject = new BehaviorSubject<number>(0);
   public pendingCount$ = this.pendingCountSubject.asObservable();
 
+  private lastReviewedCount = 0;
+  private actualCount = 0;
+
   private initialized = false;
   private userId: string | null = null;
   private partnerId: string | null = null;
@@ -173,8 +176,19 @@ export class NotificationService {
     // Sort by created_at desc
     allNotifications.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
+    this.actualCount = allNotifications.length;
+    if (this.lastReviewedCount > this.actualCount) {
+      this.lastReviewedCount = this.actualCount;
+    }
+
     this.notificationsSubject.next(allNotifications);
-    this.pendingCountSubject.next(allNotifications.length);
+    const pendingDisplay = Math.max(0, this.actualCount - this.lastReviewedCount);
+    this.pendingCountSubject.next(pendingDisplay);
+  }
+
+  markAsReviewed() {
+    this.lastReviewedCount = this.actualCount;
+    this.pendingCountSubject.next(0);
   }
 
   setupRealtimeSubscriptions() {

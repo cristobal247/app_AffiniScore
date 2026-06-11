@@ -134,6 +134,11 @@ export class HomePage implements OnInit {
     });
   }
 
+  openNotifications() {
+    this.isNotificationsOpen = true;
+    this.notificationSvc.markAsReviewed();
+  }
+
   async validateActionNotification(logId: string, confirm: boolean) {
     await this.notificationSvc.validateAction(logId, confirm);
     await this.cargarDatosAfinidad();
