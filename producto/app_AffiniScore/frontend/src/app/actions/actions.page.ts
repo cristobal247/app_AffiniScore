@@ -394,8 +394,7 @@ export class ActionsPage implements OnInit {
           category: 'IA',
           myAccepted: false,
           partnerAccepted: false,
-          status: 'disponible',
-          image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDED7_vj5Bo9tZfdjGKmrrdmjn99oTlgDpHJtU83qm2tYs-Qj0F6U11B-3HzNyWP8--ijruBiWu7cX0q_WPETd6HXjp46NwhV-dJnaYS_8FE9qkAEdqGwUA8zLW0hXvSQtgyvHddxlleUvbmA2ptfYjarYED3qm-Uk98HIg0nixgtZ1qklCjqlCd07txC305J5ppZZvKj8Y3VQpDT_9dkL_BPkGufQzsU51oZUrFzX1pluX5FN7ekU4fog9Eu4BLNgjhGx8dghhIoQ'
+          status: 'disponible'
         };
         this.disconnectChallenges.unshift(newReto);
       }
