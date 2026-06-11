@@ -85,12 +85,17 @@ export class SupabaseService {
   private supabaseEnabled = false;
   private apiUrl: string;
   public pointsUpdated = new BehaviorSubject<void>(undefined);
+  private profileCache: any = null;
   // Modo de desarrollo: autentificación simulada cuando environment.devAuth = true
   private _devMode = false;
   private _devUser: any = null;
   private _devSessionToken: string | null = null;
 
   constructor(private http: HttpClient) {
+    this.pointsUpdated.subscribe(() => {
+      this.profileCache = null;
+    });
+
     const url = environment.supabaseUrl || '';
     const key = environment.supabaseKey || '';
     const isValidUrl = url.startsWith('http://') || url.startsWith('https://');
@@ -361,18 +366,22 @@ export class SupabaseService {
      ======================================================================== */
 
   // Obtener los datos del perfil (nombre, puntos totales, etc.)
-  async getUserProfile() {
+  async getUserProfile(forceRefresh = false) {
+    if (!forceRefresh && this.profileCache) {
+      return { data: this.profileCache, error: null };
+    }
     const user = await this.getCurrentUser();
     if (!user) return { data: null, error: 'No user' };
     if (this._devMode) {
+      this.profileCache = {
+        id: user.id,
+        full_name: user.user_metadata?.full_name || 'Usuario Dev',
+        email: user.email,
+        points_total: 999,
+        partnership_id: null
+      };
       return {
-        data: {
-          id: user.id,
-          full_name: user.user_metadata?.full_name || 'Usuario Dev',
-          email: user.email,
-          points_total: 999,
-          partnership_id: null
-        },
+        data: this.profileCache,
         error: null
       };
     }
@@ -391,6 +400,7 @@ export class SupabaseService {
       if (p) {
         data.partnership_id = p.id;
       }
+      this.profileCache = data;
     }
 
     return { data, error };

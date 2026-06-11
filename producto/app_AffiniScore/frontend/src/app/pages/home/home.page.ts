@@ -182,8 +182,14 @@ export class HomePage implements OnInit {
 
   async cargarDatosAfinidad() {
     try {
-      // Cargar la reflexión diaria dinámicamente
-      this.reflectionsCatalog = await this.supabaseSvc.getReflectionsCatalog();
+      // Cargar datos en paralelo para optimizar la velocidad de carga
+      const [reflections, profileRes, weeklyRes] = await Promise.all([
+        this.supabaseSvc.getReflectionsCatalog(),
+        this.supabaseSvc.getUserProfile(),
+        this.supabaseSvc.getWeeklyPoints()
+      ]);
+
+      this.reflectionsCatalog = reflections;
       if (this.reflectionsCatalog && this.reflectionsCatalog.length > 0) {
         const now = new Date();
         const startOfYear = new Date(now.getFullYear(), 0, 0);
@@ -195,9 +201,7 @@ export class HomePage implements OnInit {
         this.reflectionAuthor = this.reflectionsCatalog[index].author;
       }
 
-      const { data, error } = await this.supabaseSvc.getUserProfile();
-      const weeklyRes = await this.supabaseSvc.getWeeklyPoints();
-      
+      const data = profileRes.data;
       this.puntosSemanales = weeklyRes.data || 0;
 
       if (data) {
