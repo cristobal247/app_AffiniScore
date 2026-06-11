@@ -65,9 +65,25 @@ async def validate_challenge_photo(request: ChallengeValidateRequest):
         f"Puntos máximos: {request.points}"
     )
 
+    # Download image and encode to base64 to avoid Groq fetching issues
+    import base64
+    image_base64 = ""
+    media_type = "image/jpeg"
+    try:
+        async with httpx.AsyncClient() as client:
+            img_resp = await client.get(request.image_url, timeout=10.0)
+            img_resp.raise_for_status()
+            image_base64 = base64.b64encode(img_resp.content).decode("utf-8")
+            media_type = img_resp.headers.get("content-type", "image/jpeg")
+    except Exception as download_err:
+        print(f"Error downloading image for Groq: {download_err}")
+
+    # Use base64 data URI if download succeeded, otherwise fall back to url
+    image_url_payload = f"data:{media_type};base64,{image_base64}" if image_base64 else request.image_url
+
     user_content = [
         {"type": "text", "text": user_message},
-        {"type": "image_url", "image_url": {"url": request.image_url}}
+        {"type": "image_url", "image_url": {"url": image_url_payload}}
     ]
 
     points_awarded = request.points

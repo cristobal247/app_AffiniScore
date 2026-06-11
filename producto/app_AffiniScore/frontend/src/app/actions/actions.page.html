@@ -195,7 +195,7 @@
         <div class="timer-circle">
           <span class="timer-text">{{ formatTime(focusTimeLeft) }}</span>
         </div>
-        <p style="color: rgba(255,255,255,0.7); font-size: 13px; margin-top: 10px;">Ganan +{{ activeChallenge?.points }} Pts al terminar</p>
+        <p style="color: #767775; font-size: 13px; margin-top: 10px;">Ganan +{{ activeChallenge?.points }} Pts al terminar</p>
 
         <div class="focus-actions">
           <ion-button class="btn-abandon" fill="clear" (click)="abandonFocus()">
@@ -205,7 +205,7 @@
           
           <!-- Botón oculto/pequeño para Demo (saltar el tiempo) -->
           <div style="margin-top: 40px;">
-            <ion-button fill="clear" color="light" size="small" style="opacity: 0.5;" (click)="finishFocusEarly()">
+            <ion-button fill="clear" color="danger" size="small" style="opacity: 0.7;" (click)="finishFocusEarly()">
               [Demo] Finalizar Ahora
             </ion-button>
           </div>
