@@ -175,13 +175,11 @@
 
   h3 {
     font-family: 'Montserrat', sans-serif;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 800;
     color: #2E2F2D;
     margin: 0 0 10px 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    line-height: 1.2;
   }
 
   .points-pill-container {
@@ -211,7 +209,7 @@
 
   .action-btn {
     width: 100%;
-    background: linear-gradient(90deg, #FA8072, #FFA07A);
+    background: linear-gradient(135deg, #FF8C00 0%, #FF4500 100%);
     color: white;
     border: none;
     border-radius: 20px;
@@ -240,4 +238,122 @@
       box-shadow: none;
     }
   }
+}
+
+/* Modo Enfoque (Temporizador) - Light Theme */
+.focus-modal {
+  --background: #ffffff;
+}
+
+.focus-mode-bg {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, #F8F9FA 0%, #F1F3F5 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #2E2F2D;
+  text-align: center;
+}
+
+.focus-container {
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.focus-header {
+  width: 80px;
+  height: 80px;
+  background: rgba(250, 128, 114, 0.12);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.focus-icon {
+  font-size: 40px;
+  color: #FA8072;
+}
+
+.focus-title {
+  font-size: 24px;
+  font-weight: 800;
+  margin: 0 0 8px 0;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #FA8072;
+}
+
+.focus-challenge-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #2E2F2D;
+  margin: 0 0 12px 0;
+}
+
+.focus-subtitle {
+  font-size: 15px;
+  color: #767775;
+  margin-bottom: 40px;
+  line-height: 1.5;
+  max-width: 280px;
+}
+
+.timer-circle {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  border: 4px solid rgba(250, 128, 114, 0.2);
+  background: rgba(255, 255, 255, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 20px;
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -4px; left: -4px; right: -4px; bottom: -4px;
+    border-radius: 50%;
+    border: 4px solid transparent;
+    border-top-color: #FA8072;
+    animation: spin 60s linear infinite;
+  }
+}
+
+.timer-text {
+  font-size: 48px;
+  font-weight: 800;
+  color: #2E2F2D;
+  font-variant-numeric: tabular-nums;
+}
+
+.focus-actions {
+  margin-top: 40px;
+  width: 100%;
+}
+
+.btn-abandon {
+  color: #767775;
+  font-weight: 600;
+  --padding-start: 20px;
+  --padding-end: 20px;
+}
+
+@keyframes spin {
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.bounce-animation {
+  animation: bounce 2s ease-in-out infinite;
 }

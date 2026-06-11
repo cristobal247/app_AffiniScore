@@ -125,7 +125,7 @@
 
       <!-- Tarjetas Normales -->
       <div *ngFor="let item of disconnectChallenges; let i = index" class="reto-card-ios">
-        <img [src]="item.image || getChallengeImage(i)" class="reto-img" />
+        <img [src]="item.image || getChallengeImage(item.title, i)" class="reto-img" />
         <div class="reto-content">
           <h2 class="reto-title">{{ item.title }}</h2>
           <span class="reto-points-pill">Gana +{{ item.points }} Puntos</span>
@@ -148,7 +148,7 @@
             </ion-button>
 
             <!-- Activo: Ambos aceptaron, listos para entrar al Modo Enfoque -->
-            <ion-button expand="block" class="btn-aceptar-reto" *ngIf="item.status === 'activo'" (click)="startFocusMode(item)" style="--background: linear-gradient(135deg, #FF8C00 0%, #FF4500 100%) !important;">
+            <ion-button expand="block" class="btn-aceptar-reto" *ngIf="item.status === 'activo'" (click)="startFocusMode(item)">
               Modo Enfoque
             </ion-button>
 

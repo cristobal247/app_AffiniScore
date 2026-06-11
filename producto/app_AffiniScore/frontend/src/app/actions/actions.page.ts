@@ -54,10 +54,16 @@ export class ActionsPage implements OnInit {
 
   disconnectChallenges: DisconnectChallenge[] = [];
   challengeImages = [
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuDO0BI4plo40cKmuzfXv3ch3sfjl88YKWMqTo-17cgk7kwaBYBb1YhsR0544HY0oppAlTSfKh0k5D2zoLGQZPXYFzpyXBcuocRJVhlFFQGw8L17dCQxb2f9cFe7BDcPt4KnPA3ljxYAM3UsRsNSeBoUST_obWnTq9OG7Y423kV7unx1YsNx6YyuEKH0L0TD7SWHJQrl2_N-Psjb7ewDZ0bh4NPf0C699mjjHlB1-ptQet37X2hGpjkusFGCBVmSzwlK9aOZq4-C988',
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuCDFq81_0BDne6HQKF0ss82iQltc0787WRT8395azpeFGUljhW2vSCjSMBhbEmSfEKr5Jk7awZnVs5t6rpDz0IbQ4rl1SzV_HN-T93Mphkp2HQQQ2Q8Bmgs4B-we1jBezZ2RYBI46mTike6kzMPHBsd05MPNhQ00fB98zQ3frXD0PO7zVxSBAZnrFfh4DjwEu4VZSWRMdTrxyFkiiUSvLmroJMdXN-NpQuyWCy9qAKUW3t-6obBFlpMsV_9_u4CoFfSGxvVXwNzHBA',
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuDED7_vj5Bo9tZfdjGKmrrdmjn99oTlgDpHJtU83qm2tYs-Qj0F6U11B-3HzNyWP8--ijruBiWu7cX0q_WPETd6HXjp46NwhV-dJnaYS_8FE9qkAEdqGwUA8zLW0hXvSQtgyvHddxlleUvbmA2ptfYjarYED3qm-Uk98HIg0nixgtZ1qklCjqlCd07txC305J5ppZZvKj8Y3VQpDT_9dkL_BPkGufQzsU51oZUrFzX1pluX5FN7ekU4fog9Eu4BLNgjhGx8dghhIoQ',
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuBlu1dSU7bWRjUMbvwG4E8P2SZd8_3pPaUOF2IRsljbalik6aZRsuYjvC-xuEJwSyuMSvk2LKHoON5MmtccjZBaTJEjh_TRi1FzJYaljUKTNgaVcl0usDYOL6y-UQqgVHxMVTVXq6qGSK_F2RhWYYP2R1_tfU_KxprF0LIuQlDSUItASzZKGNV03b37KQjU3D1bb729uvHn67BbBeTJLWM2-GpMK3E9Oj7jK_irXvkCZp2xRmzO1GP2KxjVD_nPwCotAAinmZv9kqA'
+    'assets/images/retos/cena_sin_celulares.png',
+    'assets/images/retos/paseo_parque.png',
+    'assets/images/retos/juegos_mesa.png',
+    'assets/images/retos/cocinar_juntos.png',
+    'assets/images/retos/maraton_peliculas.png',
+    'assets/images/retos/mirar_estrellas.png',
+    'assets/images/retos/maraton_lectura.png',
+    'assets/images/retos/caminata_ejercicio.png',
+    'assets/images/retos/cafe_charla.png',
+    'assets/images/retos/meditacion_pareja.png'
   ];
 
   notifications: any[] = [];
@@ -347,7 +353,19 @@ export class ActionsPage implements OnInit {
     this.startFocusMode(item);
   }
 
-  getChallengeImage(index: number): string {
+  getChallengeImage(title: string, index: number): string {
+    const t = (title || '').toLowerCase();
+    if (t.includes('cena') || t.includes('comida') || t.includes('restaurante') || t.includes('velas')) return 'assets/images/retos/cena_sin_celulares.png';
+    if (t.includes('paseo') || t.includes('caminata') || t.includes('parque')) return 'assets/images/retos/paseo_parque.png';
+    if (t.includes('juego') || t.includes('cartas') || t.includes('mesa')) return 'assets/images/retos/juegos_mesa.png';
+    if (t.includes('cocin') || t.includes('receta')) return 'assets/images/retos/cocinar_juntos.png';
+    if (t.includes('película') || t.includes('pelicula') || t.includes('serie') || t.includes('cine') || t.includes('maratón') || t.includes('maraton')) return 'assets/images/retos/maraton_peliculas.png';
+    if (t.includes('estrellas') || t.includes('stargazing') || t.includes('mirar')) return 'assets/images/retos/mirar_estrellas.png';
+    if (t.includes('lectura') || t.includes('leer') || t.includes('libro')) return 'assets/images/retos/maraton_lectura.png';
+    if (t.includes('deporte') || t.includes('ejercicio') || t.includes('correr')) return 'assets/images/retos/caminata_ejercicio.png';
+    if (t.includes('café') || t.includes('cafe') || t.includes('charla') || t.includes('conversar')) return 'assets/images/retos/cafe_charla.png';
+    if (t.includes('medita') || t.includes('yoga') || t.includes('relaj')) return 'assets/images/retos/meditacion_pareja.png';
+    
     return this.challengeImages[index % this.challengeImages.length];
   }
 

@@ -19,14 +19,15 @@ import {
   qrCodeOutline,
   shieldCheckmarkOutline,
   notificationsOutline,
-  checkmarkCircleOutline,
-  phonePortraitOutline,
   cameraOutline,
   documentTextOutline
 } from 'ionicons/icons';
 import { SupabaseService } from '../../services/supabase';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 
 export interface PrivacySettings {
   profileVisibleToPartner: boolean;
@@ -64,7 +65,7 @@ export class ProfilePage implements OnInit {
   };
 
   notificationSettings: NotificationSettings = {
-    pushEnabled: false,
+    pushEnabled: true,
     dailyReminder: true,
     challengeInvites: true,
     scoreMilestones: true,
@@ -93,8 +94,6 @@ export class ProfilePage implements OnInit {
       qrCodeOutline,
       shieldCheckmarkOutline,
       notificationsOutline,
-      checkmarkCircleOutline,
-      phonePortraitOutline,
       cameraOutline,
       documentTextOutline
     });
@@ -338,15 +337,6 @@ export class ProfilePage implements OnInit {
     console.log('Notifications updated', this.notificationSettings);
   }
 
-  public enablePushNotifications(): void {
-    this.notificationSettings.pushEnabled = true;
-    console.log('Push notifications enabled');
-  }
-
-  public sendTestNotification(): void {
-    console.log('Test notification sent');
-  }
-
   public async logout() {
     const loading = await this.loadingCtrl.create({
       message: 'Cerrando sesión...',
@@ -434,8 +424,26 @@ export class ProfilePage implements OnInit {
         headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0] }
       });
 
-      // Guardar PDF
-      doc.save('Reporte-Semanal-AffiniScore.pdf');
+      // Guardar o compartir PDF según plataforma
+      if (Capacitor.isNativePlatform()) {
+        const pdfBase64 = doc.output('datauristring').split(',')[1];
+        const fileName = `Reporte-Semanal-AffiniScore-${Date.now()}.pdf`;
+        
+        const result = await Filesystem.writeFile({
+          path: fileName,
+          data: pdfBase64,
+          directory: Directory.Cache
+        });
+
+        await Share.share({
+          title: 'Reporte Semanal AffiniScore',
+          text: 'Aquí está tu reporte semanal de afinidad.',
+          url: result.uri,
+          dialogTitle: 'Compartir o guardar Reporte'
+        });
+      } else {
+        doc.save('Reporte-Semanal-AffiniScore.pdf');
+      }
     } catch (err) {
       console.error('Error generating PDF:', err);
     }

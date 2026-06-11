@@ -250,9 +250,8 @@ ion-content {
   }
 }
 
-.logout-btn {
+.pdf-btn, .logout-btn {
   margin-top: 0px;
-  margin-bottom: 100px;
   --background: rgba(224, 90, 90, 0.1);
   --color: #E05A5A;
   --border-radius: 20px;
@@ -267,6 +266,14 @@ ion-content {
     font-size: 24px;
     margin-right: 8px;
   }
+}
+
+.pdf-btn {
+  margin-bottom: 12px;
+}
+
+.logout-btn {
+  margin-bottom: 100px;
 }
 
 ion-toolbar {

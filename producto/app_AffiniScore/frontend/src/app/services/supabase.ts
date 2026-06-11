@@ -460,7 +460,7 @@ export class SupabaseService {
    */
   async getDailyReflection(): Promise<{ phrase: string; author: string }> {
     const data = await this.getReflectionsCatalog();
-    
+
     // Calcular el día del año actual de forma determinista para que ambos partners vean la misma frase
     const now = new Date();
     const startOfYear = new Date(now.getFullYear(), 0, 0);
@@ -1313,9 +1313,9 @@ export class SupabaseService {
       .eq('id', actionId)
       .single();
 
-    const isServiceAction = 
-      actionDetails?.category === 'ACTO_SERVICIO' || 
-      actionDetails?.category === 'Actos de Servicio' || 
+    const isServiceAction =
+      actionDetails?.category === 'ACTO_SERVICIO' ||
+      actionDetails?.category === 'Actos de Servicio' ||
       actionDetails?.subcategory === 'CUSTOM';
     const initialStatus = isServiceAction ? 'PENDING' : 'CONFIRMED';
 
@@ -1348,12 +1348,12 @@ export class SupabaseService {
       this.pointsUpdated.next();
     } else {
       console.log('Acción pendiente. Enviando notificación a pareja...');
-      
+
       const partnership = await this.getActivePartnership();
       if (partnership) {
         // El partnerId es el otro usuario de la vinculación
         const partnerId = partnership.user1_id === user.id ? partnership.user2_id : partnership.user1_id;
-        
+
         if (partnerId) {
           try {
             const { data: session } = await this.supabase.auth.getSession();
@@ -1365,11 +1365,11 @@ export class SupabaseService {
                 partner_id: partnerId,
                 action_name: actionDetails?.name || 'Un acto de servicio',
                 log_id: insertedLog.id
-              }, { 
+              }, {
                 headers: {
                   'Authorization': `Bearer ${tokenHeader}`,
                   'Content-Type': 'application/json'
-                } 
+                }
               })
             );
             console.log('Notificación enviada exitosamente a la pareja:', partnerId);
@@ -1393,9 +1393,9 @@ export class SupabaseService {
     // 1. Actualizamos el estado de la acción
     const { data: updatedLog, error: updateError } = await this.supabase
       .from('user_actions_log')
-      .update({ 
+      .update({
         status: newStatus,
-        validated_by: user.id 
+        validated_by: user.id
       })
       .eq('id', logId)
       .select()
@@ -1410,7 +1410,7 @@ export class SupabaseService {
         .select('total_points')
         .eq('id', updatedLog.user_id)
         .single();
-        
+
       const currentPoints = ownerProfile?.total_points || 0;
       const newTotal = currentPoints + (updatedLog.points_earned || 0);
 
@@ -1419,7 +1419,7 @@ export class SupabaseService {
         .update({ total_points: newTotal, updated_at: new Date() })
         .eq('id', updatedLog.user_id);
     }
-    
+
     this.pointsUpdated.next();
     return { success: true };
   }
@@ -1675,11 +1675,11 @@ export class SupabaseService {
                 this.http.post<any>(`${this.apiUrl}/api/v1/notifications/sos`, {
                   partner_id: partnerId,
                   sender_name: userProfile.name || 'Tu pareja'
-                }, { 
+                }, {
                   headers: {
                     'Authorization': `Bearer ${tokenHeader}`,
                     'Content-Type': 'application/json'
-                  } 
+                  }
                 })
               );
               console.log('Notificación push SOS enviada con éxito');
@@ -1732,7 +1732,7 @@ export class SupabaseService {
     try {
       const { data: profile } = await this.getUserProfile();
       const currentPrefs = profile ? profile['preferences'] || {} : {};
-      
+
       const updatedPrefs = {
         ...currentPrefs,
         location: {
@@ -1873,7 +1873,7 @@ export class SupabaseService {
       id: 'dc1',
       title: 'Cena sin móviles',
       description: 'Dejad los móviles en otra habitación durante toda la cena.',
-      points: 150,
+      points: 250,
       difficulty: 'Medio',
       category: 'Citas',
       myAccepted: false,
@@ -1884,7 +1884,7 @@ export class SupabaseService {
       id: 'dc2',
       title: 'Tarde de juegos de mesa',
       description: 'Apagad las pantallas y jugad a un juego de mesa durante 2 horas.',
-      points: 200,
+      points: 300,
       difficulty: 'Alto',
       category: 'Hogar',
       myAccepted: false,
@@ -1895,7 +1895,7 @@ export class SupabaseService {
       id: 'dc3',
       title: 'Paseo de 30 minutos',
       description: 'Dad un paseo juntos sin mirar el móvil.',
-      points: 100,
+      points: 180,
       difficulty: 'Bajo',
       category: 'Bienestar',
       myAccepted: false,
@@ -1972,7 +1972,7 @@ export class SupabaseService {
 
     const mapped: DisconnectChallenge[] = dbChallenges.map((row) => {
       const log = logByActionId.get(row.id);
-      
+
       let myAccepted = false;
       let partnerAccepted = false;
       let status: DisconnectChallenge['status'] = 'disponible';
@@ -2001,11 +2001,15 @@ export class SupabaseService {
         }
       }
 
+      // Hacer que los retos valgan arriba de 150 puntos (mínimo 180, o sumando si es muy bajo)
+      const rawPoints = row.default_points || 100;
+      const calculatedPoints = rawPoints < 150 ? rawPoints + 120 : rawPoints;
+
       return {
         id: row.id,
         title: row.name,
         description: row.description || '',
-        points: row.default_points || 100,
+        points: calculatedPoints,
         difficulty: 'Medio',
         category: row.category || 'Desconexión',
         myAccepted,
@@ -2209,7 +2213,7 @@ export class SupabaseService {
     if (!user) return 0;
 
     const lastRead = this.getLastRead(roomId);
-    
+
     const { count, error } = await this.supabase
       .from('chat_messages')
       .select('*', { count: 'exact', head: true })

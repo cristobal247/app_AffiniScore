@@ -85,7 +85,8 @@
           slot="end"
           [(ngModel)]="privacySettings.profileVisibleToPartner"
           (ionChange)="onPrivacyChange()"
-          color="danger">
+          color="danger"
+          disabled="true">
         </ion-toggle>
       </ion-item>
 
@@ -98,7 +99,8 @@
           slot="end"
           [(ngModel)]="privacySettings.showStreak"
           (ionChange)="onPrivacyChange()"
-          color="danger">
+          color="danger"
+          disabled="true">
         </ion-toggle>
       </ion-item>
 
@@ -111,7 +113,8 @@
           slot="end"
           [(ngModel)]="privacySettings.shareActivityStatus"
           (ionChange)="onPrivacyChange()"
-          color="danger">
+          color="danger"
+          disabled="true">
         </ion-toggle>
       </ion-item>
     </ion-list>
@@ -131,20 +134,8 @@
           slot="end"
           [(ngModel)]="notificationSettings.pushEnabled"
           (ionChange)="onNotificationChange()"
-          color="danger">
-        </ion-toggle>
-      </ion-item>
-
-      <ion-item class="menu-item">
-        <ion-label>
-          <h3>Recordatorio diario</h3>
-          <p>Recibe un aviso para sumar puntos cada dia.</p>
-        </ion-label>
-        <ion-toggle
-          slot="end"
-          [(ngModel)]="notificationSettings.dailyReminder"
-          (ionChange)="onNotificationChange()"
-          color="danger">
+          color="danger"
+          disabled="true">
         </ion-toggle>
       </ion-item>
 
@@ -157,38 +148,14 @@
           slot="end"
           [(ngModel)]="notificationSettings.challengeInvites"
           (ionChange)="onNotificationChange()"
-          color="danger">
-        </ion-toggle>
-      </ion-item>
-
-      <ion-item class="menu-item">
-        <ion-label>
-          <h3>Hitos de puntuacion</h3>
-          <p>Recibe avisos cuando superen objetivos de afinidad.</p>
-        </ion-label>
-        <ion-toggle
-          slot="end"
-          [(ngModel)]="notificationSettings.scoreMilestones"
-          (ionChange)="onNotificationChange()"
-          color="danger">
+          color="danger"
+          disabled="true">
         </ion-toggle>
       </ion-item>
     </ion-list>
 
-    <div class="notification-actions">
-      <ion-button expand="block" fill="outline" color="danger" (click)="enablePushNotifications()">
-        <ion-icon slot="start" name="phone-portrait-outline"></ion-icon>
-        Permitir notificaciones
-      </ion-button>
-
-      <ion-button expand="block" fill="clear" color="danger" (click)="sendTestNotification()">
-        <ion-icon slot="start" name="checkmark-circle-outline"></ion-icon>
-        Enviar notificacion de prueba
-      </ion-button>
-    </div>
-
     <div class="action-section">
-      <ion-button expand="block" fill="outline" color="danger" (click)="exportPDF()" class="pdf-btn" style="margin-bottom: 10px; --border-width: 2px;">
+      <ion-button expand="block" fill="clear" color="danger" (click)="exportPDF()" class="pdf-btn">
         <ion-icon slot="start" name="document-text-outline"></ion-icon>
         Generar Reporte Semanal (PDF)
       </ion-button>

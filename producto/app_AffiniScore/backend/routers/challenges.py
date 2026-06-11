@@ -76,7 +76,7 @@ async def validate_challenge_photo(request: ChallengeValidateRequest):
     feedback = "¡Buen trabajo completando el reto!"
 
     try:
-        model = "meta-llama/llama-4-scout-17b-16e-instruct"
+        model = "llama-3.2-11b-vision-preview"
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 "https://api.groq.com/openai/v1/chat/completions",
