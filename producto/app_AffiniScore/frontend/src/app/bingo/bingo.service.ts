@@ -80,7 +80,7 @@ export class BingoService {
     }
 
     try {
-      // Ensure the 9 cells exist in the activity_catalog table
+      // Asegurar que las 9 casillas existan en la tabla del catálogo
       const cellsToInsert = this.defaultBingoCard.cells.map(cell => ({
         id: cell.id,
         name: `Bingo: ${cell.title}`,
@@ -117,7 +117,7 @@ export class BingoService {
       ? [partnership.user1_id, partnership.user2_id]
       : [user.user.id];
 
-    // Query all logs in user_actions_log for this card
+    // Consultar todos los registros completados del bingo
     const { data: logs, error: logsError } = await this.supabase
       .from('user_actions_log')
       .select('action_id, points_earned')
@@ -167,7 +167,7 @@ export class BingoService {
       : [user.user.id];
     const actionId = cellId;
 
-    // Check if cell is already completed
+    // Verificar si la casilla ya fue completada
     const { data: existingLogs } = await this.supabase
       .from('user_actions_log')
       .select('*')
@@ -179,14 +179,10 @@ export class BingoService {
     const points = cellTask ? cellTask.points : 10;
 
     if (existingLogs && existingLogs.length > 0) {
-      // Once a bingo cell is completed by the partnership or user, do NOT allow
-      // it to be toggled off to avoid cheating. Return a specific error so the
-      // UI can inform the user and keep the cell locked.
+      // Una vez completada la casilla del bingo, no permitimos desactivarla.
       return { error: { code: 'ALREADY_COMPLETED', message: 'La casilla ya fue completada y no puede desactivarse.' } };
     } else {
-      // Toggle on: Create new log
-      // Build payload conditionally to avoid sending partnership_id when the
-      // column is not present in the DB schema cache.
+      // Marcar casilla: Guardar registro en base de datos.
       const payload: any = {
         user_id: user.user.id,
         action_id: actionId,
@@ -205,7 +201,7 @@ export class BingoService {
 
       if (insertError) return { error: insertError };
 
-      // After inserting, compute updated completed cells and detect full-card
+      // Calcular casillas completadas y verificar premios
       const { data: progressData } = await this.getBingoProgress(cardId);
       const completed = progressData?.completed_cells || [];
       const bonusContext = await this.getBingoBonusContext(partnership ? partnership.id : user.user.id);
@@ -258,7 +254,7 @@ export class BingoService {
       const fullCard = completed.length >= (this.defaultBingoCard.cells?.length || 9);
 
       if (fullCard) {
-        // Reset the bingo state so the next round starts from zero completed cells.
+        // Reiniciar el estado para la siguiente ronda
         try {
           if (shouldAwardFullCard) {
             this.supabaseSvc.pointsUpdated.next();
@@ -274,8 +270,7 @@ export class BingoService {
     }
   }
 
-  // Reset the bingo state and return the base card again.
-  // This clears confirmed bingo logs so the next round does not inherit old progress.
+  // Limpiar el progreso del bingo y reiniciar la tarjeta.
   async generateNewCard(): Promise<BingoCard> {
     const { data: user } = await this.supabase.auth.getUser();
     if (!user?.user) {
@@ -323,7 +318,7 @@ export class BingoService {
       created_at: new Date().toISOString()
     };
 
-    // Re-ensure the catalog rows exist for the base bingo cells.
+    // Asegurar que las casillas existan en el catálogo
     try {
       const cellsToInsert = this.defaultBingoCard.cells.map(cell => ({
         id: cell.id,

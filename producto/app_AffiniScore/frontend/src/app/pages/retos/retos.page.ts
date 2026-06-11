@@ -209,7 +209,7 @@ export class RetosPage implements OnInit {
 
     if (!item) return;
 
-    // Navigate to challenge validation page passing challenge in extras state
+    // Redirige a la página de validación del reto
     this.router.navigate(['/challenge-validation'], {
       state: { challenge: item }
     });

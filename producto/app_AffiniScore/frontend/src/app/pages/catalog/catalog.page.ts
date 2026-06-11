@@ -36,7 +36,7 @@ export class CatalogPage implements OnInit {
     private loadingCtrl: LoadingController,
     private alertCtrl: AlertController
   ) {
-    // IMPORTANTE: Registrar iconos de búsqueda
+    // Carga los iconos del buscador
     addIcons({ 
       restaurantOutline, homeOutline, giftOutline, heartOutline, 
       flashOutline, searchOutline, search, lockClosed, chevronForwardOutline,
@@ -64,7 +64,7 @@ export class CatalogPage implements OnInit {
     loading.dismiss();
   }
 
-  // Lógica del buscador reactivo
+  // Filtra las acciones según el texto ingresado
   onSearchChange(event: any) {
     const query = event.detail.value.toLowerCase().trim();
     

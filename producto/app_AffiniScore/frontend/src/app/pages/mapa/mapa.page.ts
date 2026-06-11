@@ -24,6 +24,7 @@ import {
 } from '@ionic/angular/standalone';
 import { SupabaseService } from '../../services/supabase';
 import { GeolocationService } from '../../services/geolocation.service';
+import { NotificationService } from '../../services/notification.service';
 import { Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
@@ -130,7 +131,8 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
     private geolocationService: GeolocationService,
     private toastCtrl: ToastController,
     private loadingCtrl: LoadingController,
-    private alertCtrl: AlertController
+    private alertCtrl: AlertController,
+    private notificationSvc: NotificationService
   ) {
     addIcons({ 
       addCircleOutline, 
@@ -693,6 +695,7 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
       this.showToast(`Lugar "${zone.name}" eliminado con éxito.`, 'success');
       // Recargar lista y marcadores en mapa
       await this.cargarLugaresEspeciales();
+      await this.notificationSvc.reloadGeozones();
     } catch (err) {
       console.error('Error al eliminar geozona:', err);
       this.showToast('No se pudo eliminar el lugar especial.', 'warning');
@@ -755,6 +758,7 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
       
       // Recargar geozonas para redibujar el mapa y actualizar el historial
       await this.cargarLugaresEspeciales();
+      await this.notificationSvc.reloadGeozones();
 
       // Centrar el mapa en la nueva geocerca
       if (this.map) {

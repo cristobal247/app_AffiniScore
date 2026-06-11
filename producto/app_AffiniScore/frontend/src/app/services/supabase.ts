@@ -837,8 +837,8 @@ export class SupabaseService {
       payload['created_at'] = updates.created_at;
     }
 
-    // First, try to update by id (expected UUID). If that fails (e.g. memoryId is a filename),
-    // attempt a fallback update by file_name or by matching file_url.
+    // Primero intentamos actualizar usando el ID (UUID esperado). Si falla (ej: memoryId es un nombre de archivo),
+    // intentamos buscar y actualizar por nombre de archivo (file_name) o por dirección de internet (file_url).
     try {
       const { data, error } = await this.supabase
         .from('memories')
@@ -850,21 +850,21 @@ export class SupabaseService {
       if (error) {
         const msg = (error && (error.message || error)) as any;
         if (typeof msg === 'string' && msg.toLowerCase().includes('invalid input syntax for type uuid')) {
-          // fallthrough to fallback handlers
+          // pasa a las alternativas de búsqueda
         } else {
           return { error: msg };
         }
       } else if (data) {
         return { data };
       }
-      // if no data and no specific uuid error, fall through to fallback
+      // si no hay datos o falla, pasa a las alternativas de búsqueda
     } catch (e) {
-      // continue to fallback
+      // continuar con alternativas
     }
 
-    // Fallback: try to update by file_name exactly
+    // Alternativa 1: intentar actualizar buscando por el nombre exacto de archivo (file_name)
     try {
-      // Try matching by file_name using memoryId or filename extracted from provided imageUrl
+      // Buscamos coincidencia usando el memoryId o el nombre extraído de la dirección del archivo
       const candidateNames: string[] = [memoryId];
       try {
         if (imageUrl) {
@@ -873,7 +873,7 @@ export class SupabaseService {
           if (last && !candidateNames.includes(last)) candidateNames.push(last);
         }
       } catch (e) {
-        // ignore
+        // ignorar error
       }
 
       for (const name of candidateNames) {
@@ -887,14 +887,14 @@ export class SupabaseService {
 
           if (!byName.error && byName.data) return { data: byName.data };
         } catch (e) {
-          // ignore and try next
+          // ignorar e intentar con el siguiente
         }
       }
     } catch (e) {
-      // ignore and try url match
+      // ignorar e intentar buscando por dirección de archivo
     }
 
-    // Final fallback: try to match file_url containing the memoryId (useful when id==filename)
+    // Alternativa 2: buscar coincidencia en la dirección de archivo (file_url) que contenga memoryId
     try {
       const likeMatch = await this.supabase
         .from('memories')
@@ -904,10 +904,10 @@ export class SupabaseService {
         .maybeSingle();
 
       if (!likeMatch.error && likeMatch.data) return { data: likeMatch.data };
-      // If no rows matched, try to create a new metadata row from the storage object
+      // Si no se actualizó ninguna fila, intentamos crear un registro nuevo con los metadatos de almacenamiento
       if (!likeMatch.error && !likeMatch.data) {
         try {
-          // If the caller provided the imageUrl (from the UI), try to match storage items by publicUrl
+          // Si se proporcionó la dirección de archivo, intentamos buscarla en la lista pública de recuerdos
           let storageName: string | null = null;
           let publicUrl: string | null = null;
 
@@ -922,14 +922,14 @@ export class SupabaseService {
             }
           }
 
-          // If we still don't have a storageName, try direct getPublicUrl (may fail if path differs)
+          // Si no se encuentra, intentamos obtener su dirección pública directamente
           if (!storageName) {
             try {
               const { data: urlData } = this.supabase.storage.from('memories').getPublicUrl(memoryId);
               publicUrl = urlData?.publicUrl || null;
               storageName = memoryId;
             } catch (e) {
-              // ignore
+              // ignorar error
             }
           }
 
@@ -1105,8 +1105,8 @@ export class SupabaseService {
       }
     }
 
-    // If the table has no usable rows yet, fall back to the storage bucket
-    // using the user prefix that uploadMemory() already writes into filenames.
+    // Si la tabla no tiene registros válidos, buscamos directamente en la carpeta de almacenamiento
+    // usando el prefijo de usuario que guarda la función uploadMemory()
     if (items.length === 0) {
       const { data: storageItems } = await this.listMemoriesPublic();
       const ownItems = (storageItems || [])

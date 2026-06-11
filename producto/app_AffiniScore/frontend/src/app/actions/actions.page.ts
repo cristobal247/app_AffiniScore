@@ -519,7 +519,7 @@ export class ActionsPage implements OnInit {
 
     if (!item) return;
 
-    // Navigate to challenge validation page passing challenge in extras state
+    // Redirige a la página de validación del reto
     this.router.navigate(['/challenge-validation'], {
       state: { challenge: item }
     });
@@ -553,7 +553,7 @@ export class ActionsPage implements OnInit {
       if (res.success && res.data) {
         const valData = res.data;
         await this.loadDisconnectChallenges();
-        await this.cargarDatosAfinidad(); // Refresh total points
+        await this.cargarDatosAfinidad(); // Actualiza los puntos totales
 
         const alert = await this.alertCtrl.create({
           header: '¡Reto Validado por la IA! 🎉',

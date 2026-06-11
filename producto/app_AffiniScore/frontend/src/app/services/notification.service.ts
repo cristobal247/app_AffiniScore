@@ -1,6 +1,10 @@
 import { Injectable } from '@angular/core';
 import { SupabaseService } from './supabase';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Subscription } from 'rxjs';
+import { GeolocationService } from './geolocation.service';
+import { ToastController } from '@ionic/angular/standalone';
+import { LocalNotifications } from '@capacitor/local-notifications';
+import { Capacitor } from '@capacitor/core';
 
 export interface AppNotification {
   id: string;
@@ -35,7 +39,16 @@ export class NotificationService {
   private partnershipId: string | null = null;
   private channels: any[] = [];
 
-  constructor(private supabaseSvc: SupabaseService) {}
+  // Variables para Geofencing
+  private geozones: any[] = [];
+  private notifiedGeozoneIds = new Set<string>();
+  private gpsSubscription: Subscription | null = null;
+
+  constructor(
+    private supabaseSvc: SupabaseService,
+    private geolocationService: GeolocationService,
+    private toastCtrl: ToastController
+  ) {}
 
   async init() {
     if (this.initialized) return;
@@ -53,6 +66,131 @@ export class NotificationService {
     this.initialized = true;
     await this.fetchNotifications();
     this.setupRealtimeSubscriptions();
+
+    // Carga geozonas e inicia chequeo
+    await this.reloadGeozones();
+    this.startGeofencingCheck();
+    this.requestWebNotificationPermission();
+  }
+
+  async requestWebNotificationPermission() {
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const perm = await LocalNotifications.checkPermissions();
+        if (perm.display !== 'granted') {
+          await LocalNotifications.requestPermissions();
+        }
+      } catch (e) {
+        console.warn('Error al solicitar permisos de notificación nativos:', e);
+      }
+    } else if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
+      try {
+        await Notification.requestPermission();
+      } catch (e) {
+        console.warn('No se pudieron solicitar permisos de notificación en web:', e);
+      }
+    }
+  }
+
+  async reloadGeozones() {
+    try {
+      this.geozones = await this.supabaseSvc.getGeozones();
+    } catch (e) {
+      console.warn('Error al cargar geozonas para geofencing:', e);
+    }
+  }
+
+  startGeofencingCheck() {
+    if (this.gpsSubscription) {
+      this.gpsSubscription.unsubscribe();
+    }
+
+    this.gpsSubscription = this.geolocationService.position$.subscribe(async (position) => {
+      if (!position || !this.geozones || this.geozones.length === 0) return;
+
+      for (const zone of this.geozones) {
+        const dist = this.calculateDistance(
+          position.latitude,
+          position.longitude,
+          zone.latitude,
+          zone.longitude
+        );
+
+        // Pasamos distancia de kilómetros a metros
+        const distanceInMeters = dist * 1000;
+        const radius = zone.radius || 50; // 50 metros por defecto
+
+        if (distanceInMeters <= radius) {
+          if (!this.notifiedGeozoneIds.has(zone.id)) {
+            this.notifiedGeozoneIds.add(zone.id);
+            await this.triggerGeofenceNotification(zone);
+          }
+        } else {
+          // Si el usuario se aleja, permitimos volver a notificar en el futuro
+          if (this.notifiedGeozoneIds.has(zone.id)) {
+            this.notifiedGeozoneIds.delete(zone.id);
+          }
+        }
+      }
+    });
+  }
+
+  private calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    const R = 6371; // Radio de la Tierra en kilómetros
+    const dLat = this.deg2rad(lat2 - lat1);
+    const dLon = this.deg2rad(lon2 - lon1);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(this.deg2rad(lat1)) * Math.cos(this.deg2rad(lat2)) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
+
+  private deg2rad(deg: number): number {
+    return deg * (Math.PI / 180);
+  }
+
+  private async triggerGeofenceNotification(zone: any) {
+    const title = '📍 ¡Lugar Especial Cerca! 💖';
+    const message = `Estás pasando por: ${zone.name}`;
+
+    // Alerta visual dentro de la aplicación
+    const toast = await this.toastCtrl.create({
+      message: `${title} - ${message}`,
+      duration: 5000,
+      color: 'danger',
+      position: 'top',
+      buttons: [{ text: 'Ok', role: 'cancel' }]
+    });
+    await toast.present();
+
+    // Notificación del sistema nativa (dispositivo móvil o navegador)
+    if (Capacitor.isNativePlatform()) {
+      try {
+        await LocalNotifications.schedule({
+          notifications: [
+            {
+              title: title,
+              body: message,
+              id: Math.floor(Math.random() * 100000),
+              schedule: { at: new Date(Date.now() + 100) },
+              sound: 'default'
+            }
+          ]
+        });
+      } catch (e) {
+        console.warn('Error al enviar notificación nativa:', e);
+      }
+    } else if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+      try {
+        new Notification(title, {
+          body: message
+        });
+      } catch (e) {
+        console.warn('Error al mostrar notificación de geofencing en web:', e);
+      }
+    }
   }
 
   async fetchNotifications() {
@@ -60,7 +198,7 @@ export class NotificationService {
 
     const allNotifications: AppNotification[] = [];
 
-    // 1. Pending action validations from partner
+    // 1. Validaciones de acciones pendientes de la pareja
     if (this.partnerId) {
       const { data: pendingLogs, error: logError } = await this.supabaseSvc.supabase
         .from('user_actions_log')
@@ -92,7 +230,7 @@ export class NotificationService {
       }
     }
 
-    // 2. SOS Alerts from partner
+    // 2. Alertas SOS de la pareja
     if (this.partnerId) {
       const { data: sosAlerts, error: sosError } = await this.supabaseSvc.supabase
         .from('sos_alerts')
@@ -118,7 +256,7 @@ export class NotificationService {
       }
     }
 
-    // 3. New memories
+    // 3. Nuevos recuerdos
     if (this.partnershipId && this.partnerId) {
       const { data: memories, error: memError } = await this.supabaseSvc.supabase
         .from('memories')
@@ -142,7 +280,7 @@ export class NotificationService {
       }
     }
 
-    // 4. Pending challenges (accepted by partner, but not by me)
+    // 4. Retos pendientes (aceptados por mi pareja pero no por mí)
     try {
       const challenges = await this.supabaseSvc.getDisconnectChallenges();
       for (const challenge of challenges) {
@@ -173,7 +311,7 @@ export class NotificationService {
       console.warn('Error loading disconnect challenge notifications:', e);
     }
 
-    // Sort by created_at desc
+    // Ordenar por fecha de creación descendente
     allNotifications.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
     this.actualCount = allNotifications.length;
@@ -196,7 +334,7 @@ export class NotificationService {
 
     if (!this.userId) return;
 
-    // Listen to partner action validations
+    // Escucha validaciones de acciones de la pareja
     if (this.partnerId) {
       const actionChannel = this.supabaseSvc.supabase
         .channel('realtime-notifications-actions')
@@ -210,7 +348,7 @@ export class NotificationService {
         .subscribe();
       this.channels.push(actionChannel);
 
-      // Listen to SOS alerts
+      // Escucha alertas SOS
       const sosChannel = this.supabaseSvc.supabase
         .channel('realtime-notifications-sos')
         .on(
@@ -224,7 +362,7 @@ export class NotificationService {
       this.channels.push(sosChannel);
     }
 
-    // Listen to new memories
+    // Escucha nuevos recuerdos
     if (this.partnershipId) {
       const memChannel = this.supabaseSvc.supabase
         .channel('realtime-notifications-mem')
@@ -278,5 +416,9 @@ export class NotificationService {
   cleanupSubscriptions() {
     this.channels.forEach(ch => this.supabaseSvc.supabase.removeChannel(ch));
     this.channels = [];
+    if (this.gpsSubscription) {
+      this.gpsSubscription.unsubscribe();
+      this.gpsSubscription = null;
+    }
   }
 }

@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { publicGuard } from './guards/public.guard';
 import { authGuard } from './guards/auth.guard';
+import { partnerGuard } from './guards/partner.guard';
 
 export const routes: Routes = [
   {
@@ -33,40 +34,49 @@ export const routes: Routes = [
       },
       {
         path: 'actions',
-        loadComponent: () => import('./actions/actions.page').then(m => m.ActionsPage)
+        loadComponent: () => import('./actions/actions.page').then(m => m.ActionsPage),
+        canActivate: [partnerGuard]
       },
       {
         path: 'mapa',
-        loadComponent: () => import('./pages/mapa/mapa.page').then(m => m.MapaPage)
+        loadComponent: () => import('./pages/mapa/mapa.page').then(m => m.MapaPage),
+        canActivate: [partnerGuard]
       },
 
       {
         path: 'chat-ai',
-        loadComponent: () => import('./pages/Chat/chat.page').then(m => m.ChatPage)
+        loadComponent: () => import('./pages/Chat/chat.page').then(m => m.ChatPage),
+        canActivate: [partnerGuard]
       },
       {
         path: 'chat-partner',
-        loadComponent: () => import('./pages/partner-chat/partner-chat.page').then(m => m.PartnerChatPage)
+        loadComponent: () => import('./pages/partner-chat/partner-chat.page').then(m => m.PartnerChatPage),
+        canActivate: [partnerGuard]
       },
       {
         path: 'chat',
-        loadComponent: () => import('./pages/chat-list/chat-list.page').then(m => m.ChatListPage)
+        loadComponent: () => import('./pages/chat-list/chat-list.page').then(m => m.ChatListPage),
+        canActivate: [partnerGuard]
       },
       {
         path: 'group-chat',
-        loadComponent: () => import('./pages/groupchat/group-chat.page').then(m => m.GroupChatPage)
+        loadComponent: () => import('./pages/groupchat/group-chat.page').then(m => m.GroupChatPage),
+        canActivate: [partnerGuard]
       },
       {
         path: 'bingo',
-        loadComponent: () => import('./bingo/bingo.page').then(m => m.BingoPage)
+        loadComponent: () => import('./bingo/bingo.page').then(m => m.BingoPage),
+        canActivate: [partnerGuard]
       },
       {
         path: 'quick-interaction',
-        loadComponent: () => import('./quick-interaction/quick-interaction.page').then(m => m.QuickInteractionPage)
+        loadComponent: () => import('./quick-interaction/quick-interaction.page').then(m => m.QuickInteractionPage),
+        canActivate: [partnerGuard]
       },
       {
         path: 'memory-history',
-        loadComponent: () => import('./pages/memory-history/memory-history.page').then(m => m.MemoryHistoryPage)
+        loadComponent: () => import('./pages/memory-history/memory-history.page').then(m => m.MemoryHistoryPage),
+        canActivate: [partnerGuard]
       },
 
       {
@@ -79,12 +89,12 @@ export const routes: Routes = [
   {
     path: 'catalog',
     loadComponent: () => import('./pages/catalog/catalog.page').then(m => m.CatalogPage),
-    canActivate: [authGuard]
+    canActivate: [authGuard, partnerGuard]
   },
   {
     path: 'memories',
     loadComponent: () => import('./pages/memories/memories.page').then(m => m.MemoriesPage),
-    canActivate: [authGuard]
+    canActivate: [authGuard, partnerGuard]
   },
   {
     path: '',
@@ -139,12 +149,12 @@ export const routes: Routes = [
   {
     path: 'retos',
     loadComponent: () => import('./pages/retos/retos.page').then(m => m.RetosPage),
-    canActivate: [authGuard]
+    canActivate: [authGuard, partnerGuard]
   },
   {
     path: 'challenge-validation',
     loadComponent: () => import('./pages/challenge-validation/challenge-validation.page').then(m => m.ChallengeValidationPage),
-    canActivate: [authGuard]
+    canActivate: [authGuard, partnerGuard]
   },
   {
     path: 'qr',
