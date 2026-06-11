@@ -160,7 +160,7 @@ ion-toolbar.main-header-toolbar {
   --border-color: transparent !important;
   box-shadow: none !important;
   border: none !important;
-  padding-top: 12px !important; 
+  padding-top: calc(env(safe-area-inset-top, 0px) + 16px) !important; 
 }
 ion-header,
 ion-header::before,
