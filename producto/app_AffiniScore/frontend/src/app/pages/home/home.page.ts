@@ -43,8 +43,9 @@ import { NavController } from '@ionic/angular/standalone';
 export class HomePage implements OnInit {
   points: number = 0;
   puntosSemanales: number = 0;
-  metaSemanal: number = 3000; // Meta aumentada para que el porcentaje suba más lento y sea realista
-  nivelAfinidad: number = 1;
+  metaSemanal: number = 700; // Meta máxima del Nivel 5 semanal para la pareja
+  nivelAfinidad: number = 1; // Nivel de afinidad acumulado histórico (individual)
+  nivelSemanal: number = 1;  // Nivel semanal de afinidad de la pareja (basado en puntos combinados)
   porcentajeAfinidad: number = 0;
   userAvatarUrl: string | null = null;
   reflectionPhrase: string = '';
@@ -209,14 +210,27 @@ export class HomePage implements OnInit {
       const data = profileRes.data;
       this.puntosSemanales = weeklyRes.data || 0;
 
+      // Calcular nivel semanal de la pareja en base a los puntos semanales acumulados por ambos
+      if (this.puntosSemanales <= 100) {
+        this.nivelSemanal = 1;
+      } else if (this.puntosSemanales <= 220) {
+        this.nivelSemanal = 2;
+      } else if (this.puntosSemanales <= 380) {
+        this.nivelSemanal = 3;
+      } else if (this.puntosSemanales <= 550) {
+        this.nivelSemanal = 4;
+      } else {
+        this.nivelSemanal = 5;
+      }
+
       if (data) {
         this.points = data.total_points || 0;
         
-        // Cada 5000 puntos se sube de nivel (hace que sea un reto real)
+        // Nivel histórico individual
         const puntosPorNivel = 5000;
         this.nivelAfinidad = Math.floor(this.points / puntosPorNivel) + 1;
         
-        // Progreso hacia la meta SEMANAL
+        // Progreso hacia la meta SEMANAL de la pareja
         this.porcentajeAfinidad = Math.min(100, Math.round((this.puntosSemanales / this.metaSemanal) * 100));
         // Guardamos snapshot en el perfil para uso en rotación mensual
         try {

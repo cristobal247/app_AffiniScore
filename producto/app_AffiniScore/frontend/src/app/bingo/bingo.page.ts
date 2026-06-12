@@ -43,6 +43,10 @@ export class BingoPage implements OnInit {
 
   async resetCard() {
     if (this.isSaving) return;
+    
+    const confirmed = window.confirm('¿Estás seguro de que quieres reiniciar el cartón de Bingo? Esto restablecerá el progreso para ambos miembros de la pareja.');
+    if (!confirmed) return;
+
     this.isSaving = true;
     try {
       const newCard = await this.bingoService.generateNewCard();
@@ -124,6 +128,11 @@ export class BingoPage implements OnInit {
 
   async toggleCell(cell: BingoCellTask) {
     if (!this.bingoCard || this.isSaving || this.savingCellId) {
+      return;
+    }
+
+    if (this.isCellCompleted(cell)) {
+      await this.showToast('Esta casilla ya está completada y no puede desactivarse.', 'warning');
       return;
     }
 

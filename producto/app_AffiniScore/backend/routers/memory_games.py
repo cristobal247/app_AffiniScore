@@ -42,7 +42,7 @@ def _get_active_partnership(partnership_id: str, user_id: str):
 
 
 def _normalize_memory(row: dict) -> dict:
-    image_url = row.get("public_url") or row.get("image_url") or row.get("url") or ""
+    image_url = row.get("file_url") or row.get("public_url") or row.get("image_url") or row.get("url") or ""
     return {
         "id": row.get("id") or row.get("file_name") or image_url,
         "image_url": image_url,

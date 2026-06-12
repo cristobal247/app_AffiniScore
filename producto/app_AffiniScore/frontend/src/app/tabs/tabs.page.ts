@@ -46,7 +46,14 @@ export class TabsPage {
   }
 
   shouldShowTabBar(): boolean {
-    const hiddenRoutes = ['/tabs/bingo', '/tabs/quick-interaction', '/tabs/mapa'];
+    const hiddenRoutes = [
+      '/tabs/bingo', 
+      '/tabs/quick-interaction', 
+      '/tabs/mapa', 
+      '/tabs/chat-partner', 
+      '/tabs/chat-ai', 
+      '/tabs/group-chat'
+    ];
     return !hiddenRoutes.some(route => this.router.url.includes(route));
   }
 }

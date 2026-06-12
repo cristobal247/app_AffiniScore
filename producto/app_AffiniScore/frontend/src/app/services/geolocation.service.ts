@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { Geolocation, PositionOptions } from '@capacitor/geolocation';
 import { Capacitor } from '@capacitor/core';
+import { BackgroundGeolocation } from '@capgo/background-geolocation';
 
 export interface AppPosition {
   latitude: number;
@@ -19,6 +20,7 @@ export class GeolocationService {
   private isTrackingSubject = new BehaviorSubject<boolean>(false);
   private errorSubject = new BehaviorSubject<string | null>(null);
   private watchId: string | null = null;
+  private activeWatchers = 0;
 
   get position$(): Observable<AppPosition | null> {
     return this.positionSubject.asObservable();
@@ -89,6 +91,8 @@ export class GeolocationService {
       throw new Error('Permiso de ubicación no concedido.');
     }
 
+    this.activeWatchers++;
+
     if (this.watchId) {
       return;
     }
@@ -96,44 +100,106 @@ export class GeolocationService {
     this.isTrackingSubject.next(true);
     this.errorSubject.next(null);
 
-    this.watchId = await Geolocation.watchPosition(this.watchOptions, (position, err) => {
-      if (err) {
-        console.error('🚨 Error nativo de watchPosition:', err);
-        const message = err.message ? err.message : 'Error al obtener seguimiento de ubicación.';
-        this.errorSubject.next(message);
-        return;
+    if (Capacitor.getPlatform() !== 'web') {
+      try {
+        await BackgroundGeolocation.start(
+          {
+            backgroundMessage: "AffiniScore monitorea tu ubicación para el Geofencing.",
+            backgroundTitle: "Servicio de ubicación activo",
+            requestPermissions: true,
+            stale: false,
+            distanceFilter: 15 // metros
+          },
+          (location, error) => {
+            if (error) {
+              console.error('🚨 Error en segundo plano:', error);
+              const message = error.message ? error.message : 'Error al obtener seguimiento de ubicación.';
+              this.errorSubject.next(message);
+              return;
+            }
+            if (location) {
+              const appPos: AppPosition = {
+                latitude: location.latitude,
+                longitude: location.longitude,
+                accuracy: location.accuracy,
+                timestamp: location.time ? location.time : Date.now()
+              };
+              console.log(`📍 [GPS Real-Time Background] Lat: ${appPos.latitude}, Lng: ${appPos.longitude} | Precisión: ${appPos.accuracy}m`);
+
+              const currentPos = this.positionSubject.getValue();
+              if (appPos.accuracy > 30 && currentPos != null) {
+                console.debug(`⚠️ Posición en segundo plano descartada por baja precisión: ${appPos.accuracy}m`);
+                return;
+              }
+
+              this.positionSubject.next(appPos);
+              this.accuracySubject.next(appPos.accuracy);
+            }
+          }
+        );
+        this.watchId = 'background-active';
+      } catch (e: any) {
+        console.error('Error al iniciar el watcher de segundo plano:', e);
+        this.errorSubject.next(e.message || 'Error al iniciar geolocalización en background');
       }
+    } else {
+      const id = await Geolocation.watchPosition(this.watchOptions, (position, err) => {
+        if (err) {
+          console.error('🚨 Error nativo de watchPosition:', err);
+          const message = err.message ? err.message : 'Error al obtener seguimiento de ubicación.';
+          this.errorSubject.next(message);
+          return;
+        }
 
-      if (!position || !position.coords) {
-        return;
-      }
+        if (!position || !position.coords) {
+          return;
+        }
 
-      const acc = position.coords.accuracy;
-      console.log(`📍 [GPS Real-Time] Lat: ${position.coords.latitude}, Lng: ${position.coords.longitude} | Precisión: ${acc}m`);
+        const acc = position.coords.accuracy;
+        console.log(`📍 [GPS Real-Time] Lat: ${position.coords.latitude}, Lng: ${position.coords.longitude} | Precisión: ${acc}m`);
 
-      const currentPos = this.positionSubject.getValue();
-      
-      // Si YA tenemos una posición previa, exigimos alta precisión (<=30m). 
-      // Si es la PRIMERA ubicación, la aceptamos para no dejar la pantalla "congelada" sin ubicación inicial.
-      if (acc > 30 && currentPos != null) {
-        console.debug(`⚠️ Posición descartada por baja precisión (>30m): ${acc}m`);
-        return;
-      }
+        const currentPos = this.positionSubject.getValue();
+        
+        // Si YA tenemos una posición previa, exigimos alta precisión (<=30m). 
+        // Si es la PRIMERA ubicación, la aceptamos para no dejar la pantalla "congelada" sin ubicación inicial.
+        if (acc > 30 && currentPos != null) {
+          console.debug(`⚠️ Posición descartada por baja precisión (>30m): ${acc}m`);
+          return;
+        }
 
-      this.positionSubject.next(this.parsePosition(position));
-      this.accuracySubject.next(position.coords.accuracy);
-    });
+        this.positionSubject.next(this.parsePosition(position));
+        this.accuracySubject.next(position.coords.accuracy);
+      });
+      this.watchId = id;
+    }
   }
 
-  async stopTracking(): Promise<void> {
+  async stopTracking(force: boolean = false): Promise<void> {
+    this.activeWatchers = Math.max(0, this.activeWatchers - 1);
+    
+    if (this.activeWatchers > 0 && !force) {
+      console.log(`📍 Manteniendo seguimiento GPS activo (Quedan ${this.activeWatchers} observadores activos).`);
+      return;
+    }
+
     if (!this.watchId) {
       this.isTrackingSubject.next(false);
       return;
     }
 
-    await Geolocation.clearWatch({ id: this.watchId });
+    if (Capacitor.getPlatform() !== 'web') {
+      try {
+        await BackgroundGeolocation.stop();
+      } catch (e) {
+        console.warn('Error al detener watcher en background:', e);
+      }
+    } else {
+      await Geolocation.clearWatch({ id: this.watchId });
+    }
+
     this.watchId = null;
     this.isTrackingSubject.next(false);
+    console.log('📍 Seguimiento GPS detenido por completo.');
   }
 
   private parsePosition(position: any): AppPosition {

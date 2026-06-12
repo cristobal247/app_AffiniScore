@@ -105,6 +105,11 @@ export class NotificationService {
       this.gpsSubscription.unsubscribe();
     }
 
+    // Iniciamos el rastreo de geolocalización globalmente para que funcione en background
+    this.geolocationService.startTracking().catch((err) => {
+      console.warn('Error al iniciar rastreo de GPS en NotificationService:', err);
+    });
+
     this.gpsSubscription = this.geolocationService.position$.subscribe(async (position) => {
       if (!position || !this.geozones || this.geozones.length === 0) return;
 

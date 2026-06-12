@@ -131,7 +131,7 @@ export class MemoryHistoryPage implements OnInit, OnDestroy {
       })
       .subscribe();
 
-    const roundRes = await this.supabaseSvc.getHistoricMemoryRound(partnership.id, this.roundKey);
+    const roundRes = await this.supabaseSvc.getHistoricMemoryRound(partnership.id);
     if (roundRes.data) {
       this.syncRound(roundRes.data, true);
     } else {
@@ -150,8 +150,8 @@ export class MemoryHistoryPage implements OnInit, OnDestroy {
 
   private buildRoundKey() {
     const now = new Date();
-    const roundedBucket = Math.floor(now.getMinutes() / 5);
-    return `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}-${roundedBucket}`;
+    const roundedBucket = Math.floor(now.getUTCMinutes() / 5);
+    return `${now.getUTCFullYear()}${String(now.getUTCMonth() + 1).padStart(2, '0')}${String(now.getUTCDate()).padStart(2, '0')}-${String(now.getUTCHours()).padStart(2, '0')}-${roundedBucket}`;
   }
 
   private syncRound(round: HistoricMemoryRound, announce: boolean) {

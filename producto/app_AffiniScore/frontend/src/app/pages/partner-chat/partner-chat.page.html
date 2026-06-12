@@ -1,41 +1,104 @@
+<div class="ion-page" id="partner-chat-content">
 <ion-header class="ion-no-border">
-  <ion-toolbar color="primary">
-    <ion-buttons slot="start">
-      <ion-back-button defaultHref="/tabs/dashboard"></ion-back-button>
-    </ion-buttons>
-    <ion-title>Chat con Pareja</ion-title>
+  <ion-toolbar mode="ios" class="main-header-toolbar">
+    <div class="header-content-wrapper" style="display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 0 8px;">
+      <ion-button fill="clear" routerLink="/tabs/chat" routerDirection="back" class="back-circle-btn" style="margin: 0;">
+        <ion-icon name="chevron-back-outline"></ion-icon>
+      </ion-button>
+      
+      <!-- Texto al centro -->
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; text-align: center;">
+        <span style="font-weight: 800; font-size: 16px; color: #3a3a3a; letter-spacing: -0.5px; line-height: 1.2;">{{ partnerName }}</span>
+        <span *ngIf="!isLoading" style="font-size: 10px; color: #FA8072; font-weight: 700; text-transform: uppercase;">PAREJA VINCULADA</span>
+      </div>
+
+      <!-- Foto de perfil de la pareja al lado derecho -->
+      <div style="width: 38px; height: 38px; border-radius: 50%; overflow: hidden; background: #e0e0e0; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 6px rgba(0,0,0,0.15); border: 2px solid white; margin-right: 8px;">
+        <img *ngIf="partnerAvatarUrl" [src]="partnerAvatarUrl" style="width: 100%; height: 100%; object-fit: cover;" alt="Pareja" />
+        <ion-icon *ngIf="!partnerAvatarUrl" name="person" style="font-size: 18px; color: #7e7e7e;"></ion-icon>
+      </div>
+    </div>
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ion-padding chat-content" color="light">
-  <div *ngIf="isLoading" class="ion-text-center ion-padding">
+<ion-content class="dashboard-bg" [fullscreen]="true">
+  <div *ngIf="isLoading" class="ion-text-center ion-padding" style="margin-top: 100px;">
     <ion-spinner></ion-spinner>
     <p>Cargando chat...</p>
   </div>
 
-  <div *ngIf="!isLoading && !roomId" class="ion-text-center ion-padding">
+  <div *ngIf="!isLoading && !roomId" class="ion-text-center ion-padding" style="margin-top: 100px;">
     <ion-icon name="heart-dislike-outline" color="medium" style="font-size: 3rem;"></ion-icon>
     <p>Aún no tienes a tu pareja vinculada o no existe una sala de chat para ustedes.</p>
     <ion-button routerLink="/qr" expand="block" shape="round" color="primary">Vincular Pareja</ion-button>
   </div>
 
   <div class="chat-container" *ngIf="!isLoading && roomId">
-    <div *ngFor="let msg of messages" class="message-wrapper" [ngClass]="{'me': msg.sender_id === currentUserId, 'partner': msg.sender_id !== currentUserId}">
-      <div class="message-bubble">
-        <p>{{ msg.message }}</p>
-        <span class="time">{{ msg.created_at | date:'shortTime' }}</span>
+    <div *ngFor="let msg of messages" class="message-wrapper" [class.mine]="isMine(msg)">
+      
+      <!-- Avatar de la Pareja -->
+      <div *ngIf="!isMine(msg)" class="message-avatar" style="width: 28px; height: 28px; border-radius: 50%; overflow: hidden; background: #e0e0e0; display: flex; align-items: center; justify-content: center; margin-right: 8px; flex-shrink: 0; align-self: flex-end; margin-bottom: 5px;">
+        <img *ngIf="partnerAvatarUrl" [src]="partnerAvatarUrl" style="width: 100%; height: 100%; object-fit: cover;" alt="Pareja" />
+        <ion-icon *ngIf="!partnerAvatarUrl" name="person" style="font-size: 14px; color: #7e7e7e;"></ion-icon>
       </div>
+
+      <div class="message-bubble">
+        <img *ngIf="msg.metadata?.image_url" [src]="msg.metadata.image_url" style="max-width: 100%; max-height: 250px; border-radius: 12px; margin-bottom: 8px; display: block; object-fit: cover;" />
+        <p *ngIf="msg.message && msg.message !== '📷 Foto'">{{ msg.message }}</p>
+        <span class="message-time">{{ msg.created_at | date:'shortTime' }}</span>
+      </div>
+
+      <!-- Avatar del Usuario -->
+      <div *ngIf="isMine(msg)" class="message-avatar" style="width: 28px; height: 28px; border-radius: 50%; overflow: hidden; background: #e0e0e0; display: flex; align-items: center; justify-content: center; margin-left: 8px; flex-shrink: 0; align-self: flex-end; margin-bottom: 5px;">
+        <img *ngIf="userAvatarUrl" [src]="userAvatarUrl" style="width: 100%; height: 100%; object-fit: cover;" alt="Tú" />
+        <ion-icon *ngIf="!userAvatarUrl" name="person" style="font-size: 14px; color: #7e7e7e;"></ion-icon>
+      </div>
+
     </div>
   </div>
 </ion-content>
 
-<ion-footer *ngIf="!isLoading && roomId">
-  <ion-toolbar>
-    <ion-item lines="none" class="input-item">
-      <ion-input [(ngModel)]="newMessage" placeholder="Escribe un mensaje..." (keyup.enter)="sendMessage()"></ion-input>
-      <ion-button fill="clear" slot="end" (click)="sendMessage()" [disabled]="!newMessage.trim()">
-        <ion-icon name="send" color="primary"></ion-icon>
-      </ion-button>
-    </ion-item>
+<ion-footer class="ion-no-border" *ngIf="!isLoading && roomId">
+  <!-- Image Uploading / Preview Container (WhatsApp Style) -->
+  <div *ngIf="selectedImageUrl || isUploadingImage" class="image-preview-container" style="display: flex; align-items: center; padding: 10px 16px; background: rgba(255, 255, 255, 0.95); border-top: 1px solid rgba(0,0,0,0.05); gap: 12px;">
+    <div style="position: relative; width: 60px; height: 60px; border-radius: 8px; overflow: hidden; border: 1px solid rgba(0,0,0,0.1); background: #f5f5f5; display: flex; align-items: center; justify-content: center;">
+      <img *ngIf="selectedImageUrl" [src]="selectedImageUrl" style="width: 100%; height: 100%; object-fit: cover;" />
+      <ion-spinner *ngIf="isUploadingImage" name="crescent" color="danger" style="transform: scale(0.8);"></ion-spinner>
+      <div *ngIf="selectedImageUrl" (click)="cancelSelectedImage()" style="position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,0.6); color: white; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10;">
+        <ion-icon name="close" style="font-size: 12px;"></ion-icon>
+      </div>
+    </div>
+    <div style="flex: 1;">
+      <span style="font-size: 13px; color: #3a3a3a; font-weight: 700;">
+        {{ isUploadingImage ? 'Cargando imagen...' : 'Imagen seleccionada' }}
+      </span>
+      <p style="font-size: 11px; color: #7e7e7e; margin: 2px 0 0 0;">
+        {{ isUploadingImage ? 'Subiendo foto al servidor seguro...' : 'Escribe un mensaje y presiona Enviar para mandar la foto.' }}
+      </p>
+    </div>
+  </div>
+
+  <ion-toolbar style="--background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); --border-width: 0; padding-bottom: 12px; padding-top: 8px;">
+    <div class="input-wrapper-container" style="display: flex; align-items: flex-end; gap: 10px; width: 100%; padding: 0 16px;">
+      <div class="input-container" style="flex: 1; display: flex; align-items: center; background: rgba(255, 255, 255, 0.9); border-radius: 24px; padding: 0 16px; min-height: 44px; box-shadow: 0 4px 14px rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.05);">
+        <ion-input 
+          [(ngModel)]="newMessage" 
+          placeholder="Escribe un mensaje..." 
+          class="chat-input"
+          (keyup.enter)="sendMessage()"
+          style="--background: transparent; --padding-start: 0; font-size: 15px; --color: #3a3a3a; font-weight: 500;"
+        ></ion-input>
+        <!-- File Input -->
+        <input type="file" #fileInput (change)="onFileSelected($event)" accept="image/*" style="display: none;" />
+        <!-- Camera Button -->
+        <ion-button fill="clear" size="small" (click)="fileInput.click()" style="margin: 0; --padding-start: 4px; --padding-end: 4px; --color: #7e7e7e; height: 36px;">
+          <ion-icon name="camera-outline" style="font-size: 22px;"></ion-icon>
+        </ion-button>
+      </div>
+      <div class="send-btn-container" (click)="sendMessage()" style="background: linear-gradient(135deg, #fb8d80 0%, #FA8072 100%); border-radius: 50%; width: 44px; height: 44px; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 10px rgba(250, 128, 114, 0.3); flex-shrink: 0;">
+        <ion-icon name="send" style="color: white; font-size: 20px;"></ion-icon>
+      </div>
+    </div>
   </ion-toolbar>
 </ion-footer>
+</div>
