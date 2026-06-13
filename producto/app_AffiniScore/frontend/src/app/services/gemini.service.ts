@@ -64,7 +64,6 @@ Restricciones:
           model: model,
           messages: this.conversationHistory,
           temperature: 0.7,
-          max_tokens: 350,
         })
       });
 
@@ -129,8 +128,7 @@ Restricciones:
             },
             { role: 'user', content: actionText }
           ],
-          temperature: 0.3,
-          max_tokens: 150
+          temperature: 0.3
         })
       });
 
@@ -198,8 +196,7 @@ Restricciones:
             { role: 'system', content: 'Eres un generador de títulos. Responde SOLO con un título corto (máximo 4 palabras) que resuma el tema del mensaje del usuario. Sin comillas ni texto adicional.' },
             { role: 'user', content: firstMessage }
           ],
-          temperature: 0.5,
-          max_tokens: 20,
+          temperature: 0.5
         })
       });
 
