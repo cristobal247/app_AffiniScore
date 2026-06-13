@@ -2278,23 +2278,40 @@ export class SupabaseService {
   }
 
   async getAiVerificationPreference(): Promise<boolean> {
+    // Intentar leer de LocalStorage primero (instantáneo y libre de fallos de caché/red)
+    const localVal = localStorage.getItem('ai_verification_enabled');
+    if (localVal !== null) {
+      return localVal === 'true';
+    }
+
     const user = await this.getCurrentUser();
     if (!user) return true;
-    const { data: profile } = await this.getUserProfile();
+    const { data: profile } = await this.getUserProfile(true); // Forzar refresco para evitar datos cacheados
     const prefs = profile?.preferences || {};
-    return prefs.ai_verification_enabled !== false;
+    const enabled = prefs.ai_verification_enabled !== false;
+    // Guardar en local para futuras lecturas rápidas
+    localStorage.setItem('ai_verification_enabled', enabled ? 'true' : 'false');
+    return enabled;
   }
 
   async updateAiVerificationPreference(enabled: boolean): Promise<any> {
+    // Guardar en LocalStorage de inmediato
+    localStorage.setItem('ai_verification_enabled', enabled ? 'true' : 'false');
+
     const user = await this.getCurrentUser();
     if (!user) return { error: 'Usuario no autenticado' };
-    const { data: profile } = await this.getUserProfile();
+    const { data: profile } = await this.getUserProfile(true); // Forzar refresco para obtener preferencias actuales
     const prefs = profile ? profile.preferences || {} : {};
     prefs.ai_verification_enabled = enabled;
-    return await this.supabase
+    const res = await this.supabase
       .from('profiles')
       .update({ preferences: prefs })
       .eq('id', user.id);
+      
+    if (!res.error) {
+      this.profileCache = null; // Limpiar caché para forzar recarga en el resto de la app
+    }
+    return res;
   }
 
   async completeChallengeDirectly(challengeId: string, title: string, points: number): Promise<any> {
@@ -2368,6 +2385,123 @@ export class SupabaseService {
     } catch (err: any) {
       console.error('Error al completar reto directamente:', err);
       return { error: err.message || String(err) };
+    }
+  }
+
+  async getWeeklyReportData() {
+    const user = await this.getCurrentUser();
+    if (!user) return { data: null, error: 'Usuario no autenticado' };
+
+    const partnership = await this.getActivePartnership();
+    if (!partnership) return { data: null, error: 'No hay vinculación activa' };
+
+    const startOfWeek = new Date();
+    // Lunes como inicio de semana
+    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay() + (startOfWeek.getDay() === 0 ? -6 : 1));
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const startOfWeekIso = startOfWeek.toISOString();
+
+    try {
+      // 1. Obtener nombres de ambos miembros
+      const { data: profiles } = await this.supabase
+        .from('profiles')
+        .select('id, full_name, avatar_url, total_points')
+        .in('id', [partnership.user1_id, partnership.user2_id]);
+
+      const profileMap: any = {};
+      profiles?.forEach(p => {
+        profileMap[p.id] = p;
+      });
+
+      // 2. Obtener logs de acciones semanales de la pareja
+      const { data: logs } = await this.supabase
+        .from('user_actions_log')
+        .select('*')
+        .eq('partnership_id', partnership.id)
+        .eq('status', 'CONFIRMED')
+        .gte('created_at', startOfWeekIso)
+        .order('created_at', { ascending: false });
+
+      // Obtener catálogo para nombres de acciones
+      const { data: catalog } = await this.getFullCatalog();
+
+      const actionsDetail = (logs || []).map(log => {
+        const act = catalog?.find(c => c.id === log.action_id);
+        const userProfile = profileMap[log.user_id];
+        return {
+          id: log.id,
+          action_id: log.action_id,
+          action_name: act ? act.name : 'Acción registrada',
+          points: log.points_earned || 0,
+          userName: userProfile ? userProfile.full_name : 'Pareja',
+          userId: log.user_id,
+          category: act ? act.category : 'General',
+          date: new Date(log.created_at)
+        };
+      });
+
+      // Calcular puntos semanales por persona
+      const pointsByPerson: { [key: string]: number } = {};
+      profiles?.forEach(p => {
+        pointsByPerson[p.id] = 0;
+      });
+      actionsDetail.forEach(act => {
+        if (pointsByPerson[act.userId] !== undefined) {
+          pointsByPerson[act.userId] += act.points;
+        } else {
+          pointsByPerson[act.userId] = act.points;
+        }
+      });
+
+      const memberPoints = profiles?.map(p => ({
+        id: p.id,
+        name: p.full_name || 'Miembro',
+        weeklyPoints: pointsByPerson[p.id] || 0,
+        totalPoints: p.total_points || 0
+      })) || [];
+
+      // 3. Obtener recuerdos creados esta semana (incluyendo fotos de retos de desconexión)
+      const { data: memories } = await this.supabase
+        .from('memories')
+        .select('*')
+        .eq('partnership_id', partnership.id)
+        .gte('created_at', startOfWeekIso)
+        .order('created_at', { ascending: false });
+
+      // 4. Obtener geozonas creadas esta semana
+      let newGeozones: any[] = [];
+      try {
+        const { data: geozones } = await this.supabase
+          .from('geozones')
+          .select('*')
+          .eq('partnership_id', partnership.id)
+          .gte('created_at', startOfWeekIso)
+          .order('name', { ascending: true });
+        newGeozones = geozones || [];
+      } catch (err) {
+        console.warn('Fallo al consultar creados_at de geozones, obteniendo todas las zonas como fallback:', err);
+        const { data: geozones } = await this.supabase
+          .from('geozones')
+          .select('*')
+          .eq('partnership_id', partnership.id)
+          .order('name', { ascending: true });
+        newGeozones = geozones || [];
+      }
+
+      return {
+        success: true,
+        data: {
+          memberPoints,
+          actionsDetail,
+          memories: memories || [],
+          newGeozones
+        },
+        error: null
+      };
+    } catch (err: any) {
+      console.error('Error generando datos de reporte semanal:', err);
+      return { data: null, error: err.message || String(err) };
     }
   }
 }

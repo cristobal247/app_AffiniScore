@@ -365,78 +365,188 @@ export class ProfilePage implements OnInit {
   }
 
   async exportPDF() {
-    try {
-      const { data: profile } = await this.supabaseSvc.getUserProfile();
-      const points = profile?.total_points || 0;
-      const nivelAfinidad = Math.floor(points / 1000) + 1;
+    const loading = await this.loadingCtrl.create({
+      message: 'Generando Reporte Semanal...',
+      mode: 'ios'
+    });
+    await loading.present();
 
-      const { data: history, error } = await this.supabaseSvc.getWeeklyHistory();
-      if (error) {
-        console.error('Error fetching weekly history for PDF:', error);
+    try {
+      const res = await this.supabaseSvc.getWeeklyReportData();
+      await loading.dismiss();
+
+      if (res.error || !res.data) {
+        this.showToast('No se pudieron obtener los datos para el reporte: ' + (res.error || 'Sin datos'), 'danger');
         return;
       }
 
-      // Agrupar por día de la semana
-      const daysOfWeek = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-      const groupedByDay: { [key: string]: number } = {};
+      const { memberPoints, actionsDetail, memories, newGeozones } = res.data;
 
-      let weeklyTotal = 0;
-
-      (history || []).forEach((log: any) => {
-        const date = new Date(log.date);
-        const dayName = daysOfWeek[date.getDay()];
-        const pts = log.points_earned || 0;
-        groupedByDay[dayName] = (groupedByDay[dayName] || 0) + pts;
-        weeklyTotal += pts;
+      // Calcular puntos semanales totales de la pareja
+      let totalWeeklyPoints = 0;
+      memberPoints.forEach((m: any) => {
+        totalWeeklyPoints += m.weeklyPoints;
       });
 
       // Inicializar jsPDF
       const doc = new jsPDF();
 
-      // Título y Cabeceras
-      doc.setFontSize(18);
-      doc.text('Reporte Semanal de AffiniScore', 14, 22);
+      // Cabecera Principal
+      doc.setFontSize(22);
+      doc.setTextColor(189, 52, 58); // Color de la marca ($red-brand)
+      doc.text('Reporte de Pareja - AffiniScore', 14, 22);
 
-      doc.setFontSize(12);
-      doc.text(`Nivel de Afinidad: ${nivelAfinidad}`, 14, 32);
-      doc.text(`Puntos Totales: ${points}`, 14, 40);
-      doc.text(`Puntos Recolectados esta Semana: ${weeklyTotal}`, 14, 48);
+      doc.setFontSize(10);
+      doc.setTextColor(120, 120, 120);
+      doc.text(`Generado el: ${new Date().toLocaleDateString()} a las ${new Date().toLocaleTimeString()}`, 14, 28);
+      
+      // Separador
+      doc.setDrawColor(220, 220, 220);
+      doc.line(14, 32, 196, 32);
 
-      // Tabla de Resumen Semanal
-      const tableData = Object.keys(groupedByDay).map(day => [
-        day,
-        `+${groupedByDay[day]} pts`
+      // Sección 1: Resumen de Puntos de la Relación
+      doc.setFontSize(14);
+      doc.setTextColor(0, 0, 0);
+      doc.text('Resumen de Puntos de la Relación', 14, 42);
+
+      const pointsSummaryData = memberPoints.map((m: any) => [
+        m.name,
+        `+${m.weeklyPoints} pts`,
+        `${m.totalPoints} pts`
+      ]);
+      // Añadir fila de totales
+      pointsSummaryData.push([
+        'Total Pareja',
+        `+${totalWeeklyPoints} pts`,
+        `${memberPoints.reduce((acc: number, val: any) => acc + val.totalPoints, 0)} pts`
       ]);
 
       autoTable(doc, {
-        startY: 55,
-        head: [['Día de la Semana', 'Puntos Recolectados']],
-        body: tableData,
+        startY: 46,
+        head: [['Miembro de la Pareja', 'Puntos esta Semana', 'Puntos Acumulados']],
+        body: pointsSummaryData,
         theme: 'striped',
-        headStyles: { fillColor: [189, 52, 58] } // Color $red-brand
+        headStyles: { fillColor: [189, 52, 58] },
+        footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' }
       });
 
-      // Detalles de acciones de la semana
-      doc.setFontSize(14);
-      const finalY = (doc as any).lastAutoTable.finalY || 55;
-      doc.text('Detalle de Acciones', 14, finalY + 10);
+      let currentY = (doc as any).lastAutoTable.finalY + 12;
 
-      const detailsData = (history || []).map((log: any) => {
+      // Sección 2: Detalle de Acciones (Quién hizo qué)
+      doc.setFontSize(14);
+      doc.setTextColor(0, 0, 0);
+      doc.text('Detalle de Acciones de la Semana', 14, currentY);
+
+      const daysOfWeek = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+      const detailsData = (actionsDetail || []).map((log: any) => {
         const d = new Date(log.date);
         return [
           `${daysOfWeek[d.getDay()]} ${d.toLocaleDateString()}`,
+          log.userName,
           log.action_name,
-          `+${log.points_earned}`
+          log.category || 'General',
+          `+${log.points} pts`
         ];
       });
 
-      autoTable(doc, {
-        startY: finalY + 15,
-        head: [['Fecha', 'Acción', 'Puntos']],
-        body: detailsData,
-        theme: 'plain',
-        headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0] }
+      if (detailsData.length === 0) {
+        doc.setFontSize(11);
+        doc.setTextColor(100, 100, 100);
+        doc.text('No se registraron acciones esta semana.', 14, currentY + 6);
+        currentY += 15;
+      } else {
+        autoTable(doc, {
+          startY: currentY + 4,
+          head: [['Fecha', 'Usuario', 'Acción / Actividad', 'Categoría', 'Puntos']],
+          body: detailsData,
+          theme: 'plain',
+          headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' }
+        });
+        currentY = (doc as any).lastAutoTable.finalY + 12;
+      }
+
+      // Salto de página para galería y geozonas si es muy largo
+      if (currentY > 200) {
+        doc.addPage();
+        currentY = 22;
+      }
+
+      // Sección 3: Retos y Galería de Recuerdos
+      doc.setFontSize(14);
+      doc.setTextColor(0, 0, 0);
+      doc.text('Retos Completados y Galería de Recuerdos', 14, currentY);
+
+      const memoriesData = (memories || []).map((mem: any) => {
+        const d = new Date(mem.created_at);
+        const smileText = mem.emotional_score !== undefined && mem.emotional_score !== null 
+          ? `${Math.round(mem.emotional_score * 100)}% de felicidad (IA)` 
+          : 'Sin validación emocional';
+        return [
+          mem.title || 'Recuerdo',
+          d.toLocaleDateString(),
+          smileText,
+          mem.file_url ? 'Ver Foto' : 'Sin Foto'
+        ];
       });
+
+      if (memoriesData.length === 0) {
+        doc.setFontSize(11);
+        doc.setTextColor(100, 100, 100);
+        doc.text('No se agregaron fotos ni recuerdos esta semana.', 14, currentY + 6);
+        currentY += 15;
+      } else {
+        autoTable(doc, {
+          startY: currentY + 4,
+          head: [['Recuerdo / Reto', 'Fecha', 'Puntuación IA', 'Foto']],
+          body: memoriesData,
+          theme: 'striped',
+          headStyles: { fillColor: [100, 100, 100] },
+          columnStyles: {
+            3: { textColor: [189, 52, 58], fontStyle: 'bold' } // Resaltar "Ver Foto"
+          },
+          didDrawCell: (data) => {
+            // Si la celda es "Ver Foto" y tiene URL, la hacemos clickeable en el PDF
+            if (data.column.index === 3 && data.cell.text[0] === 'Ver Foto') {
+              const memIndex = data.row.index;
+              const url = memories[memIndex]?.file_url;
+              if (url) {
+                doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, { url });
+              }
+            }
+          }
+        });
+        currentY = (doc as any).lastAutoTable.finalY + 12;
+      }
+
+      if (currentY > 210) {
+        doc.addPage();
+        currentY = 22;
+      }
+
+      // Sección 4: Nuevas Zonas de Geofencing
+      doc.setFontSize(14);
+      doc.setTextColor(0, 0, 0);
+      doc.text('Nuevas Zonas Especiales (Geofencing)', 14, currentY);
+
+      const geozonesData = (newGeozones || []).map((zone: any) => [
+        zone.name,
+        `Radio: ${zone.radius || 50}m`,
+        `Lat: ${zone.latitude.toFixed(5)}, Lon: ${zone.longitude.toFixed(5)}`
+      ]);
+
+      if (geozonesData.length === 0) {
+        doc.setFontSize(11);
+        doc.setTextColor(100, 100, 100);
+        doc.text('No se agregaron nuevas zonas especiales esta semana.', 14, currentY + 6);
+      } else {
+        autoTable(doc, {
+          startY: currentY + 4,
+          head: [['Nombre del Lugar', 'Radio de Cobertura', 'Coordenadas']],
+          body: geozonesData,
+          theme: 'striped',
+          headStyles: { fillColor: [70, 130, 180] } // Color azul acero para geofencing
+        });
+      }
 
       // Guardar o compartir PDF según plataforma
       if (Capacitor.isNativePlatform()) {
@@ -451,15 +561,19 @@ export class ProfilePage implements OnInit {
 
         await Share.share({
           title: 'Reporte Semanal AffiniScore',
-          text: 'Aquí está tu reporte semanal de afinidad.',
+          text: 'Aquí está tu reporte semanal de afinidad completo.',
           url: result.uri,
           dialogTitle: 'Compartir o guardar Reporte'
         });
       } else {
         doc.save('Reporte-Semanal-AffiniScore.pdf');
       }
-    } catch (err) {
-      console.error('Error generating PDF:', err);
+
+      this.showToast('Reporte generado exitosamente.', 'success');
+    } catch (err: any) {
+      await loading.dismiss();
+      console.error('Error generando PDF:', err);
+      this.showToast('Error al generar PDF: ' + err.message, 'danger');
     }
   }
 }
