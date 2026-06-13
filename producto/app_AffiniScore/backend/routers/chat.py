@@ -16,10 +16,12 @@ class ChatMessagePayload(BaseModel):
     image_url: Optional[str] = None
     sender_id: Optional[str] = None
 
-async def get_gemini_ai_response(user_message: str, is_group: bool, image_url: Optional[str] = None) -> str:
+async def get_gemini_ai_response(user_message: str, is_group: bool, image_url: Optional[str] = None, history: Optional[list] = None) -> str:
     gemini_api_key = os.environ.get("GEMINI_API_KEY", "")
     if not gemini_api_key:
-        raise HTTPException(status_code=500, detail="GEMINI_API_KEY no encontrada en el entorno del servidor.")
+        gemini_api_key = os.environ.get("GROQ_API_KEY", "")
+        if not gemini_api_key:
+            raise HTTPException(status_code=500, detail="GEMINI_API_KEY no encontrada en el entorno del servidor.")
         
     model = "gemini-2.5-flash"
 
@@ -30,17 +32,18 @@ async def get_gemini_ai_response(user_message: str, is_group: bool, image_url: O
         "la Terapia Focalizada en las Emociones (TFE) y la Comunicación No Violenta (CNV).\n\n"
         
         "TUS DIRECTRICES DE COMPORTAMIENTO:\n"
-        "1. TONO: Cálido, empático, profesional, equilibrado y profundamente alentador.\n"
-        "2. SIN FAVORITISMOS: En el chat grupal, mantén una neutralidad absoluta. Jamás tomes partido por ninguno de los dos. "
+        "1. TONO: Cálido, empático, altamente profesional, analítico e inteligente. Habla como un psicólogo real de verdad.\n"
+        "2. CONVERSACIÓN FLUIDA (EVITA DAR CONSEJOS Y TERMINAR): No des consejos definitivos de inmediato ni termines la sesión rápido. "
+        "Escucha activamente, valida emocionalmente y haz **preguntas reflexivas y abiertas** para indagar y comprender el fondo. "
+        "Tu meta es simular una sesión de terapia real, manteniendo un diálogo fluido a lo largo de varios mensajes (ida y vuelta).\n"
+        "3. FORMATO VISUAL: Para facilitar la comprensión en celulares, **resalta frases o palabras clave en negrita** (usando **texto**). "
+        "Usa emojis apropiados (ej. 💖, 🤝, 💬, 🧘) de forma moderada, nunca en exceso, para mantener un aire premium pero cercano.\n"
+        "4. SIN FAVORITISMOS: En el chat grupal, mantén una neutralidad absoluta. Jamás tomes partido por ninguno de los dos. "
         "Si uno de los dos expresa una queja, valida su emoción, pero invita al otro a expresarse con empatía.\n"
-        "3. LENGUAJE EMOCIONAL: Ayuda a la pareja a traducir la culpa ('tú siempre haces...', 'por tu culpa...') "
+        "5. LENGUAJE EMOCIONAL: Ayuda a la pareja a traducir la culpa ('tú siempre haces...', 'por tu culpa...') "
         "en expresiones de vulnerabilidad e impacto personal ('me siento solo/a cuando...', 'necesito apoyo en...').\n"
-        "4. EJERCICIOS PRÁCTICOS: Cuando el ambiente esté tenso o te pidan guía, propone micro-ejercicios prácticos de conexión "
-        "(ej. la pausa de respiración compartida, turnos de escucha activa sin interrupción por 2 minutos, o expresar una gratitud diaria).\n"
-        "5. FORMATO MÓVIL: Tus respuestas deben caber en burbujas de chat de celular. Sé conciso y claro. "
-        "Escribe un máximo de 2 a 3 párrafos cortos. Usa viñetas para ejercicios y emojis con moderación (ej. 💖, 🤝, 💬, 🧘) "
-        "para mantener un aire moderno, premium y cercano.\n"
-        "6. IDIOMA: Responde siempre en un español natural, cálido y comprensible."
+        "6. FORMATO MÓVIL: Respuestas concisas que quepan en burbujas de chat. Escribe un máximo de 2 a 3 párrafos cortos (no más de 2 oraciones por párrafo).\n"
+        "7. IDIOMA: Responde siempre en un español natural, cálido y comprensible."
     )
 
     if is_group:
@@ -58,26 +61,58 @@ async def get_gemini_ai_response(user_message: str, is_group: bool, image_url: O
             "puede aportar de manera constructiva a la relación y entender la perspectiva de su pareja."
         )
 
-    # Preparar el contenido para Gemini
-    contents = [user_message]
-    if image_url:
-        if image_url.startswith("data:"):
-            try:
-                header, encoded = image_url.split(",", 1)
-                mime_type = header.split(";")[0].split(":")[1]
-                img_data = base64.b64decode(encoded)
-                contents.append(types.Part.from_bytes(data=img_data, mime_type=mime_type))
-            except Exception as e:
-                print(f"Error decodificando imagen base64 para Gemini: {e}")
-        else:
-            try:
-                async with httpx.AsyncClient() as client:
-                    img_resp = await client.get(image_url, timeout=10.0)
-                    img_resp.raise_for_status()
-                    mime_type = img_resp.headers.get("content-type", "image/jpeg")
-                    contents.append(types.Part.from_bytes(data=img_resp.content, mime_type=mime_type))
-            except Exception as download_err:
-                print(f"Error descargando imagen para Gemini: {download_err}")
+    # Preparar el contenido para Gemini con historial de conversación
+    contents = []
+    
+    if history:
+        for msg in history:
+            role = "user" if msg.get("sender_type") == "USER" else "model"
+            msg_text = msg.get("message") or ""
+            metadata = msg.get("metadata") or {}
+            msg_image_url = metadata.get("image_url")
+            
+            parts = [types.Part.from_text(text=msg_text)]
+            if msg_image_url and role == "user":
+                if msg_image_url.startswith("data:"):
+                    try:
+                        header, encoded = msg_image_url.split(",", 1)
+                        mtype = header.split(";")[0].split(":")[1]
+                        img_data = base64.b64decode(encoded)
+                        parts.append(types.Part.from_bytes(data=img_data, mime_type=mtype))
+                    except Exception as e:
+                        print(f"Error decodificando imagen base64 del historial: {e}")
+                
+            contents.append(types.Content(role=role, parts=parts))
+
+    # Verificar si el último mensaje del historial ya contiene el mensaje que se va a enviar
+    has_current = False
+    if contents and contents[-1].role == "user":
+        # Comprobar si el texto del último elemento del historial coincide
+        if contents[-1].parts and contents[-1].parts[0].text == user_message:
+            has_current = True
+            
+    if not has_current:
+        # Añadir mensaje actual
+        parts = [types.Part.from_text(text=user_message)]
+        if image_url:
+            if image_url.startswith("data:"):
+                try:
+                    header, encoded = image_url.split(",", 1)
+                    mime_type = header.split(";")[0].split(":")[1]
+                    img_data = base64.b64decode(encoded)
+                    parts.append(types.Part.from_bytes(data=img_data, mime_type=mime_type))
+                except Exception as e:
+                    print(f"Error decodificando imagen base64 actual: {e}")
+            else:
+                try:
+                    async with httpx.AsyncClient() as client:
+                        img_resp = await client.get(image_url, timeout=10.0)
+                        img_resp.raise_for_status()
+                        mime_type = img_resp.headers.get("content-type", "image/jpeg")
+                        parts.append(types.Part.from_bytes(data=img_resp.content, mime_type=mime_type))
+                except Exception as download_err:
+                    print(f"Error descargando imagen actual: {download_err}")
+        contents.append(types.Content(role="user", parts=parts))
 
     try:
         client = genai.Client(api_key=gemini_api_key)
@@ -99,12 +134,7 @@ async def process_group_chat_3_message(
     payload: ChatMessagePayload,
     id_usuario: str = Path(..., description="ID del usuario emisor")
 ):
-    """
-    Endpoint específico para el Canal 3: Chat Grupal (Pareja + Terapeuta IA).
-    Identifica automáticamente la sala (partnership_id) del usuario.
-    """
     try:
-        # 1. Obtener partnership_id desde la tabla 'partnerships' (porque en 'profiles' no existe la columna)
         p_res = supabase.table("partnerships").select("id").or_(f"user1_id.eq.{id_usuario},user2_id.eq.{id_usuario}").eq("status", "active").execute()
         
         if not p_res.data:
@@ -112,7 +142,6 @@ async def process_group_chat_3_message(
             
         partnership_id = p_res.data[0]["id"]
 
-        # Asegurar que exista la sala de chat grupal (GROUP_AI)
         room_check = supabase.table("chat_rooms").select("id").eq("id", partnership_id).execute()
         if not room_check.data:
             new_room = {
@@ -123,11 +152,9 @@ async def process_group_chat_3_message(
             }
             supabase.table("chat_rooms").insert(new_room).execute()
 
-        # Obtener el nombre del perfil
         profile_res = supabase.table("profiles").select("full_name").eq("id", id_usuario).execute()
         emisor_name = profile_res.data[0].get("full_name", "Usuario") if profile_res.data else "Usuario"
         
-        # 2. Guardar mensaje del usuario
         user_metadata = {"emisor": emisor_name, "canal": 3}
         if payload.image_url:
             user_metadata["image_url"] = payload.image_url
@@ -143,10 +170,19 @@ async def process_group_chat_3_message(
         user_res = supabase.table("chat_messages").insert(user_msg_data).execute()
         inserted_user = user_res.data[0] if (user_res.data and len(user_res.data) > 0) else user_msg_data
         
-        # 3. Obtener respuesta de la IA configurada como moderadora grupal
-        ai_text = await get_gemini_ai_response(payload.message, is_group=True, image_url=payload.image_url)
+        # 3. Obtener el historial reciente del chat grupal (últimos 8 mensajes)
+        history = []
+        try:
+            h_res = supabase.table("chat_messages").select("sender_type, message, metadata").eq("room_id", str(partnership_id)).order("created_at", desc=True).limit(8).execute()
+            if h_res.data:
+                history = list(reversed(h_res.data))
+        except Exception as he:
+            print(f"Error cargando historial de chat grupal: {he}")
+
+        # 4. Obtener respuesta de la IA configurada como moderadora grupal
+        ai_text = await get_gemini_ai_response(payload.message, is_group=True, image_url=payload.image_url, history=history)
         
-        # 4. Guardar respuesta de la IA
+        # 5. Guardar respuesta de la IA
         ai_msg_data = {
             "room_id": str(partnership_id),
             "sender_id": None,
@@ -200,7 +236,17 @@ async def process_chat_message(
             
         elif canal_id in [2, 3]:
             is_group = (canal_id == 3)
-            ai_text = await get_gemini_ai_response(payload.message, is_group, payload.image_url)
+            
+            # Obtener el historial de la conversación (últimos 8 mensajes)
+            history = []
+            try:
+                h_res = supabase.table("chat_messages").select("sender_type, message, metadata").eq("room_id", room_id).order("created_at", desc=True).limit(8).execute()
+                if h_res.data:
+                    history = list(reversed(h_res.data))
+            except Exception as he:
+                print(f"Error cargando historial de chat: {he}")
+
+            ai_text = await get_gemini_ai_response(payload.message, is_group, payload.image_url, history=history)
             
             ai_msg_data = {
                 "room_id": room_id,
