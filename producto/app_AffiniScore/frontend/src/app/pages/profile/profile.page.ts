@@ -138,9 +138,15 @@ export class ProfilePage implements OnInit {
       .subscribe();
   }
 
+  loadingProfile: boolean = false;
+
   async loadProfileData() {
+    this.loadingProfile = true;
     const user = await this.supabaseSvc.getCurrentUser();
-    if (!user) return;
+    if (!user) {
+      this.loadingProfile = false;
+      return;
+    }
     this.userEmail = user.email;
 
     // 1. Obtener mi perfil
@@ -199,6 +205,9 @@ export class ProfilePage implements OnInit {
     this.aiVerificationEnabled = await this.supabaseSvc.getAiVerificationPreference();
 
     this.cdr.detectChanges();
+    setTimeout(() => {
+      this.loadingProfile = false;
+    }, 150); // Pequeño delay para asegurar que el binding de Angular e Ionic finalice
   }
 
   public async confirmUnlink() {
@@ -342,6 +351,10 @@ export class ProfilePage implements OnInit {
   }
 
   public async onAiVerificationToggleChange() {
+    if (this.loadingProfile) {
+      // Ignorar cambios que provienen de la inicialización de la vista
+      return;
+    }
     console.log('AI Verification Preference updated', this.aiVerificationEnabled);
     const res = await this.supabaseSvc.updateAiVerificationPreference(this.aiVerificationEnabled);
     if (res.error) {
