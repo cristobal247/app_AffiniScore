@@ -15,8 +15,9 @@ class ChatMessagePayload(BaseModel):
     message: str
     image_url: Optional[str] = None
     sender_id: Optional[str] = None
+    session_id: Optional[str] = None
 
-async def get_gemini_ai_response(user_message: str, is_group: bool, image_url: Optional[str] = None, history: Optional[list] = None) -> str:
+async def get_gemini_ai_response(user_message: str, is_group: bool, image_url: Optional[str] = None, history: Optional[list] = None, emisor_name: Optional[str] = None) -> str:
     gemini_api_key = os.environ.get("GEMINI_API_KEY", "")
     if not gemini_api_key:
         gemini_api_key = os.environ.get("GROQ_API_KEY", "")
@@ -50,8 +51,12 @@ async def get_gemini_ai_response(user_message: str, is_group: bool, image_url: O
         system_prompt = (
             f"{base_prompt}\n\n"
             "CONTEXTO ACTUAL: Chat Grupal de Pareja. Estás interactuando con ambos miembros a la vez. "
-            "Tu rol es actuar como un moderador sabio, pacificador y facilitador de puentes de conexión. "
-            "Fomenta la interacción entre ellos y haz preguntas abiertas para que dialoguen directamente."
+            "Cada mensaje de los usuarios vendrá precedido por su nombre entre corchetes, por ejemplo: '[Juan]: mi pareja me ignora'.\n"
+            "INSTRUCCIONES CLAVE DE GRUPO:\n"
+            "- Identifica quién está hablando gracias a la etiqueta de su nombre.\n"
+            "- Cuando un usuario exprese una preocupación, dolor o queja (ej. 'mi pareja me ignora'), valida sus sentimientos con empatía.\n"
+            "- Inmediatamente después, dirígete al otro miembro de la pareja por su nombre (si está en el historial reciente o si lo puedes deducir) y pídele amablemente su perspectiva u opinión al respecto para involucrarlo en la terapia. Ejemplo: '[Valida al emisor]... y cuéntame [Nombre de la pareja], ¿cómo vives tú esta situación?' o '¿qué opinas sobre esto que nos comparte [Nombre]?'\n"
+            "- Mantén el hilo de la conversación y no desvíes el tema. Fomenta que hablen y se escuchen mutuamente sin tomar bandos."
         )
     else:
         system_prompt = (
@@ -71,6 +76,11 @@ async def get_gemini_ai_response(user_message: str, is_group: bool, image_url: O
             metadata = msg.get("metadata") or {}
             msg_image_url = metadata.get("image_url")
             
+            # Si es chat grupal, agregamos el nombre del emisor al inicio del mensaje del historial
+            if role == "user" and is_group:
+                emisor = metadata.get("emisor") or "Usuario"
+                msg_text = f"[{emisor}]: {msg_text}"
+                
             parts = [types.Part.from_text(text=msg_text)]
             if msg_image_url and role == "user":
                 if msg_image_url.startswith("data:"):
@@ -86,14 +96,15 @@ async def get_gemini_ai_response(user_message: str, is_group: bool, image_url: O
 
     # Verificar si el último mensaje del historial ya contiene el mensaje que se va a enviar
     has_current = False
+    expected_text = f"[{emisor_name}]: {user_message}" if (is_group and emisor_name) else user_message
     if contents and contents[-1].role == "user":
-        # Comprobar si el texto del último elemento del historial coincide
-        if contents[-1].parts and contents[-1].parts[0].text == user_message:
+        last_text = contents[-1].parts[0].text or ""
+        if last_text == expected_text or last_text == user_message:
             has_current = True
             
     if not has_current:
         # Añadir mensaje actual
-        parts = [types.Part.from_text(text=user_message)]
+        parts = [types.Part.from_text(text=expected_text)]
         if image_url:
             if image_url.startswith("data:"):
                 try:
@@ -180,7 +191,7 @@ async def process_group_chat_3_message(
             print(f"Error cargando historial de chat grupal: {he}")
 
         # 4. Obtener respuesta de la IA configurada como moderadora grupal
-        ai_text = await get_gemini_ai_response(payload.message, is_group=True, image_url=payload.image_url, history=history)
+        ai_text = await get_gemini_ai_response(payload.message, is_group=True, image_url=payload.image_url, history=history, emisor_name=emisor_name)
         
         # 5. Guardar respuesta de la IA
         ai_msg_data = {
@@ -246,7 +257,7 @@ async def process_chat_message(
             except Exception as he:
                 print(f"Error cargando historial de chat: {he}")
 
-            ai_text = await get_gemini_ai_response(payload.message, is_group, payload.image_url, history=history)
+            ai_text = await get_gemini_ai_response(payload.message, is_group, payload.image_url, history=history, emisor_name=emisor)
             
             ai_msg_data = {
                 "room_id": room_id,
