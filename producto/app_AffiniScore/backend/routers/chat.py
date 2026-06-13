@@ -4,17 +4,10 @@ from typing import Optional
 from datetime import datetime
 import os
 import httpx
-import random
+import base64
 from database import supabase
-
-router = APIRouter()
-from fastapi import APIRouter, HTTPException, Path, Query
-from pydantic import BaseModel
-from typing import Optional
-from datetime import datetime
-import os
-import httpx
-from database import supabase
+from google import genai
+from google.genai import types
 
 router = APIRouter()
 
@@ -23,12 +16,12 @@ class ChatMessagePayload(BaseModel):
     image_url: Optional[str] = None
     sender_id: Optional[str] = None
 
-async def get_groq_ai_response(user_message: str, is_group: bool, image_url: Optional[str] = None) -> str:
-    groq_api_key = os.environ.get("GROQ_API_KEY", "")
-    if not groq_api_key:
-        raise HTTPException(status_code=500, detail="GROQ_API_KEY no encontrada en el entorno del servidor.")
+async def get_gemini_ai_response(user_message: str, is_group: bool, image_url: Optional[str] = None) -> str:
+    gemini_api_key = os.environ.get("GEMINI_API_KEY", "")
+    if not gemini_api_key:
+        raise HTTPException(status_code=500, detail="GEMINI_API_KEY no encontrada en el entorno del servidor.")
         
-    model = "meta-llama/llama-4-scout-17b-16e-instruct" if image_url else "llama-3.3-70b-versatile"
+    model = "gemini-2.5-flash"
 
     base_prompt = (
         "Eres AffiniCoach, un terapeuta de parejas de élite con más de 15 años de experiencia clínica. "
@@ -65,37 +58,41 @@ async def get_groq_ai_response(user_message: str, is_group: bool, image_url: Opt
             "puede aportar de manera constructiva a la relación y entender la perspectiva de su pareja."
         )
 
-    # Preparar el contenido para Groq
-    user_content = user_message
+    # Preparar el contenido para Gemini
+    contents = [user_message]
     if image_url:
-        user_content = [
-            {"type": "text", "text": user_message},
-            {"type": "image_url", "image_url": {"url": image_url}}
-        ]
+        if image_url.startswith("data:"):
+            try:
+                header, encoded = image_url.split(",", 1)
+                mime_type = header.split(";")[0].split(":")[1]
+                img_data = base64.b64decode(encoded)
+                contents.append(types.Part.from_bytes(data=img_data, mime_type=mime_type))
+            except Exception as e:
+                print(f"Error decodificando imagen base64 para Gemini: {e}")
+        else:
+            try:
+                async with httpx.AsyncClient() as client:
+                    img_resp = await client.get(image_url, timeout=10.0)
+                    img_resp.raise_for_status()
+                    mime_type = img_resp.headers.get("content-type", "image/jpeg")
+                    contents.append(types.Part.from_bytes(data=img_resp.content, mime_type=mime_type))
+            except Exception as download_err:
+                print(f"Error descargando imagen para Gemini: {download_err}")
 
     try:
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                "https://api.groq.com/openai/v1/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {groq_api_key}",
-                    "Content-Type": "application/json"
-                },
-                json={
-                    "model": model,
-                    "messages": [
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_content}
-                    ]
-                },
-                timeout=12.0
+        client = genai.Client(api_key=gemini_api_key)
+        response = client.models.generate_content(
+            model=model,
+            contents=contents,
+            config=types.GenerateContentConfig(
+                system_instruction=system_prompt,
+                temperature=0.7
             )
-            response.raise_for_status()
-            data = response.json()
-            return data["choices"][0]["message"]["content"]
+        )
+        return response.text
     except Exception as e:
-        print(f"Error llamando a la API de Groq: {e}")
-        raise HTTPException(status_code=502, detail=f"Error al conectar con el servicio de IA: {str(e)}")
+        print(f"Error llamando a la API de Gemini: {e}")
+        raise HTTPException(status_code=502, detail=f"Error al conectar con el servicio de IA (Gemini): {str(e)}")
 
 @router.post("/api/chat/3/{id_usuario}")
 async def process_group_chat_3_message(
@@ -147,7 +144,7 @@ async def process_group_chat_3_message(
         inserted_user = user_res.data[0] if (user_res.data and len(user_res.data) > 0) else user_msg_data
         
         # 3. Obtener respuesta de la IA configurada como moderadora grupal
-        ai_text = await get_groq_ai_response(payload.message, is_group=True, image_url=payload.image_url)
+        ai_text = await get_gemini_ai_response(payload.message, is_group=True, image_url=payload.image_url)
         
         # 4. Guardar respuesta de la IA
         ai_msg_data = {
@@ -158,7 +155,7 @@ async def process_group_chat_3_message(
             "metadata": {
                 "emisor": "AffiniCoach IA", 
                 "canal": 3,
-                "fuente": "Groq API"
+                "fuente": "Gemini API"
             },
             "created_at": datetime.utcnow().isoformat()
         }
@@ -203,7 +200,7 @@ async def process_chat_message(
             
         elif canal_id in [2, 3]:
             is_group = (canal_id == 3)
-            ai_text = await get_groq_ai_response(payload.message, is_group, payload.image_url)
+            ai_text = await get_gemini_ai_response(payload.message, is_group, payload.image_url)
             
             ai_msg_data = {
                 "room_id": room_id,
@@ -212,7 +209,7 @@ async def process_chat_message(
                 "message": ai_text,
                 "metadata": {
                     "emisor": "AffiniCoach IA",
-                    "fuente": "Groq API"
+                    "fuente": "Gemini API"
                 },
                 "created_at": datetime.utcnow().isoformat()
             }

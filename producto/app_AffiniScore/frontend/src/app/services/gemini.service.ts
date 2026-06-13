@@ -9,8 +9,8 @@ export interface ChatMessage {
 @Injectable({
   providedIn: 'root'
 })
-export class GroqService {
-  private apiUrl = 'https://api.groq.com/openai/v1/chat/completions';
+export class GeminiService {
+  private apiUrl = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
   
   // Mantenemos el historial de la conversación
   private conversationHistory: ChatMessage[] = [
@@ -51,15 +51,13 @@ Restricciones:
       this.conversationHistory.push({ role: 'user', content: finalMessage });
     }
 
-    // Determinar si usar modelo de visión
-    const hasImages = this.conversationHistory.some(msg => Array.isArray(msg.content));
-    const model = hasImages ? 'meta-llama/llama-4-scout-17b-16e-instruct' : 'llama-3.3-70b-versatile';
+    const model = 'gemini-2.5-flash';
 
     try {
       const response = await fetch(this.apiUrl, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${(environment as any).apiKeyGroq}`,
+          'Authorization': `Bearer ${(environment as any).apiKeyGemini}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -72,7 +70,7 @@ Restricciones:
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Groq API error details:', errorText);
+        console.error('Gemini API error details:', errorText);
         throw new Error(`Error de red: ${response.status} ${response.statusText} - ${errorText}`);
       }
 
@@ -84,7 +82,7 @@ Restricciones:
       
       return botResponse;
     } catch (error) {
-      console.error('Error al comunicarse con Groq API:', error);
+      console.error('Error al comunicarse con Gemini API:', error);
       // Si hay error, quitamos el último mensaje del usuario para no corromper el historial
       this.conversationHistory.pop();
       return 'Disculpa, tuve un problema al conectarme. ¿Podrías intentar de nuevo?';
@@ -119,11 +117,11 @@ Restricciones:
       const response = await fetch(this.apiUrl, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${(environment as any).apiKeyGroq}`,
+          'Authorization': `Bearer ${(environment as any).apiKeyGemini}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
+          model: 'gemini-2.5-flash',
           messages: [
             {
               role: 'system',
@@ -164,7 +162,7 @@ Restricciones:
   setConversationHistory(dbMessages: any[]) {
     this.resetConversation();
     
-    // Mapeamos los mensajes de la base de datos al formato de Groq
+    // Mapeamos los mensajes de la base de datos al formato de Gemini
     for (const msg of dbMessages) {
       if (msg.sender_type === 'USER') {
         const imageUrl = msg.metadata?.image_url;
@@ -191,11 +189,11 @@ Restricciones:
       const response = await fetch(this.apiUrl, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${environment.apiKeyGroq}`,
+          'Authorization': `Bearer ${(environment as any).apiKeyGemini}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
+          model: 'gemini-2.5-flash',
           messages: [
             { role: 'system', content: 'Eres un generador de títulos. Responde SOLO con un título corto (máximo 4 palabras) que resuma el tema del mensaje del usuario. Sin comillas ni texto adicional.' },
             { role: 'user', content: firstMessage }

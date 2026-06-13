@@ -18,7 +18,7 @@ import {
   cartOutline, timeOutline, phonePortraitOutline, closeCircleOutline, sparkles, notificationsOutline, addOutline, closeOutline, createOutline, listOutline
 } from 'ionicons/icons';
 import { SupabaseService, Activity, DisconnectChallenge } from '../services/supabase';
-import { GroqService } from '../services/groq.service';
+import { GeminiService } from '../services/gemini.service';
 import { EmojiPipe } from '../pipes/emoji.pipe';
 import { NotificationService } from '../services/notification.service';
 
@@ -74,7 +74,7 @@ export class ActionsPage implements OnInit {
 
   constructor(
     private supabaseSvc: SupabaseService,
-    private groqSvc: GroqService,
+    private geminiSvc: GeminiService,
     private navCtrl: NavController,
     private loadingCtrl: LoadingController,
     private alertCtrl: AlertController,
@@ -247,7 +247,7 @@ export class ActionsPage implements OnInit {
     await loading.present();
 
     // 1. Consultar a la IA para clasificar y puntuar
-    const aiResult = await this.groqSvc.analyzeCustomAction(trimmed);
+    const aiResult = await this.geminiSvc.analyzeCustomAction(trimmed);
 
     // 2. Registrar la acción en Supabase con los datos de la IA, marcándola con la subcategoría 'CUSTOM'
     const { error } = await this.supabaseSvc.createCatalogAction(
@@ -384,8 +384,8 @@ export class ActionsPage implements OnInit {
   async generateAiChallenge() {
     this.isGeneratingAi = true;
     try {
-      const prompt = "Genera un reto de desconexión para parejas único, romántico y divertido. Debe requerir no usar el celular. Responde SOLO con el formato JSON: {\"title\": \"Título\", \"description\": \"Descripción corta\", \"points\": 150}. Sin markdown extra ni saludos.";
-      const response = await this.groqSvc.sendMessage(prompt, 'Sistema de Retos');
+      const prompt = "Genera un reto de desconexión para parejas unique, romántico y divertido. Debe requerir no usar el celular. Responde SOLO con el formato JSON: {\"title\": \"Título\", \"description\": \"Descripción corta\", \"points\": 150}. Sin markdown extra ni saludos.";
+      const response = await this.geminiSvc.sendMessage(prompt, 'Sistema de Retos');
       
       const match = response.match(/\{[\s\S]*\}/);
       if(match) {

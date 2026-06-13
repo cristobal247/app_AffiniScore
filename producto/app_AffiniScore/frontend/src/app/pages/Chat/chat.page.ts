@@ -9,7 +9,7 @@ import {
   IonSpinner
 } from '@ionic/angular/standalone';
 import { SupabaseService, ChatMessage } from '../../services/supabase';
-import { GroqService } from '../../services/groq.service';
+import { GeminiService } from '../../services/gemini.service';
 import { addIcons } from 'ionicons';
 import { sendOutline, arrowBackOutline, videocam, call, ellipsisVertical, happyOutline, cameraOutline, send, sparkles, ellipsisHorizontal, chevronBackOutline, person, menuOutline } from 'ionicons/icons';
 
@@ -43,7 +43,7 @@ export class ChatPage implements OnDestroy {
 
   constructor(
     private supabaseSvc: SupabaseService,
-    private groqSvc: GroqService,
+    private geminiSvc: GeminiService,
     private menuCtrl: MenuController,
     private cdr: ChangeDetectorRef
   ) {
@@ -106,13 +106,13 @@ export class ChatPage implements OnDestroy {
     if (res.data) {
       this.roomId = res.data.id;
       this.messages = [];
-      this.groqSvc.resetConversation();
+      this.geminiSvc.resetConversation();
       
       // Mensaje de bienvenida de la IA
       const welcomeMsg: ChatMessage = {
         id: 'welcome',
         room_id: this.roomId,
-        sender_id: 'groq-bot',
+        sender_id: 'gemini-bot',
         sender_type: 'AI',
         message: '¡Hola! Soy AffiniCoach. ¿En qué puedo ayudarte a ti y a tu pareja hoy?',
         created_at: new Date().toISOString()
@@ -134,7 +134,7 @@ export class ChatPage implements OnDestroy {
     
     if (data) {
       this.messages = data;
-      this.groqSvc.setConversationHistory(data);
+      this.geminiSvc.setConversationHistory(data);
       this.scrollToBottom(0);
     }
   }
@@ -199,7 +199,7 @@ export class ChatPage implements OnDestroy {
 
     // Auto-título si es el primer mensaje real del usuario
     if (this.messages.length === 2) {
-      this.groqSvc.generateTitle(displayMsg).then(async (title) => {
+      this.geminiSvc.generateTitle(displayMsg).then(async (title) => {
         await this.supabaseSvc.updateSessionTitle(this.roomId, title);
         // Recargar la lista de la barra lateral para ver el nuevo título
         const listRes = await this.supabaseSvc.getAiSessions();
@@ -207,13 +207,13 @@ export class ChatPage implements OnDestroy {
       });
     }
     
-    // Enviamos a Groq con la imagen para visión multimodal
-    const botResponseText = await this.groqSvc.sendMessage(displayMsg, this.currentUserName, imageUrl || undefined);
+    // Enviamos a Gemini con la imagen para visión multimodal
+    const botResponseText = await this.geminiSvc.sendMessage(displayMsg, this.currentUserName, imageUrl || undefined);
     
     const botMsg: ChatMessage = {
       id: Math.random().toString(),
       room_id: this.roomId,
-      sender_id: 'groq-bot',
+      sender_id: 'gemini-bot',
       sender_type: 'AI',
       message: botResponseText,
       created_at: new Date().toISOString()

@@ -1,11 +1,13 @@
 from fastapi import APIRouter, HTTPException, Path
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
 import os
 import json
 import httpx
 from database import supabase
+from google import genai
+from google.genai import types
 
 router = APIRouter(prefix="/api/v1/challenges", tags=["challenges"])
 
@@ -17,11 +19,19 @@ class ChallengeValidateRequest(BaseModel):
     image_url: str
     user_id: str
 
+class ChallengeValidationResult(BaseModel):
+    points_awarded: int = Field(description="Puntos otorgados al usuario")
+    smiling_score: float = Field(description="Puntuación de felicidad/sonrisa de ambos miembros, entre 0.0 y 1.0")
+    environment_match: bool = Field(description="Indica si el entorno coincide con el contexto y ubicación del reto")
+    feedback: str = Field(description="Explicación detallada en español de lo observado, constructiva y afectuosa")
+
 @router.post("/validate")
 async def validate_challenge_photo(request: ChallengeValidateRequest):
-    groq_api_key = os.environ.get("GROQ_API_KEY", "")
-    if not groq_api_key:
-        raise HTTPException(status_code=500, detail="GROQ_API_KEY no encontrada en el entorno del servidor.")
+    gemini_api_key = os.environ.get("GEMINI_API_KEY", "")
+    if not gemini_api_key:
+        gemini_api_key = os.environ.get("GROQ_API_KEY", "")
+        if not gemini_api_key:
+            raise HTTPException(status_code=500, detail="GEMINI_API_KEY no encontrada en el entorno del servidor.")
     
     # 1. Obtener partnership_id
     partnership_id = None
@@ -48,15 +58,7 @@ async def validate_challenge_photo(request: ChallengeValidateRequest):
         "- Si no están ambos miembros de la pareja en la foto, resta el 80% o más de los puntos.\n"
         "- Si el entorno no coincide (ej. están en el sofá de la casa cuando debían estar en la playa), resta entre el 40% y 60% de los puntos.\n"
         "- Si no están sonriendo (están enojados, tristes o serios), resta entre el 20% y 40% de los puntos.\n"
-        "- Los puntos otorgados no pueden ser menores que 0 ni mayores que max_points.\n\n"
-        "Debes responder estrictamente en formato JSON con la siguiente estructura:\n"
-        "{\n"
-        "  \"points_awarded\": <int>,\n"
-        "  \"smiling_score\": <float entre 0.0 y 1.0>,\n"
-        "  \"environment_match\": <bool>,\n"
-        "  \"feedback\": \"<Explicación detallada en español de lo observado, mencionando si están ambos, si el lugar corresponde y si se les ve sonriendo, explicando cualquier penalización de forma constructiva y cariñosa>\"\n"
-        "}\n"
-        "No incluyas ningún texto fuera del JSON, responde únicamente con el objeto JSON."
+        "- Los puntos otorgados no pueden ser menores que 0 ni mayores que max_points.\n"
     )
 
     user_message = (
@@ -65,75 +67,54 @@ async def validate_challenge_photo(request: ChallengeValidateRequest):
         f"Puntos máximos: {request.points}"
     )
 
-    # Download image and encode to base64 to avoid Groq fetching issues
-    import base64
-    image_base64 = ""
+    # Download image
+    img_content = None
     media_type = "image/jpeg"
     try:
         async with httpx.AsyncClient() as client:
             img_resp = await client.get(request.image_url, timeout=10.0)
             img_resp.raise_for_status()
-            image_base64 = base64.b64encode(img_resp.content).decode("utf-8")
+            img_content = img_resp.content
             media_type = img_resp.headers.get("content-type", "image/jpeg")
     except Exception as download_err:
-        print(f"Error downloading image for Groq: {download_err}")
-
-    # Use base64 data URI if download succeeded, otherwise fall back to url
-    image_url_payload = f"data:{media_type};base64,{image_base64}" if image_base64 else request.image_url
-
-    user_content = [
-        {"type": "text", "text": user_message},
-        {"type": "image_url", "image_url": {"url": image_url_payload}}
-    ]
+        print(f"Error downloading image for Gemini validation: {download_err}")
 
     points_awarded = request.points
     smiling_score = 1.0
     environment_match = True
     feedback = "¡Buen trabajo completando el reto!"
 
-    try:
-        model = "meta-llama/llama-4-scout-17b-16e-instruct"
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                "https://api.groq.com/openai/v1/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {groq_api_key}",
-                    "Content-Type": "application/json"
-                },
-                json={
-                    "model": model,
-                    "messages": [
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_content}
-                    ],
-                    "temperature": 0.2
-                },
-                timeout=18.0
+    if img_content:
+        try:
+            client = genai.Client(api_key=gemini_api_key)
+            response = client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=[
+                    types.Part.from_bytes(data=img_content, mime_type=media_type),
+                    user_message
+                ],
+                config=types.GenerateContentConfig(
+                    system_instruction=system_prompt,
+                    temperature=0.2,
+                    response_mime_type="application/json",
+                    response_schema=ChallengeValidationResult
+                )
             )
-            response.raise_for_status()
-            ai_data = response.json()
-            ai_text = ai_data["choices"][0]["message"]["content"].strip()
-            
-            # Limpiar posibles bloques de código de markdown
-            if ai_text.startswith("```"):
-                lines = ai_text.split("\n")
-                if lines[0].startswith("```"):
-                    lines = lines[1:]
-                if lines[-1].startswith("```"):
-                    lines = lines[:-1]
-                ai_text = "\n".join(lines).strip()
-            
-            parsed = json.loads(ai_text)
-            points_awarded = int(parsed.get("points_awarded", request.points))
-            smiling_score = float(parsed.get("smiling_score", 1.0))
-            environment_match = bool(parsed.get("environment_match", True))
-            feedback = parsed.get("feedback", "Reto validado con éxito por AffiniCoach IA.")
-    except Exception as e:
-        print(f"Error llamando a Groq o procesando la respuesta: {e}")
-        feedback = f"AffiniCoach IA validó tu reto de desconexión. Completado con éxito. (Nota: Hubo una degradación en el análisis visual, pero se te han asignado los puntos correspondientes)."
+            result = response.parsed
+            if result:
+                points_awarded = int(result.points_awarded)
+                smiling_score = float(result.smiling_score)
+                environment_match = bool(result.environment_match)
+                feedback = result.feedback
+        except Exception as e:
+            print(f"Error calling Gemini in challenges router: {e}")
+            feedback = f"AffiniCoach IA validó tu reto de desconexión. Completado con éxito. (Nota: Hubo una degradación en el análisis visual, pero se te han asignado los puntos correspondientes)."
+    else:
+        feedback = "No se pudo descargar la imagen del reto para su análisis, pero se te han asignado los puntos correspondientes de forma automática."
 
     # Asegurar límites de puntos
     points_awarded = max(0, min(request.points, points_awarded))
+
 
     # 3. Guardar puntos y registro
     try:
