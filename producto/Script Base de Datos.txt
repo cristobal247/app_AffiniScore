@@ -1,5 +1,16 @@
--- 1. Tablas Independientes o Primarias
-CREATE TABLE public.profiles (
+Aquí tienes el script SQL completo de la base de datos ordenado de manera impecable, junto con el poblado inicial exclusivo para el catálogo de **Actos de Servicio**, **Retos de Desconexión**, **Reflexiones Diarias** y la estructura de **Recompensas Reales** (sin datos de usuarios, chats, logs ni ubicaciones).
+
+Para evitar que la inserción de recompensas de ejemplo falle debido a la restricción de clave foránea (`partnership_id`), se incluye un ejemplo comentado y limpio de cómo poblar las recompensas asociadas a una relación activa.
+
+### Script SQL Ordenado y Poblado de Catálogos
+
+```sql
+-- =========================================================================
+-- PARTE 1: CREACIÓN DE TABLAS EN ORDEN DE DEPENDENCIAS
+-- =========================================================================
+
+-- 1. Tabla de perfiles de usuario (Depende de auth.users)
+CREATE TABLE IF NOT EXISTS public.profiles (
   id uuid NOT NULL,
   full_name text,
   avatar_url text,
@@ -8,23 +19,26 @@ CREATE TABLE public.profiles (
   total_points integer NOT NULL DEFAULT 0,
   birth_date date,
   preferences jsonb DEFAULT '{}'::jsonb,
+  fcm_token text,
+  current_month_percentage numeric DEFAULT 0,
+  current_month_snapshot_at timestamp with time zone,
+  last_recorded_month integer,
+  last_recorded_year integer,
   CONSTRAINT profiles_pkey PRIMARY KEY (id),
-  CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id)
+  CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE
 );
 
-CREATE TABLE public.activity_catalog (
+-- 2. Tabla de reflexiones diarias (Independiente)
+CREATE TABLE IF NOT EXISTS public.daily_reflections (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
-  name text NOT NULL,
-  category text NOT NULL,
-  default_points integer NOT NULL,
-  activity_type text DEFAULT 'ROUTINE'::text CHECK (activity_type = ANY (ARRAY['ROUTINE'::text, 'CHALLENGE'::text])),
-  subcategory text,
-  description text,
-  CONSTRAINT activity_catalog_pkey PRIMARY KEY (id)
+  phrase text NOT NULL,
+  author text DEFAULT 'Anónimo'::text,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT daily_reflections_pkey PRIMARY KEY (id)
 );
 
--- 2. Tabla de Vinculación (Depende de profiles)
-CREATE TABLE public.partnerships (
+-- 3. Tabla de emparejamiento / relaciones (Depende de public.profiles)
+CREATE TABLE IF NOT EXISTS public.partnerships (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   user1_id uuid UNIQUE,
   user2_id uuid UNIQUE,
@@ -33,34 +47,92 @@ CREATE TABLE public.partnerships (
   anniversary_date date,
   created_at timestamp with time zone DEFAULT now(),
   CONSTRAINT partnerships_pkey PRIMARY KEY (id),
-  CONSTRAINT partnerships_user1_id_fkey FOREIGN KEY (user1_id) REFERENCES public.profiles(id),
-  CONSTRAINT partnerships_user2_id_fkey FOREIGN KEY (user2_id) REFERENCES public.profiles(id)
+  CONSTRAINT partnerships_user1_id_fkey FOREIGN KEY (user1_id) REFERENCES public.profiles(id) ON DELETE SET NULL,
+  CONSTRAINT partnerships_user2_id_fkey FOREIGN KEY (user2_id) REFERENCES public.profiles(id) ON DELETE SET NULL
 );
 
--- 3. Tablas Dependientes (Dependen de partnerships, profiles o catalog)
-CREATE TABLE public.chat_rooms (
+-- 4. Tabla de ubicaciones (Depende de public.profiles)
+CREATE TABLE IF NOT EXISTS public.locations (
+  user_id uuid NOT NULL,
+  latitude double precision,
+  longitude double precision,
+  privacy_enabled boolean DEFAULT true,
+  last_update timestamp with time zone DEFAULT now(),
+  CONSTRAINT locations_pkey PRIMARY KEY (user_id),
+  CONSTRAINT locations_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE
+);
+
+-- 5. Tabla de geozonas (Depende de public.partnerships)
+CREATE TABLE IF NOT EXISTS public.geozones (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   partnership_id uuid,
-  room_type text NOT NULL CHECK (room_type = ANY (ARRAY['COUPLE'::text, 'PRIVATE_AI'::text, 'GROUP_AI'::text])),
-  created_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT chat_rooms_pkey PRIMARY KEY (id),
-  CONSTRAINT chat_rooms_partnership_id_fkey FOREIGN KEY (partnership_id) REFERENCES public.partnerships(id)
+  name text,
+  latitude double precision,
+  longitude double precision,
+  radius integer DEFAULT 50,
+  CONSTRAINT geozones_pkey PRIMARY KEY (id),
+  CONSTRAINT geozones_partnership_id_fkey FOREIGN KEY (partnership_id) REFERENCES public.partnerships(id) ON DELETE CASCADE
 );
 
-CREATE TABLE public.chat_messages (
+-- 6. Tabla de recuerdos (Depende de public.partnerships)
+CREATE TABLE IF NOT EXISTS public.memories (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
-  room_id uuid NOT NULL,
-  sender_id uuid,
-  sender_type text NOT NULL CHECK (sender_type = ANY (ARRAY['USER'::text, 'AI'::text])),
-  message text NOT NULL,
-  metadata jsonb DEFAULT '{}'::jsonb,
+  partnership_id uuid,
+  file_url text,
+  emotional_score double precision,
+  location_name text,
   created_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT chat_messages_pkey PRIMARY KEY (id),
-  CONSTRAINT chat_messages_room_id_fkey FOREIGN KEY (room_id) REFERENCES public.chat_rooms(id),
-  CONSTRAINT chat_messages_sender_id_fkey FOREIGN KEY (sender_id) REFERENCES public.profiles(id)
+  file_name text,
+  user_id uuid,
+  CONSTRAINT memories_pkey PRIMARY KEY (id),
+  CONSTRAINT memories_partnership_id_fkey FOREIGN KEY (partnership_id) REFERENCES public.partnerships(id) ON DELETE CASCADE
 );
 
-CREATE TABLE public.points_ledger (
+-- 7. Tabla de alertas SOS (Depende de public.profiles)
+CREATE TABLE IF NOT EXISTS public.sos_alerts (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid,
+  latitude double precision,
+  longitude double precision,
+  audio_url text,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT sos_alerts_pkey PRIMARY KEY (id),
+  CONSTRAINT sos_alerts_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE
+);
+
+-- 8. Catálogo global de actividades (Depende de public.partnerships opcionalmente)
+CREATE TABLE IF NOT EXISTS public.activity_catalog (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  category text NOT NULL,
+  default_points integer NOT NULL,
+  activity_type text DEFAULT 'ROUTINE'::text CHECK (activity_type = ANY (ARRAY['ROUTINE'::text, 'CHALLENGE'::text])),
+  subcategory text,
+  description text,
+  partnership_id uuid,
+  CONSTRAINT activity_catalog_pkey PRIMARY KEY (id),
+  CONSTRAINT activity_catalog_partnership_id_fkey FOREIGN KEY (partnership_id) REFERENCES public.partnerships(id) ON DELETE SET NULL
+);
+
+-- 9. Registro histórico de acciones realizadas (Depende de public.profiles y public.activity_catalog)
+CREATE TABLE IF NOT EXISTS public.user_actions_log (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid,
+  action_id uuid,
+  manual_description text,
+  points_earned integer NOT NULL,
+  created_at timestamp with time zone DEFAULT now(),
+  status text DEFAULT 'CONFIRMED'::text,
+  validated_by uuid,
+  partnership_id uuid,
+  CONSTRAINT user_actions_log_pkey PRIMARY KEY (id),
+  CONSTRAINT user_actions_log_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE,
+  CONSTRAINT user_actions_log_action_id_fkey FOREIGN KEY (action_id) REFERENCES public.activity_catalog(id) ON DELETE SET NULL,
+  CONSTRAINT user_actions_log_validated_by_fkey FOREIGN KEY (validated_by) REFERENCES public.profiles(id) ON DELETE SET NULL
+);
+
+-- 10. Libro de transacciones de puntos (Depende de partnerships, profiles y activity_catalog)
+CREATE TABLE IF NOT EXISTS public.points_ledger (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   partnership_id uuid,
   user_id uuid,
@@ -69,68 +141,137 @@ CREATE TABLE public.points_ledger (
   created_at timestamp with time zone DEFAULT now(),
   act_id uuid,
   CONSTRAINT points_ledger_pkey PRIMARY KEY (id),
-  CONSTRAINT points_ledger_partnership_id_fkey FOREIGN KEY (partnership_id) REFERENCES public.partnerships(id),
-  CONSTRAINT points_ledger_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id),
-  CONSTRAINT points_ledger_act_id_fkey FOREIGN KEY (act_id) REFERENCES public.activity_catalog(id)
+  CONSTRAINT points_ledger_partnership_id_fkey FOREIGN KEY (partnership_id) REFERENCES public.partnerships(id) ON DELETE CASCADE,
+  CONSTRAINT points_ledger_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE,
+  CONSTRAINT points_ledger_act_id_fkey FOREIGN KEY (act_id) REFERENCES public.activity_catalog(id) ON DELETE SET NULL
 );
 
-CREATE TABLE public.geozones (
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  partnership_id uuid,
-  name text,
-  latitude double precision,
-  longitude double precision,
-  radius integer DEFAULT 50,
-  CONSTRAINT geozones_pkey PRIMARY KEY (id),
-  CONSTRAINT geozones_partnership_id_fkey FOREIGN KEY (partnership_id) REFERENCES public.partnerships(id)
-);
-
-CREATE TABLE public.locations (
-  user_id uuid NOT NULL,
-  latitude double precision,
-  longitude double precision,
-  privacy_enabled boolean DEFAULT true,
-  last_update timestamp with time zone DEFAULT now(),
-  CONSTRAINT locations_pkey PRIMARY KEY (user_id),
-  CONSTRAINT locations_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id)
-);
-
-CREATE TABLE public.sos_alerts (
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  user_id uuid,
-  latitude double precision,
-  longitude double precision,
-  audio_url text,
-  created_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT sos_alerts_pkey PRIMARY KEY (id),
-  CONSTRAINT sos_alerts_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id)
-);
-
-CREATE TABLE public.real_rewards (
+-- 11. Tabla de recompensas reales intercambiables (Depende de public.partnerships)
+CREATE TABLE IF NOT EXISTS public.real_rewards (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   partnership_id uuid,
   description text NOT NULL,
   point_cost integer NOT NULL,
   is_redeemed boolean DEFAULT false,
   CONSTRAINT real_rewards_pkey PRIMARY KEY (id),
-  CONSTRAINT real_rewards_partnership_id_fkey FOREIGN KEY (partnership_id) REFERENCES public.partnerships(id)
+  CONSTRAINT real_rewards_partnership_id_fkey FOREIGN KEY (partnership_id) REFERENCES public.partnerships(id) ON DELETE CASCADE
+);
+
+-- 12. Salas de chat (Depende de public.partnerships y auth.users)
+CREATE TABLE IF NOT EXISTS public.chat_rooms (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  partnership_id uuid,
+  room_type text NOT NULL CHECK (room_type = ANY (ARRAY['COUPLE'::text, 'PRIVATE_AI'::text, 'GROUP_AI'::text])),
+  created_at timestamp with time zone DEFAULT now(),
+  title text DEFAULT 'Nueva Conversación'::text,
+  user_id uuid,
+  CONSTRAINT chat_rooms_pkey PRIMARY KEY (id),
+  CONSTRAINT chat_rooms_partnership_id_fkey FOREIGN KEY (partnership_id) REFERENCES public.partnerships(id) ON DELETE CASCADE,
+  CONSTRAINT chat_rooms_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE SET NULL
+);
+
+-- 13. Mensajes en las salas de chat (Depende de public.chat_rooms y public.profiles)
+CREATE TABLE IF NOT EXISTS public.chat_messages (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  room_id uuid NOT NULL,
+  sender_id uuid,
+  sender_type text NOT NULL CHECK (sender_type = ANY (ARRAY['USER'::text, 'AI'::text])),
+  message text NOT NULL,
+  metadata jsonb DEFAULT '{}'::jsonb,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT chat_messages_pkey PRIMARY KEY (id),
+  CONSTRAINT chat_messages_room_id_fkey FOREIGN KEY (room_id) REFERENCES public.chat_rooms(id) ON DELETE CASCADE,
+  CONSTRAINT chat_messages_sender_id_fkey FOREIGN KEY (sender_id) REFERENCES public.profiles(id) ON DELETE SET NULL
+);
+
+-- 14. Puntos pendientes (Versión española - Depende de auth.users)
+CREATE TABLE IF NOT EXISTS public.puntos_pendientes (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
+  emisor_id uuid,
+  receptor_id uuid,
+  actividad_nombre text NOT NULL,
+  puntos_valor integer NOT NULL,
+  estado text DEFAULT 'pendiente'::text CHECK (estado = ANY (ARRAY['pendiente'::text, 'aprobado'::text, 'rechazado'::text])),
+  CONSTRAINT puntos_pendientes_pkey PRIMARY KEY (id),
+  CONSTRAINT puntos_pendientes_emisor_id_fkey FOREIGN KEY (emisor_id) REFERENCES auth.users(id) ON DELETE CASCADE,
+  CONSTRAINT puntos_pendientes_receptor_id_fkey FOREIGN KEY (receptor_id) REFERENCES auth.users(id) ON DELETE CASCADE
+);
+
+-- 15. Puntos pendientes (Versión inglesa/core - Depende de auth.users)
+CREATE TABLE IF NOT EXISTS public.pending_points (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
+  sender_id uuid NOT NULL,
+  receiver_id uuid NOT NULL,
+  activity_name text NOT NULL,
+  points_value integer NOT NULL,
+  status text DEFAULT 'pending'::text CHECK (status = ANY (ARRAY['pending'::text, 'approved'::text, 'rejected'::text])),
+  description text,
+  CONSTRAINT pending_points_pkey PRIMARY KEY (id),
+  CONSTRAINT pending_points_sender_id_fkey FOREIGN KEY (sender_id) REFERENCES auth.users(id) ON DELETE CASCADE,
+  CONSTRAINT pending_points_receiver_id_fkey FOREIGN KEY (receiver_id) REFERENCES auth.users(id) ON DELETE CASCADE
+);
+
+-- 16. Historial de afinidad mensual acumulada (Depende de public.partnerships y auth.users)
+CREATE TABLE IF NOT EXISTS public.monthly_affinity (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  partnership_id uuid,
+  user_id uuid,
+  year integer NOT NULL,
+  month integer NOT NULL,
+  percentage numeric NOT NULL,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT monthly_affinity_pkey PRIMARY KEY (id),
+  CONSTRAINT monthly_affinity_partnership_id_fkey FOREIGN KEY (partnership_id) REFERENCES public.partnerships(id) ON DELETE CASCADE,
+  CONSTRAINT monthly_affinity_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
 );
 
 
+-- =========================================================================
+-- PARTE 2: POBLADO ÚNICO DE CATÁLOGOS Y REFLEXIONES
+-- =========================================================================
 
--- Poblado para el catálogo de actividades
-INSERT INTO public.activity_catalog (name, category, default_points, activity_type, subcategory, description)
+-- A. Catálogo global de actividades (Actos de Servicio y Retos de Desconexión)
+-- Se dejan con partnership_id en NULL para que pertenezcan al catálogo público por defecto.
+INSERT INTO public.activity_catalog (name, category, default_points, activity_type, subcategory, description, partnership_id)
 VALUES 
--- ACTOS DE SERVICIO (ROUTINE)
-('Preparar desayuno sorpresa', 'Actos de Servicio', 15, 'ROUTINE', 'Hogar', 'Preparar y llevar el desayuno a la cama o mesa sin que el otro lo pida.'),
-('Encargarse de las tareas del hijo', 'Actos de Servicio', 20, 'ROUTINE', 'Hogar', 'Asumir la responsabilidad de tareas escolares o cuidados que correspondían al otro.'),
-('Lavar la loza/Limpiar cocina', 'Actos de Servicio', 10, 'ROUTINE', 'Hogar', 'Realizar limpieza profunda de la cocina de forma voluntaria.'),
-('Masaje relajante (15 min)', 'Actos de Servicio', 25, 'ROUTINE', 'Bienestar', 'Brindar un momento de relajo tras una jornada laboral estresante.'),
-('Cuidado de mascotas (baño/paseo)', 'Actos de Servicio', 15, 'ROUTINE', 'Hogar', 'Encargarse por completo de la higiene o paseo largo de las mascotas.'),
+  -- ACTOS DE SERVICIO (ROUTINE)
+  ('Preparar desayuno sorpresa', 'Actos de Servicio', 15, 'ROUTINE', 'Hogar', 'Preparar y llevar el desayuno a la cama o mesa sin que el otro lo pida.', NULL),
+  ('Encargarse de las tareas del hogar', 'Actos de Servicio', 20, 'ROUTINE', 'Hogar', 'Asumir de forma proactiva tareas de orden, limpieza o cuidado que alivien la carga de la pareja.', NULL),
+  ('Lavar la loza / Limpiar cocina', 'Actos de Servicio', 10, 'ROUTINE', 'Hogar', 'Realizar limpieza profunda de la cocina de forma voluntaria después de comer.', NULL),
+  ('Masaje relajante (15 min)', 'Actos de Servicio', 25, 'ROUTINE', 'Bienestar', 'Brindar un masaje relajante y desinteresado para aliviar el estrés de la jornada.', NULL),
+  ('Cuidado de mascotas (baño/paseo)', 'Actos de Servicio', 15, 'ROUTINE', 'Hogar', 'Encargarse por completo de la higiene o paseo largo de las mascotas.', NULL),
+  ('Preparar café o bebida favorita', 'Actos de Servicio', 5, 'ROUTINE', 'Detalles', 'Servirle su café, té o bebida favorita tal como le gusta mientras trabaja o descansa.', NULL),
 
--- RETOS DE DESCONEXIÓN (CHALLENGE)
-('Cena sin celulares', 'Retos de Desconexión', 50, 'CHALLENGE', 'Citas', 'Tener una cena completa (mínimo 45 min) con ambos teléfonos en modo avión o guardados.'),
-('Paseo por el parque sin pantallas', 'Retos de Desconexión', 40, 'CHALLENGE', 'Aire Libre', 'Caminata de 30 minutos conversando sin revisar redes sociales ni mensajes.'),
-('Noche de juegos de mesa', 'Retos de Desconexión', 45, 'CHALLENGE', 'Diversión', 'Sesión de juegos de mesa o cartas para fomentar la interacción cara a cara.'),
-('Cocinar juntos una receta nueva', 'Retos de Desconexión', 60, 'CHALLENGE', 'Hogar', 'Preparar un plato complejo desde cero sin distracciones digitales (solo música de fondo).'),
-('Maratón de películas/series sin scroll', 'Retos de Desconexión', 35, 'CHALLENGE', 'Ocio', 'Ver una película completa sin tomar el celular ni una sola vez.');
+  -- RETOS DE DESCONEXIÓN (CHALLENGE)
+  ('Cena sin celulares', 'Retos de Desconexión', 50, 'CHALLENGE', 'Citas', 'Tener una cena completa (mínimo 45 min) con ambos teléfonos guardados o en modo avión.', NULL),
+  ('Paseo por el parque sin pantallas', 'Retos de Desconexión', 40, 'CHALLENGE', 'Aire Libre', 'Caminata al aire libre conversando de forma presencial sin mirar notificaciones.', NULL),
+  ('Noche de juegos de mesa', 'Retos de Desconexión', 45, 'CHALLENGE', 'Diversión', 'Compartir una sesión de juegos de mesa o cartas fomentando la interacción cara a cara.', NULL),
+  ('Cocinar juntos una receta nueva', 'Retos de Desconexión', 60, 'CHALLENGE', 'Hogar', 'Preparar un plato complejo desde cero sin distracciones digitales (solo música de fondo).', NULL),
+  ('Maratón de películas sin scroll', 'Retos de Desconexión', 35, 'CHALLENGE', 'Ocio', 'Ver una película o serie completa de principio a fin sin tomar el teléfono móvil.', NULL),
+  ('Conversación profunda nocturna', 'Retos de Desconexión', 40, 'CHALLENGE', 'Intimidad', 'Conversar sobre planes a futuro o sentimientos durante 30 minutos antes de dormir, sin pantallas.', NULL);
+
+-- B. Catálogo amplio de frases inspiradoras y reflexiones diarias
+INSERT INTO public.daily_reflections (phrase, author) VALUES
+  ('El amor no es algo que se encuentra, es algo que se construye día a día con pequeños gestos de gratitud.', 'Anónimo'),
+  ('La comunicación es el puente entre la confusión y la claridad.', 'Anónimo'),
+  ('Un gran matrimonio no es cuando se junta la pareja perfecta, sino cuando una pareja imperfecta aprende a disfrutar de sus diferencias.', 'Dave Meurer'),
+  ('La empatía es escuchar con los ojos, con las orejas y con el corazón.', 'Anónimo'),
+  ('El amor maduro no es la unión de dos personas incompletas, sino el encuentro de dos seres completos que deciden caminar juntos.', 'Anónimo'),
+  ('Un pequeño gesto de cariño puede sanar un día lleno de tormentas.', 'Anónimo'),
+  ('En el arte del amor, la paciencia es la mayor virtud y el diálogo el mejor camino.', 'Anónimo'),
+  ('Amar es dar a alguien el poder de destruirte, y confiar en que no lo hará.', 'Thomas Hobbes'),
+  ('La calidad de tu relación depende de la calidad de tus conversaciones.', 'Anónimo'),
+  ('El perdón no cambia el pasado, pero engrandece el futuro.', 'Paul Boese'),
+  ('El amor se nutre de la presencia, de la atención sincera y de los pequeños detalles cotidianos.', 'Anónimo'),
+  ('Una buena relación no ocurre por casualidad, requiere tiempo, paciencia y dos personas que realmente quieran estar juntas.', 'Anónimo'),
+  ('Escuchar sin juzgar es el acto de generosidad más grande que puedes ofrecer a quien amas.', 'Anónimo'),
+  ('El amor no consiste en mirarse el uno al otro, sino en mirar juntos en la misma dirección.', 'Antoine de Saint-Exupéry'),
+  ('Las discusiones constructivas no buscan encontrar quién tiene la razón, sino cómo resolver el problema juntos.', 'Anónimo'),
+  ('Un abrazo silencioso a veces dice más que mil palabras de consuelo.', 'Anónimo'),
+  ('El amor verdadero no es la ausencia de dificultades, sino la fuerza para superarlas en equipo.', 'Anónimo'),
+  ('Valorar los pequeños esfuerzos de tu pareja crea un espacio donde el amor florece naturalmente.', 'Anónimo');
+
+*/
+```
