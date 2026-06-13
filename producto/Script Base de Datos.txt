@@ -1,10 +1,4 @@
-Aquí tienes el script SQL completo de la base de datos ordenado de manera impecable, junto con el poblado inicial exclusivo para el catálogo de **Actos de Servicio**, **Retos de Desconexión**, **Reflexiones Diarias** y la estructura de **Recompensas Reales** (sin datos de usuarios, chats, logs ni ubicaciones).
 
-Para evitar que la inserción de recompensas de ejemplo falle debido a la restricción de clave foránea (`partnership_id`), se incluye un ejemplo comentado y limpio de cómo poblar las recompensas asociadas a una relación activa.
-
-### Script SQL Ordenado y Poblado de Catálogos
-
-```sql
 -- =========================================================================
 -- PARTE 1: CREACIÓN DE TABLAS EN ORDEN DE DEPENDENCIAS
 -- =========================================================================
@@ -274,4 +268,3 @@ INSERT INTO public.daily_reflections (phrase, author) VALUES
   ('Valorar los pequeños esfuerzos de tu pareja crea un espacio donde el amor florece naturalmente.', 'Anónimo');
 
 */
-```
