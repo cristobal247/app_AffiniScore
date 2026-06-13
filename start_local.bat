@@ -21,7 +21,6 @@ if exist "%ROOT%producto\app_AffiniScore\frontend\src\environments\environment.t
 echo Escribiendo credenciales reales en environment.ts...
 powershell -Command " $path = '%ROOT%producto\app_AffiniScore\frontend\src\environments\environment.ts'; $text = Get-Content -Path $path -Raw; $text = [regex]::Replace($text, 'supabaseUrl:\s*''[^'']*''', 'supabaseUrl: ''' + '%SUPABASE_URL%' + ''''); $text = [regex]::Replace($text, 'supabaseKey:\s*''[^'']*''', 'supabaseKey: ''' + '%SUPABASE_KEY%' + ''''); $text = [regex]::Replace($text, 'apiKeyGemini:\s*''[^'']*''', 'apiKeyGemini: ''' + '%GEMINI_API_KEY%' + ''''); if ($text -notmatch 'supabaseKey:') { $text = $text -replace '(production:\s*false,?)', 'production: false,`n  supabaseUrl: ''%SUPABASE_URL%'',`n  supabaseKey: ''%SUPABASE_KEY%'',`n  apiKeyGemini: ''%GEMINI_API_KEY%'',`n  devAuth: false,' } ; if ($text -notmatch 'devAuth:') { $text = $text -replace '(apiKeyGemini:\s*''[^'']*''|supabaseKey:\s*''[^'']*'')', '$&`n  devAuth: false' } ; Set-Content -Path $path -Value $text -Encoding UTF8"
 
-
 start "Frontend" cmd /k "cd /d "%ROOT%producto\app_AffiniScore\frontend" && npm install --no-audit --no-fund && npm run start -- --no-open --port 4201"
 
 echo Servidores arrancados en ventanas separadas.
@@ -30,3 +29,4 @@ echo Frontend: http://localhost:4201
 echo Si necesitas detenerlos, cierra las ventanas o mata los procesos.
 
 pause
+

@@ -52,12 +52,12 @@ Restricciones:
     }
 
     const model = 'gemini-2.5-flash';
+    const apiKey = (environment as any).apiKeyGemini;
 
     try {
-      const response = await fetch(this.apiUrl, {
+      const response = await fetch(`${this.apiUrl}?key=${apiKey}`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${(environment as any).apiKeyGemini}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -113,11 +113,11 @@ Restricciones:
 
   // Analizar acción personalizada, clasificar en categorías y asignar puntaje automáticamente
   async analyzeCustomAction(actionText: string): Promise<{ category: string, points: number, description: string }> {
+    const apiKey = (environment as any).apiKeyGemini;
     try {
-      const response = await fetch(this.apiUrl, {
+      const response = await fetch(`${this.apiUrl}?key=${apiKey}`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${(environment as any).apiKeyGemini}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -185,11 +185,11 @@ Restricciones:
 
   // Generar un título corto para la conversación basado en el primer mensaje
   async generateTitle(firstMessage: string): Promise<string> {
+    const apiKey = (environment as any).apiKeyGemini;
     try {
-      const response = await fetch(this.apiUrl, {
+      const response = await fetch(`${this.apiUrl}?key=${apiKey}`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${(environment as any).apiKeyGemini}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
