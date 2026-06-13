@@ -154,6 +154,26 @@
       </ion-item>
     </ion-list>
 
+    <ion-list lines="none" class="menu-list challenges-list">
+      <ion-item class="section-title-item" lines="none">
+        <ion-icon slot="start" name="camera-outline"></ion-icon>
+        <ion-label>Configuración de Retos</ion-label>
+      </ion-item>
+
+      <ion-item class="menu-item">
+        <ion-label>
+          <h3>Verificación con IA</h3>
+          <p>Valida tus retos de desconexión usando fotos analizadas por la IA. Desactívalo para sumar puntos directamente al finalizar sin subir fotos.</p>
+        </ion-label>
+        <ion-toggle
+          slot="end"
+          [(ngModel)]="aiVerificationEnabled"
+          (ionChange)="onAiVerificationToggleChange()"
+          color="danger">
+        </ion-toggle>
+      </ion-item>
+    </ion-list>
+
     <div class="action-section">
       <ion-button expand="block" fill="clear" color="danger" (click)="exportPDF()" class="pdf-btn">
         <ion-icon slot="start" name="document-text-outline"></ion-icon>

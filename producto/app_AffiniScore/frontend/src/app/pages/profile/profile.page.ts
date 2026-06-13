@@ -76,6 +76,7 @@ export class ProfilePage implements OnInit {
   hasPartner: boolean = false;
   partnerName: string = '';
   partnerAvatarUrl: string | null = null;
+  aiVerificationEnabled: boolean = true;
 
   constructor(
     private supabaseSvc: SupabaseService,
@@ -193,6 +194,9 @@ export class ProfilePage implements OnInit {
       this.partnerName = '';
       this.partnerAvatarUrl = null;
     }
+
+    // Cargar la preferencia de validación con IA
+    this.aiVerificationEnabled = await this.supabaseSvc.getAiVerificationPreference();
 
     this.cdr.detectChanges();
   }
@@ -335,6 +339,16 @@ export class ProfilePage implements OnInit {
 
   public onNotificationChange(): void {
     console.log('Notifications updated', this.notificationSettings);
+  }
+
+  public async onAiVerificationToggleChange() {
+    console.log('AI Verification Preference updated', this.aiVerificationEnabled);
+    const res = await this.supabaseSvc.updateAiVerificationPreference(this.aiVerificationEnabled);
+    if (res.error) {
+      this.showToast('Error al guardar la preferencia: ' + (res.error.message || res.error), 'danger');
+    } else {
+      this.showToast('Preferencia de verificación con IA actualizada.', 'success');
+    }
   }
 
   public async logout() {

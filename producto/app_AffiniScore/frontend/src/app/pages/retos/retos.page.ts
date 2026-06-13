@@ -209,10 +209,43 @@ export class RetosPage implements OnInit {
 
     if (!item) return;
 
-    // Redirige a la página de validación del reto
-    this.router.navigate(['/challenge-validation'], {
-      state: { challenge: item }
-    });
+    // Verificar si la verificación con IA está habilitada
+    const aiVerification = await this.supabaseSvc.getAiVerificationPreference();
+    if (!aiVerification) {
+      const loading = await this.loadingCtrl.create({ 
+        message: 'Completando reto y sumando puntos...', 
+        spinner: 'crescent',
+        mode: 'ios'
+      });
+      await loading.present();
+      
+      const res = await this.supabaseSvc.completeChallengeDirectly(item.id, item.title, item.points);
+      await loading.dismiss();
+
+      if (res.error) {
+        const alert = await this.alertCtrl.create({
+          header: 'Error',
+          message: 'No se pudo completar el reto: ' + res.error,
+          buttons: ['OK'],
+          mode: 'ios'
+        });
+        await alert.present();
+      } else {
+        const alert = await this.alertCtrl.create({
+          header: '¡Reto Completado! 🎉',
+          message: `Has completado "${item.title}". Se han sumado +${item.points} puntos a tu perfil de forma directa (sin foto).`,
+          buttons: ['¡Excelente!'],
+          mode: 'ios'
+        });
+        await alert.present();
+        await this.loadDisconnectChallenges();
+      }
+    } else {
+      // Redirige a la página de la validación del reto (con foto)
+      this.router.navigate(['/challenge-validation'], {
+        state: { challenge: item }
+      });
+    }
   }
 
   async onChallengeFileSelected(ev: any) {

@@ -2276,4 +2276,98 @@ export class SupabaseService {
       return { error: e.error?.detail || e.message || 'Error al validar con IA' };
     }
   }
+
+  async getAiVerificationPreference(): Promise<boolean> {
+    const user = await this.getCurrentUser();
+    if (!user) return true;
+    const { data: profile } = await this.getUserProfile();
+    const prefs = profile?.preferences || {};
+    return prefs.ai_verification_enabled !== false;
+  }
+
+  async updateAiVerificationPreference(enabled: boolean): Promise<any> {
+    const user = await this.getCurrentUser();
+    if (!user) return { error: 'Usuario no autenticado' };
+    const { data: profile } = await this.getUserProfile();
+    const prefs = profile ? profile.preferences || {} : {};
+    prefs.ai_verification_enabled = enabled;
+    return await this.supabase
+      .from('profiles')
+      .update({ preferences: prefs })
+      .eq('id', user.id);
+  }
+
+  async completeChallengeDirectly(challengeId: string, title: string, points: number): Promise<any> {
+    const user = await this.getCurrentUser();
+    if (!user) return { error: 'Usuario no autenticado' };
+
+    const partnership = await this.getActivePartnership();
+    const partnershipId = partnership?.id || null;
+
+    try {
+      // 1. Registrar en points_ledger
+      const ledgerRow = {
+        partnership_id: partnershipId,
+        user_id: user.id,
+        points: points,
+        ai_validated: false,
+        created_at: new Date().toISOString()
+      };
+      await this.supabase.from('points_ledger').insert(ledgerRow);
+
+      // 2. Registrar o actualizar en user_actions_log
+      let existingLog = null;
+      const logRes = await this.supabase
+        .from('user_actions_log')
+        .select('*')
+        .eq('action_id', challengeId)
+        .in('status', ['PENDING', 'ACTIVE'])
+        .limit(1);
+      
+      if (logRes.data && logRes.data.length > 0) {
+        existingLog = logRes.data[0];
+      }
+
+      if (existingLog) {
+        await this.supabase
+          .from('user_actions_log')
+          .update({
+            status: 'CONFIRMED',
+            points_earned: points,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingLog.id);
+      } else {
+        const actionLogRow = {
+          user_id: user.id,
+          action_id: challengeId,
+          points_earned: points,
+          status: 'CONFIRMED',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          partnership_id: partnershipId
+        };
+        await this.supabase.from('user_actions_log').insert(actionLogRow);
+      }
+
+      // 3. Actualizar total_points en profiles
+      const { data: profile } = await this.getUserProfile();
+      const currentPoints = profile?.total_points || 0;
+      const newTotal = currentPoints + points;
+
+      await this.supabase
+        .from('profiles')
+        .update({
+          total_points: newTotal,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id);
+
+      this.pointsUpdated.next();
+      return { success: true };
+    } catch (err: any) {
+      console.error('Error al completar reto directamente:', err);
+      return { error: err.message || String(err) };
+    }
+  }
 }
