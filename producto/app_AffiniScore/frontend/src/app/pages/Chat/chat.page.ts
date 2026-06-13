@@ -10,6 +10,7 @@ import {
 } from '@ionic/angular/standalone';
 import { SupabaseService, ChatMessage } from '../../services/supabase';
 import { GeminiService } from '../../services/gemini.service';
+import { FormatMessagePipe } from '../../pipes/format-message.pipe';
 import { addIcons } from 'ionicons';
 import { sendOutline, arrowBackOutline, videocam, call, ellipsisVertical, happyOutline, cameraOutline, send, sparkles, ellipsisHorizontal, chevronBackOutline, person, menuOutline } from 'ionicons/icons';
 
@@ -22,7 +23,7 @@ import { sendOutline, arrowBackOutline, videocam, call, ellipsisVertical, happyO
     IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, 
     IonBackButton, IonFooter, IonInput, IonButton, IonIcon, IonAvatar,
     IonMenu, IonMenuButton, IonList, IonItem, IonLabel, IonSpinner,
-    CommonModule, FormsModule, RouterModule
+    CommonModule, FormsModule, RouterModule, FormatMessagePipe
   ]
 })
 export class ChatPage implements OnDestroy {

@@ -58,7 +58,7 @@
 
       <div class="message-bubble">
         <img *ngIf="msg.metadata?.image_url" [src]="msg.metadata.image_url" style="max-width: 100%; max-height: 250px; border-radius: 12px; margin-bottom: 8px; display: block; object-fit: cover;" />
-        <p *ngIf="msg.message !== '📷 Foto'">{{ msg.message }}</p>
+        <p *ngIf="msg.message !== '📷 Foto'" [innerHTML]="msg.message | formatMessage"></p>
         <span class="message-time">{{ msg.created_at | date:'shortTime' }}</span>
       </div>
 

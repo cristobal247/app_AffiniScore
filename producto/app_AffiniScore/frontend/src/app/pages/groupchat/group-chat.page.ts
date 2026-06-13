@@ -10,6 +10,7 @@ import {
 } from '@ionic/angular/standalone';
 import { SupabaseService, ChatMessage } from '../../services/supabase';
 import { environment } from '../../../environments/environment';
+import { FormatMessagePipe } from '../../pipes/format-message.pipe';
 import { addIcons } from 'ionicons';
 import { send, sparkles, ellipsisHorizontal, chevronBackOutline, person, cameraOutline, close } from 'ionicons/icons';
 
@@ -21,7 +22,7 @@ import { send, sparkles, ellipsisHorizontal, chevronBackOutline, person, cameraO
   imports: [
     IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, 
     IonBackButton, IonFooter, IonInput, IonButton, IonIcon, IonAvatar, IonSpinner,
-    CommonModule, FormsModule, RouterModule
+    CommonModule, FormsModule, RouterModule, FormatMessagePipe
   ]
 })
 export class GroupChatPage implements OnDestroy {

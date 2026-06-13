@@ -7,12 +7,14 @@ import { RouterModule } from '@angular/router';
 import { addIcons } from 'ionicons';
 import { cameraOutline, send, closeOutline, heartDislikeOutline, imageOutline, chevronBackOutline, person } from 'ionicons/icons';
 
+import { FormatMessagePipe } from '../../pipes/format-message.pipe';
+
 @Component({
   selector: 'app-partner-chat',
   templateUrl: './partner-chat.page.html',
   styleUrls: ['./partner-chat.page.scss'],
   standalone: true,
-  imports: [IonicModule, CommonModule, FormsModule, RouterModule]
+  imports: [IonicModule, CommonModule, FormsModule, RouterModule, FormatMessagePipe]
 })
 export class PartnerChatPage implements OnInit, OnDestroy {
   @ViewChild(IonContent, { static: false }) content!: IonContent;
