@@ -167,8 +167,8 @@
         </ion-label>
         <ion-toggle
           slot="end"
-          [(ngModel)]="aiVerificationEnabled"
-          (ionChange)="onAiVerificationToggleChange()"
+          [checked]="aiVerificationEnabled"
+          (ionChange)="onAiVerificationToggleChange($event)"
           color="danger">
         </ion-toggle>
       </ion-item>

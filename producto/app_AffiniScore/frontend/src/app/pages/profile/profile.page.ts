@@ -350,13 +350,15 @@ export class ProfilePage implements OnInit {
     console.log('Notifications updated', this.notificationSettings);
   }
 
-  public async onAiVerificationToggleChange() {
+  public async onAiVerificationToggleChange(event: any) {
     if (this.loadingProfile) {
       // Ignorar cambios que provienen de la inicialización de la vista
       return;
     }
-    console.log('AI Verification Preference updated', this.aiVerificationEnabled);
-    const res = await this.supabaseSvc.updateAiVerificationPreference(this.aiVerificationEnabled);
+    const val = event.detail.checked;
+    this.aiVerificationEnabled = val;
+    console.log('AI Verification Preference updated', val);
+    const res = await this.supabaseSvc.updateAiVerificationPreference(val);
     if (res.error) {
       this.showToast('Error al guardar la preferencia: ' + (res.error.message || res.error), 'danger');
     } else {
