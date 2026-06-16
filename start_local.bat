@@ -12,7 +12,7 @@ echo Iniciando frontend (Ionic/Angular) en nueva ventana...
 REM Credenciales reales de Supabase añadidas al script
 set "SUPABASE_URL=https://fojvwsegibjssttbzghe.supabase.co"
 set "SUPABASE_KEY=sb_publishable_pZmJy4l92Un1FusZit823w_vossgdgt"
-set "GEMINI_API_KEY=YOUR_GEMINI_API_KEY_HERE"
+set "GEMINI_API_KEY=TU_API_KEY_DE_GEMINI_AQUI"
 
 echo Respaldando environment.ts...
 if exist "%ROOT%producto\app_AffiniScore\frontend\src\environments\environment.ts" (
