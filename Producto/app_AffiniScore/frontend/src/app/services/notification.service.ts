@@ -30,9 +30,6 @@ export class NotificationService {
   private pendingCountSubject = new BehaviorSubject<number>(0);
   public pendingCount$ = this.pendingCountSubject.asObservable();
 
-  private lastReviewedCount = 0;
-  private actualCount = 0;
-
   private initialized = false;
   private userId: string | null = null;
   private partnerId: string | null = null;
@@ -319,18 +316,29 @@ export class NotificationService {
     // Ordenar por fecha de creación descendente
     allNotifications.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-    this.actualCount = allNotifications.length;
-    if (this.lastReviewedCount > this.actualCount) {
-      this.lastReviewedCount = this.actualCount;
-    }
-
     this.notificationsSubject.next(allNotifications);
-    const pendingDisplay = Math.max(0, this.actualCount - this.lastReviewedCount);
+
+    // Calcular notificaciones pendientes según el timestamp de la última revisión
+    const lastReviewedStr = localStorage.getItem('last_reviewed_timestamp');
+    let pendingDisplay = 0;
+    if (lastReviewedStr) {
+      const lastReviewedTime = new Date(lastReviewedStr).getTime();
+      pendingDisplay = allNotifications.filter(n => new Date(n.created_at).getTime() > lastReviewedTime).length;
+    } else {
+      pendingDisplay = allNotifications.length;
+    }
     this.pendingCountSubject.next(pendingDisplay);
   }
 
   markAsReviewed() {
-    this.lastReviewedCount = this.actualCount;
+    const notifications = this.notificationsSubject.value;
+    if (notifications.length > 0) {
+      // Usamos el timestamp de la notificación más reciente
+      const latestTimestamp = notifications[0].created_at;
+      localStorage.setItem('last_reviewed_timestamp', latestTimestamp);
+    } else {
+      localStorage.setItem('last_reviewed_timestamp', new Date().toISOString());
+    }
     this.pendingCountSubject.next(0);
   }
 

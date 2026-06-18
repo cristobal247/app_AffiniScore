@@ -1,11 +1,11 @@
-from fastapi import APIRouter, HTTPException, Path
+from fastapi import APIRouter, HTTPException, Path, Header
 from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
 import os
 import json
 import httpx
-from database import supabase
+from database import supabase, get_user_id_from_token, is_safe_url, url as supabase_url
 from google import genai
 from google.genai import types
 
@@ -26,7 +26,19 @@ class ChallengeValidationResult(BaseModel):
     feedback: str = Field(description="Explicación detallada en español de lo observado, constructiva y afectuosa")
 
 @router.post("/validate")
-async def validate_challenge_photo(request: ChallengeValidateRequest):
+async def validate_challenge_photo(
+    request: ChallengeValidateRequest,
+    authorization: Optional[str] = Header(None)
+):
+    # 0. Validar Token de Usuario y evitar suplantación de identidad
+    token_user_id = get_user_id_from_token(authorization)
+    if token_user_id != request.user_id:
+        raise HTTPException(status_code=403, detail="El ID de usuario no coincide con el del token de sesión.")
+
+    # 0.1. Validar URL de imagen para evitar SSRF
+    if not is_safe_url(request.image_url, supabase_url):
+        raise HTTPException(status_code=400, detail="URL de imagen no permitida por razones de seguridad.")
+
     gemini_api_key = os.environ.get("GEMINI_API_KEY", "")
     if not gemini_api_key:
         gemini_api_key = os.environ.get("GROQ_API_KEY", "")
@@ -44,7 +56,7 @@ async def validate_challenge_photo(request: ChallengeValidateRequest):
             partner_id = partnership["user2_id"] if partnership["user1_id"] == request.user_id else partnership["user1_id"]
     except Exception as e:
         print(f"Error al buscar vinculación de pareja: {e}")
-
+    
     # 2. Preparar el Prompt para la IA
     system_prompt = (
         "Eres AffiniCoach, una IA experta en analizar y validar retos de desconexión de parejas.\n"

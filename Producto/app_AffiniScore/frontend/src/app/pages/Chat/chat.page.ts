@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, ViewChild, ChangeDetectorRef } from '@ang
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { 
   IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, 
   IonBackButton, IonFooter, IonInput, IonButton, IonIcon, IonAvatar,
@@ -13,6 +14,8 @@ import { GeminiService } from '../../services/gemini.service';
 import { FormatMessagePipe } from '../../pipes/format-message.pipe';
 import { addIcons } from 'ionicons';
 import { sendOutline, arrowBackOutline, videocam, call, ellipsisVertical, happyOutline, cameraOutline, send, sparkles, ellipsisHorizontal, chevronBackOutline, person, menuOutline } from 'ionicons/icons';
+import { environment } from '../../../environments/environment';
+import { retry, timer } from 'rxjs';
 
 @Component({
   selector: 'app-chat',
@@ -36,6 +39,7 @@ export class ChatPage implements OnDestroy {
   currentUserName: string = '';
   roomId: string = ''; 
   isLoading: boolean = false;
+  loadingStatus: string = 'Escribiendo';
   
   selectedImageUrl: string | null = null;
   isUploadingImage: boolean = false;
@@ -46,7 +50,8 @@ export class ChatPage implements OnDestroy {
     private supabaseSvc: SupabaseService,
     private geminiSvc: GeminiService,
     private menuCtrl: MenuController,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private http: HttpClient
   ) {
     addIcons({ sendOutline, arrowBackOutline, videocam, call, ellipsisVertical, happyOutline, cameraOutline, 'camera-outline': cameraOutline, send, sparkles, ellipsisHorizontal, chevronBackOutline, person, menuOutline, addCircleOutline: 'add-circle-outline', chatbubbleOutline: 'chatbubble-outline' });
   }
@@ -194,10 +199,8 @@ export class ChatPage implements OnDestroy {
     
     this.newMessage = '';
     this.isLoading = true;
+    this.loadingStatus = 'Escribiendo';
     
-    // Guardar el mensaje del usuario en Supabase de forma asíncrona
-    const sendUserMsgPromise = this.supabaseSvc.sendMessage(this.roomId, displayMsg, 'USER', imageUrl || undefined);
-
     // Auto-título si es el primer mensaje real del usuario
     if (this.messages.length === 2) {
       this.geminiSvc.generateTitle(displayMsg).then(async (title) => {
@@ -207,26 +210,47 @@ export class ChatPage implements OnDestroy {
         if (listRes.data) this.aiSessions = listRes.data;
       });
     }
-    
-    // Enviamos a Gemini con la imagen para visión multimodal
-    const botResponseText = await this.geminiSvc.sendMessage(displayMsg, this.currentUserName, imageUrl || undefined);
-    
-    const botMsg: ChatMessage = {
-      id: Math.random().toString(),
-      room_id: this.roomId,
-      sender_id: 'gemini-bot',
-      sender_type: 'AI',
-      message: botResponseText,
-      created_at: new Date().toISOString()
-    };
-    
-    this.messages.push(botMsg);
-    this.isLoading = false;
-    this.scrollToBottom();
 
-    // Guardar respuesta de la IA y asegurar que el primer mensaje se guardó
-    await sendUserMsgPromise;
-    await this.supabaseSvc.sendMessage(this.roomId, botResponseText, 'AI');
+    const apiUrl = (environment as any).apiUrl || 'http://localhost:8000';
+    const url = `${apiUrl}/api/chat/${this.roomId}/${this.currentUserName}?canal_id=2`;
+    const payload = {
+      message: displayMsg,
+      image_url: imageUrl || null,
+      sender_id: this.currentUserId
+    };
+
+    this.http.post<any>(url, payload).pipe(
+      retry({
+        count: 12,
+        delay: (error, retryCount) => {
+          console.warn(`Intento de conexión ${retryCount} fallido. El servidor podría estar iniciando. Reintentando...`);
+          this.loadingStatus = 'Escribiendo';
+          this.cdr.detectChanges();
+          return timer(5000);
+        }
+      })
+    ).subscribe({
+      next: (res) => {
+        this.isLoading = false;
+        if (res.ai_response) {
+          const idx = this.messages.findIndex(m => m.id === tempMsg.id);
+          if (idx > -1 && res.user_message) {
+            this.messages[idx].id = res.user_message.id;
+            this.messages[idx].created_at = res.user_message.created_at;
+          }
+          this.messages.push(res.ai_response);
+          this.scrollToBottom();
+        }
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error al enviar mensaje individual:', err);
+        this.isLoading = false;
+        this.messages = this.messages.filter(m => m.id !== tempMsg.id);
+        this.cdr.detectChanges();
+        alert('No se pudo enviar el mensaje. Revisa tu conexión con el servidor.');
+      }
+    });
   }
 
   scrollToBottom(duration: number = 300) {

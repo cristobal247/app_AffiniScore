@@ -13,6 +13,7 @@ import { environment } from '../../../environments/environment';
 import { FormatMessagePipe } from '../../pipes/format-message.pipe';
 import { addIcons } from 'ionicons';
 import { send, sparkles, ellipsisHorizontal, chevronBackOutline, person, cameraOutline, close } from 'ionicons/icons';
+import { retry, timer } from 'rxjs';
 
 @Component({
   selector: 'app-group-chat',
@@ -35,6 +36,7 @@ export class GroupChatPage implements OnDestroy {
   currentUserId: string = '';
   partnershipId: string = '';
   isLoading: boolean = false;
+  loadingStatus: string = 'Escribiendo';
   
   selectedImageUrl: string | null = null;
   isUploadingImage: boolean = false;
@@ -190,6 +192,7 @@ export class GroupChatPage implements OnDestroy {
     this.scrollToBottom();
     this.newMessage = '';
     this.isLoading = true;
+    this.loadingStatus = 'Escribiendo';
 
     const apiUrl = (environment as any).apiUrl || 'http://localhost:8000';
     const url = `${apiUrl}/api/chat/3/${this.currentUserId}`;
@@ -202,7 +205,19 @@ export class GroupChatPage implements OnDestroy {
       image_url: imageUrl || null
     };
 
-    this.http.post<any>(url, payload).subscribe({
+    this.http.post<any>(url, payload).pipe(
+      retry({
+        count: 12,
+        delay: (error, retryCount) => {
+          console.warn(`Intento de conexión grupal ${retryCount} fallido. Reintentando...`);
+          this.zone.run(() => {
+            this.loadingStatus = 'Escribiendo';
+            this.cdr.detectChanges();
+          });
+          return timer(5000);
+        }
+      })
+    ).subscribe({
       next: (res) => {
         console.log('DEBUG: Respuesta recibida:', res);
         this.zone.run(() => {

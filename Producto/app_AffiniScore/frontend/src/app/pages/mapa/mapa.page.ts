@@ -187,19 +187,27 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
 
   async loadUserProfile() {
     try {
-      const { data } = await this.supabaseSvc.getUserProfile();
+      const [profileRes, partnerData] = await Promise.all([
+        this.supabaseSvc.getUserProfile(),
+        this.supabaseSvc.getPartnerLocation()
+      ]);
+
+      const data = profileRes?.data;
       if (data) {
         this.userAvatarUrl = data.avatar_url || null;
       }
 
-      // Cargar información y ubicación inicial del partner
-      const partnerData = await this.supabaseSvc.getPartnerLocation();
       if (partnerData) {
         this.partnerId = partnerData.id;
         this.partnerAvatarUrl = partnerData.avatarUrl;
         this.partnerName = partnerData.name;
         this.partnerLat = partnerData.latitude;
         this.partnerLng = partnerData.longitude;
+        
+        if (partnerData.latitude && partnerData.longitude) {
+          localStorage.setItem('partner_last_lat', String(partnerData.latitude));
+          localStorage.setItem('partner_last_lng', String(partnerData.longitude));
+        }
       }
 
       // Forzar actualización inmediata de las imágenes de los marcadores si ya existen
@@ -218,6 +226,9 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
   private updateUserMarker(lat: number, lng: number) {
     this.currentLat = lat;
     this.currentLng = lng;
+    
+    localStorage.setItem('user_last_lat', String(lat));
+    localStorage.setItem('user_last_lng', String(lng));
 
     if (!this.map) return;
 
@@ -256,6 +267,9 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
   private updatePartnerMarker(lat: number, lng: number) {
     this.partnerLat = lat;
     this.partnerLng = lng;
+
+    localStorage.setItem('partner_last_lat', String(lat));
+    localStorage.setItem('partner_last_lng', String(lng));
 
     if (!this.map) return;
 
@@ -343,17 +357,27 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
   }
 
   private async initMap(): Promise<void> {
-    // Coordenadas por defecto (Santiago, Chile)
-    let lat = -33.447487;
-    let lng = -70.673676;
+    // Coordenadas por defecto (Santiago, Chile) o tomadas de la caché para carga instantánea
+    const cachedUserLat = localStorage.getItem('user_last_lat');
+    const cachedUserLng = localStorage.getItem('user_last_lng');
+    const cachedPartnerLat = localStorage.getItem('partner_last_lat');
+    const cachedPartnerLng = localStorage.getItem('partner_last_lng');
 
-    // Inicializamos el mapa con la ubicación por defecto usando Mapbox GL JS
+    let lat = cachedUserLat ? parseFloat(cachedUserLat) : -33.447487;
+    let lng = cachedUserLng ? parseFloat(cachedUserLng) : -70.673676;
+
+    if (cachedPartnerLat && cachedPartnerLng) {
+      this.partnerLat = parseFloat(cachedPartnerLat);
+      this.partnerLng = parseFloat(cachedPartnerLng);
+    }
+
+    // Inicializamos el mapa con la ubicación por defecto o en caché usando Mapbox GL JS
     mapboxgl.accessToken = environment.mapboxToken;
     this.map = new mapboxgl.Map({
       container: 'map',
       style: 'mapbox://styles/mapbox/streets-v12',
       center: [lng, lat],
-      zoom: 13,
+      zoom: cachedUserLat ? 15 : 13,
       attributionControl: true
     });
 
@@ -361,17 +385,33 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
       if (this.map) {
         this.map.resize();
       }
-    }, 500);
+    }, 300);
 
-    // Cargar información inicial
-    await this.loadUserProfile();
-
-    // Dibujar marcadores iniciales de fallback
+    // Dibujar marcadores iniciales usando la caché (instantáneo)
     this.updateUserMarker(lat, lng);
     if (this.partnerLat && this.partnerLng) {
       this.updatePartnerMarker(this.partnerLat, this.partnerLng);
       this.fitBothMarkers();
     }
+
+    // Cargar información de perfiles y pareja asíncronamente en segundo plano
+    this.loadUserProfile().then(() => {
+      if (this.partnerLat && this.partnerLng) {
+        this.updatePartnerMarker(this.partnerLat, this.partnerLng);
+        this.fitBothMarkers();
+      }
+      // Suscribirse a la ubicación de la pareja en tiempo real
+      if (this.partnerId) {
+        console.log('Suscripción activa a la pareja:', this.partnerId);
+        this.partnerSubscription = this.supabaseSvc.subscribeToPartnerLocation(this.partnerId, (newLoc) => {
+          console.log('Nueva ubicación de pareja recibida:', newLoc);
+          if (newLoc.latitude && newLoc.longitude) {
+            this.updatePartnerMarker(newLoc.latitude, newLoc.longitude);
+            this.fitBothMarkers();
+          }
+        });
+      }
+    }).catch(err => console.warn('Error cargando perfiles en background:', err));
 
     // 1. Configuramos las suscripciones de tracking y eventos ANTES de pedir la ubicación
     this.geoErrorSubscription = this.geolocationService.error$.subscribe((message) => {
@@ -400,19 +440,7 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
       await this.supabaseSvc.updateUserLocation(position.latitude, position.longitude);
     });
 
-    // 2. Suscribirse a la ubicación de la pareja en tiempo real
-    if (this.partnerId) {
-      console.log('Suscripción activa a la pareja:', this.partnerId);
-      this.partnerSubscription = this.supabaseSvc.subscribeToPartnerLocation(this.partnerId, (newLoc) => {
-        console.log('Nueva ubicación de pareja recibida:', newLoc);
-        if (newLoc.latitude && newLoc.longitude) {
-          this.updatePartnerMarker(newLoc.latitude, newLoc.longitude);
-          this.fitBothMarkers();
-        }
-      });
-    }
-
-    // 3. Intentamos obtener la posición inicial rápidamente
+    // 3. Intentamos obtener la posición inicial del GPS rápidamente
     try {
       const currentPosition = await this.geolocationService.getCurrentPosition();
       lat = currentPosition.latitude;
@@ -458,12 +486,10 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
       console.warn('No se pudo iniciar el tracking constante:', err);
     }
 
-    // 5. Cargar lugares especiales en el mapa
-    try {
-      await this.cargarLugaresEspeciales();
-    } catch (err) {
+    // 5. Cargar lugares especiales en el mapa de forma asíncrona
+    this.cargarLugaresEspeciales().catch((err) => {
       console.warn('Error al cargar lugares especiales:', err);
-    }
+    });
   }
 
   async handleSOS() {

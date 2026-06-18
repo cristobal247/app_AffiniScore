@@ -1,10 +1,10 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
 import random
 
-from database import supabase
+from database import supabase, get_user_id_from_token
 
 router = APIRouter(prefix="/api/v1/memory-games", tags=["memory-games"])
 
@@ -56,7 +56,15 @@ def _normalize_memory(row: dict) -> dict:
 
 
 @router.post("/round")
-async def get_historic_memory_round(request: HistoricMemoryRequest):
+async def get_historic_memory_round(
+    request: HistoricMemoryRequest,
+    authorization: Optional[str] = Header(None)
+):
+    # Validar Token de Usuario y evitar suplantación de identidad
+    token_user_id = get_user_id_from_token(authorization)
+    if token_user_id != request.user_id:
+        raise HTTPException(status_code=403, detail="El ID de usuario no coincide con el del token de sesión.")
+
     partnership = _get_active_partnership(request.partnership_id, request.user_id)
     partner_ids = {partnership.get("user1_id"), partnership.get("user2_id")}
 
@@ -91,7 +99,15 @@ async def get_historic_memory_round(request: HistoricMemoryRequest):
 
 
 @router.post("/complete")
-async def complete_historic_memory(request: HistoricMemoryCompleteRequest):
+async def complete_historic_memory(
+    request: HistoricMemoryCompleteRequest,
+    authorization: Optional[str] = Header(None)
+):
+    # Validar Token de Usuario y evitar suplantación de identidad
+    token_user_id = get_user_id_from_token(authorization)
+    if token_user_id != request.user_id:
+        raise HTTPException(status_code=403, detail="El ID de usuario no coincide con el del token de sesión.")
+
     partnership = _get_active_partnership(request.partnership_id, request.user_id)
     points_to_award = 20
 
