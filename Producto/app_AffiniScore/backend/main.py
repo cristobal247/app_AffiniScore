@@ -71,14 +71,19 @@ async def create_partnership(request: InviteRequest):
     token = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
     
     try:
-        # Verificar si el usuario ya tiene una invitación generada
+        # 1. Eliminar cualquier vinculación previa donde este usuario haya sido user2
+        # para liberar la restricción UNIQUE de user2_id
+        supabase.table("partnerships").delete().eq("user2_id", request.user1_id).execute()
+        
+        # 2. Verificar si el usuario ya tiene una invitación generada como user1
         existing = supabase.table("partnerships").select("*").eq("user1_id", request.user1_id).execute()
         
         if existing.data:
-            # Si ya existe, actualizamos el token
+            # Si ya existe, actualizamos el token y limpiamos user2_id anterior
             response = supabase.table("partnerships").update({
                 "pairing_token": token,
-                "status": "pending"
+                "status": "pending",
+                "user2_id": None
             }).eq("user1_id", request.user1_id).execute()
         else:
             # Si no existe, creamos una nueva
@@ -96,7 +101,13 @@ async def create_partnership(request: InviteRequest):
 async def join_partnership(request: JoinRequest):
     try:
         print(f"DEBUG: Attempting to join with token: {request.token} and user2_id: {request.user2_id}")
-        # Aquí verificamos que el token exista y el status sea pending
+        
+        # 1. Eliminar cualquier vinculación previa del usuario que se está uniendo (sea como user1 o user2)
+        # para evitar violar la restricción UNIQUE en la base de datos
+        supabase.table("partnerships").delete().eq("user1_id", request.user2_id).execute()
+        supabase.table("partnerships").delete().eq("user2_id", request.user2_id).execute()
+        
+        # 2. Verificar que el token exista y el status sea pending, e insertar la vinculación
         response = supabase.table("partnerships").update({
             "user2_id": request.user2_id,
             "status": "active"
@@ -108,10 +119,6 @@ async def join_partnership(request: JoinRequest):
             
         partnership = response.data[0]
         print(f"DEBUG: Partnership record updated successfully: {partnership}")
-        
-        partnership_id = partnership["id"]
-        user1_id = partnership["user1_id"]
-        user2_id = partnership["user2_id"]
         
         return {"message": "Vinculación exitosa"}
     except HTTPException as he:

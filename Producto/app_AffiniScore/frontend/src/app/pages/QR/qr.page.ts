@@ -209,6 +209,16 @@ export class QrPage implements OnInit, OnDestroy {
     this.cameraError = null;
 
     try {
+      // Solicitar permisos de cámara formalmente a través de getUserMedia para forzar el prompt nativo
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          stream.getTracks().forEach(track => track.stop()); // Detener stream para no bloquear
+        } catch (e) {
+          console.warn('getUserMedia error requesting camera permission:', e);
+        }
+      }
+
       const devices = await Html5Qrcode.getCameras();
       if (devices && devices.length > 0) {
         this.cameras = devices;
