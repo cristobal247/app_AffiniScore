@@ -322,6 +322,28 @@ export class SupabaseService {
     return await this.supabase.auth.signOut();
   }
 
+  // Eliminar la cuenta del usuario en el backend
+  async deleteAccount(userId: string): Promise<{ success?: boolean; error?: any }> {
+    try {
+      const { data: session } = await this.supabase.auth.getSession();
+      const tokenHeader = session?.session?.access_token || '';
+
+      const headers = new HttpHeaders({
+        'Authorization': `Bearer ${tokenHeader}`,
+        'Content-Type': 'application/json'
+      });
+
+      const response = await firstValueFrom(
+        this.http.post<any>(`${this.apiUrl}/api/v1/users/delete`, { user_id: userId }, { headers })
+      );
+
+      return { success: response.success };
+    } catch (err: any) {
+      console.error('Error in deleteAccount:', err);
+      return { error: err.error?.detail || 'Error al eliminar la cuenta' };
+    }
+  }
+
   // Obtener el usuario que está logueado actualmente
   async getCurrentUser() {
     if (this._devMode) {

@@ -142,6 +142,32 @@ async def unlink_partnership(request: UnlinkRequest):
         raise HTTPException(status_code=400, detail=str(e))
 
 
+class DeleteAccountRequest(BaseModel):
+    user_id: str
+
+@app.post("/api/v1/users/delete")
+async def delete_user_account(request: DeleteAccountRequest):
+    try:
+        # 1. Buscar y desvincular pareja activa (actualizar status a unlinked)
+        p1 = supabase.table("partnerships").select("*").eq("user1_id", request.user_id).eq("status", "active").execute()
+        p2 = supabase.table("partnerships").select("*").eq("user2_id", request.user_id).eq("status", "active").execute()
+        
+        partnership = None
+        if p1.data: partnership = p1.data[0]
+        elif p2.data: partnership = p2.data[0]
+        
+        if partnership:
+            supabase.table("partnerships").update({"status": "unlinked"}).eq("id", partnership["id"]).execute()
+            
+        # 2. Eliminar el usuario de Supabase Auth (desencadena ON DELETE CASCADE en la tabla profiles, etc.)
+        supabase.auth.admin.delete_user(request.user_id)
+        
+        return {"success": True, "message": "Usuario eliminado exitosamente"}
+    except Exception as e:
+        print(f"Error al eliminar usuario: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 @app.post("/api/v1/points/request")
 async def create_point_request(request: PointRequestCreate):
     try:

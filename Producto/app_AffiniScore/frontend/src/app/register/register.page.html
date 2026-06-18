@@ -46,9 +46,12 @@
             [(ngModel)]="password" 
             name="password"
             placeholder="Contraseña"
-            required minlength="6">
+            required minlength="6"
+            style="flex: 1;">
           </ion-input>
-          <ion-icon [name]="showPassword ? 'eye-off-outline' : 'eye-outline'" slot="end" class="eye-icon" (click)="togglePassword()"></ion-icon>
+          <ion-button fill="clear" slot="end" (click)="togglePassword()" style="--padding-start: 0; --padding-end: 0; margin: 0; height: 100%; display: flex; align-items: center;">
+            <ion-icon [name]="showPassword ? 'eye-off-outline' : 'eye-outline'" class="eye-icon" style="margin: 0; font-size: 24px; color: #999;"></ion-icon>
+          </ion-button>
         </ion-item>
       </div>
 
@@ -71,21 +74,7 @@
         Comenzar
       </ion-button>
 
-      <div class="divider">
-        <span>Regístrate con</span>
-      </div>
 
-      <div class="social-row">
-        <div class="social-icon fb">
-          <ion-icon name="logo-facebook"></ion-icon>
-        </div>
-        <div class="social-icon google">
-          <img src="assets/images/google_icon.png" alt="Google">
-        </div>
-        <div class="social-icon apple">
-          <ion-icon name="logo-apple"></ion-icon>
-        </div>
-      </div>
 
       <div class="footer-text">
         <p>¿Ya tienes una cuenta? <span class="register-link" (click)="goToLogin()">Inicia sesión</span></p>

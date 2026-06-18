@@ -91,26 +91,26 @@ export class RegisterPage {
 
   async onRegister() {
     if (!this.fullName || !this.email || !this.password || !this.birthDate) {
-      this.showToast('Por favor completa todos los campos');
+      this.showToast('Por favor completa todos los campos', 'warning');
       return;
     }
 
     // Validación básica de email
     const emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
     if (!emailRegex.test(this.email)) {
-      this.showToast('Por favor ingresa un email válido');
+      this.showToast('Por favor ingresa un email válido', 'warning');
       return;
     }
 
     // Validación de fecha real
     if (!this.isValidDate(this.birthDate)) {
-      this.showToast('La fecha de nacimiento no es válida');
+      this.showToast('La fecha de nacimiento no es válida', 'warning');
       return;
     }
 
     // Validación de longitud de contraseña
     if (this.password.length < 6) {
-      this.showToast('La contraseña debe tener al menos 6 caracteres');
+      this.showToast('La contraseña debe tener al menos 6 caracteres', 'warning');
       return;
     }
 
@@ -137,23 +137,26 @@ export class RegisterPage {
         });
       }
 
+      // Cerrar la sesión iniciada automáticamente por Supabase al registrarse para forzar login manual
+      await this.supabase.signOut();
+
       await loading.dismiss();
       this.isLoading = false;
-      this.showToast('Cuenta creada con éxito. Por favor, revisa tu correo para confirmar tu cuenta.');
+      this.showToast('¡Cuenta creada con éxito! Ya puedes iniciar sesión.', 'success');
       this.router.navigate(['/login']);
     } catch (error: any) {
       await loading.dismiss();
       this.isLoading = false;
-      this.showToast(error.message || 'Error al registrarse');
+      this.showToast(error.message || 'Error al registrarse', 'danger');
     }
   }
 
-  async showToast(message: string) {
+  async showToast(message: string, color: string = 'danger') {
     const toast = await this.toastCtrl.create({
       message,
-      duration: 2000,
+      duration: 3000,
       position: 'bottom',
-      color: 'primary'
+      color: color
     });
     toast.present();
   }

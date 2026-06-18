@@ -6,7 +6,7 @@ import {
   IonContent, IonHeader, IonTitle, IonToolbar, IonButton,
   IonIcon, IonItem, IonLabel, IonList, LoadingController,
   IonButtons, IonBackButton, IonCard, IonCardContent, IonToggle,
-  ToastController
+  ToastController, AlertController
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import {
@@ -20,7 +20,8 @@ import {
   shieldCheckmarkOutline,
   notificationsOutline,
   cameraOutline,
-  documentTextOutline
+  documentTextOutline,
+  trashOutline
 } from 'ionicons/icons';
 import { SupabaseService } from '../../services/supabase';
 import jsPDF from 'jspdf';
@@ -83,7 +84,8 @@ export class ProfilePage implements OnInit {
     private router: Router,
     private loadingCtrl: LoadingController,
     private toastCtrl: ToastController,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private alertCtrl: AlertController
   ) {
     addIcons({
       logOutOutline,
@@ -96,7 +98,8 @@ export class ProfilePage implements OnInit {
       shieldCheckmarkOutline,
       notificationsOutline,
       cameraOutline,
-      documentTextOutline
+      documentTextOutline,
+      trashOutline
     });
   }
 
@@ -377,6 +380,67 @@ export class ProfilePage implements OnInit {
 
     await loading.dismiss();
     this.router.navigateByUrl('/login', { replaceUrl: true });
+  }
+
+  public async confirmDeleteAccount() {
+    const alert = await this.alertCtrl.create({
+      header: '¿Eliminar tu cuenta?',
+      subHeader: 'Esta acción es permanente. Se borrarán tus datos de forma definitiva y te desvincularás de tu pareja.',
+      message: 'Para confirmar la eliminación, escribe la frase "eliminar cuenta" a continuación:',
+      mode: 'ios',
+      inputs: [
+        {
+          name: 'confirmationText',
+          type: 'text',
+          placeholder: 'Escribe "eliminar cuenta"'
+        }
+      ],
+      buttons: [
+        {
+          text: 'Cancelar',
+          role: 'cancel'
+        },
+        {
+          text: 'Eliminar',
+          role: 'destructive',
+          handler: async (data) => {
+            const typedText = data.confirmationText ? data.confirmationText.toLowerCase().trim() : '';
+            if (typedText !== 'eliminar cuenta') {
+              this.showToast('La frase escrita no es válida. No se eliminó la cuenta.', 'warning');
+              return false;
+            }
+
+            const loading = await this.loadingCtrl.create({
+              message: 'Eliminando tu cuenta...',
+              mode: 'ios'
+            });
+            await loading.present();
+
+            try {
+              const currentUser = await this.supabaseSvc.getCurrentUser();
+              if (!currentUser) throw new Error('No se encontró el usuario actual');
+
+              const res = await this.supabaseSvc.deleteAccount(currentUser.id);
+              await loading.dismiss();
+
+              if (res.error) {
+                this.showToast('Error al eliminar cuenta: ' + res.error, 'danger');
+              } else {
+                this.showToast('Tu cuenta ha sido eliminada exitosamente.', 'success');
+                await this.supabaseSvc.signOut();
+                this.router.navigateByUrl('/login', { replaceUrl: true });
+              }
+            } catch (err: any) {
+              await loading.dismiss();
+              this.showToast('Error: ' + (err.message || err), 'danger');
+            }
+            return true;
+          }
+        }
+      ]
+    });
+
+    await alert.present();
   }
 
   async exportPDF() {
