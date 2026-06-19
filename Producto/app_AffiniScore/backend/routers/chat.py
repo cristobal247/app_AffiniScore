@@ -220,6 +220,77 @@ async def process_group_chat_3_message(
         if isinstance(e, HTTPException): raise e
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.post("/api/chat/3/{id_usuario}/welcome")
+async def get_group_chat_welcome_message(
+    id_usuario: str = Path(..., description="ID del usuario")
+):
+    try:
+        p_res = supabase.table("partnerships").select("id, user1_id, user2_id").or_(f"user1_id.eq.{id_usuario},user2_id.eq.{id_usuario}").eq("status", "active").execute()
+        if not p_res.data:
+            raise HTTPException(status_code=400, detail="El usuario no tiene una pareja vinculada activa")
+            
+        partnership_id = p_res.data[0]["id"]
+        user1_id = p_res.data[0]["user1_id"]
+        user2_id = p_res.data[0]["user2_id"]
+
+        # Verificar si ya existen mensajes en este chat para evitar duplicar la bienvenida
+        msg_check = supabase.table("chat_messages").select("id").eq("room_id", str(partnership_id)).limit(1).execute()
+        if msg_check.data:
+            return {"success": True, "message": "Ya existen mensajes en la sesión."}
+
+        # Asegurar que existe la sala
+        room_check = supabase.table("chat_rooms").select("id").eq("id", partnership_id).execute()
+        if not room_check.data:
+            new_room = {
+                "id": str(partnership_id),
+                "partnership_id": str(partnership_id),
+                "room_type": "GROUP_AI",
+                "title": "Terapia Grupal"
+            }
+            supabase.table("chat_rooms").insert(new_room).execute()
+
+        # Obtener nombres de ambos miembros para personalizar la bienvenida
+        u1_res = supabase.table("profiles").select("full_name").eq("id", user1_id).execute()
+        u2_res = supabase.table("profiles").select("full_name").eq("id", user2_id).execute()
+        
+        name1 = u1_res.data[0].get("full_name", "Miembro 1") if u1_res.data else "Miembro 1"
+        name2 = u2_res.data[0].get("full_name", "Miembro 2") if u2_res.data else "Miembro 2"
+
+        welcome_prompt = (
+            f"Escribe un mensaje de bienvenida cálido, profesional y reflexivo para iniciar una sesión de terapia grupal "
+            f"con la pareja formada por {name1} y {name2}. Salúdalos a ambos por su nombre de manera afectuosa pero neutral "
+            f"y profesional. Explícales brevemente que este es un espacio seguro de terapia de parejas en el cual podrán "
+            f"compartir sus emociones, reflexionar juntos y fortalecer su conexión. Invítalos a compartir qué los trae hoy "
+            f"a la sesión o cómo se sienten en este momento. Sigue estrictamente las directrices de formato de AffiniCoach: "
+            f"resalta palabras clave en negrita, usa emojis de manera moderada y redacta 2 a 3 párrafos cortos aptos para móvil."
+        )
+
+        ai_text = await get_gemini_ai_response(welcome_prompt, is_group=True, history=[])
+
+        ai_msg_data = {
+            "room_id": str(partnership_id),
+            "sender_id": None,
+            "sender_type": "AI",
+            "message": ai_text,
+            "metadata": {
+                "emisor": "AffiniCoach IA", 
+                "canal": 3,
+                "fuente": "Gemini API"
+            },
+            "created_at": datetime.utcnow().isoformat()
+        }
+        ai_res = supabase.table("chat_messages").insert(ai_msg_data).execute()
+        inserted_ai = ai_res.data[0] if (ai_res.data and len(ai_res.data) > 0) else ai_msg_data
+
+        return {
+            "success": True, 
+            "ai_response": inserted_ai
+        }
+    except Exception as e:
+        print(f"Error en bienvenida grupal: {e}")
+        if isinstance(e, HTTPException): raise e
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.post("/api/chat/{room_id}/{emisor}")
 async def process_chat_message(
     payload: ChatMessagePayload,

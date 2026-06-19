@@ -118,7 +118,43 @@ export class GroupChatPage implements OnDestroy {
     if (data) {
       this.messages = data;
       this.scrollToBottom();
+      
+      // Si no hay mensajes guardados en esta sala, pedimos el mensaje de bienvenida de la IA
+      if (this.messages.length === 0) {
+        await this.triggerWelcomeMessage();
+      }
     }
+  }
+
+  async triggerWelcomeMessage() {
+    this.isLoading = true;
+    this.loadingStatus = 'Escribiendo';
+    this.cdr.detectChanges();
+
+    const apiUrl = (environment as any).apiUrl || 'http://localhost:8000';
+    const url = `${apiUrl}/api/chat/3/${this.currentUserId}/welcome`;
+
+    this.http.post<any>(url, {}).subscribe({
+      next: (res) => {
+        this.zone.run(() => {
+          this.isLoading = false;
+          if (res.ai_response) {
+            if (!this.messages.find(m => m.id === res.ai_response.id)) {
+              this.messages.push(res.ai_response);
+              this.scrollToBottom();
+            }
+          }
+          this.cdr.detectChanges();
+        });
+      },
+      error: (err) => {
+        console.error('Error cargando bienvenida grupal:', err);
+        this.zone.run(() => {
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        });
+      }
+    });
   }
 
   setupRealtime() {
