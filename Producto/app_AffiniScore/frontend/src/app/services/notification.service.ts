@@ -45,7 +45,22 @@ export class NotificationService {
     private supabaseSvc: SupabaseService,
     private geolocationService: GeolocationService,
     private toastCtrl: ToastController
-  ) {}
+  ) {
+    this.supabaseSvc.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_OUT') {
+        this.userId = null;
+        this.partnerId = null;
+        this.partnershipId = null;
+        this.initialized = false;
+        this.cleanupSubscriptions();
+        this.notificationsSubject.next([]);
+        this.pendingCountSubject.next(0);
+      } else if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+        this.initialized = false;
+        await this.init();
+      }
+    });
+  }
 
   async init() {
     if (this.initialized) return;
@@ -58,6 +73,9 @@ export class NotificationService {
     if (partnership) {
       this.partnershipId = partnership.id;
       this.partnerId = partnership.user1_id === user.id ? partnership.user2_id : partnership.user1_id;
+    } else {
+      this.partnershipId = null;
+      this.partnerId = null;
     }
 
     this.initialized = true;
