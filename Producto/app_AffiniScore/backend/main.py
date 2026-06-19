@@ -100,7 +100,8 @@ async def create_partnership(request: InviteRequest):
 @app.post("/api/v1/partnerships/join")
 async def join_partnership(request: JoinRequest):
     try:
-        print(f"DEBUG: Attempting to join with token: {request.token} and user2_id: {request.user2_id}")
+        clean_token = request.token.replace(" ", "").upper()
+        print(f"DEBUG: Attempting to join with token: {clean_token} (original: {request.token}) and user2_id: {request.user2_id}")
         
         # 1. Eliminar cualquier vinculación previa del usuario que se está uniendo (sea como user1 o user2)
         # para evitar violar la restricción UNIQUE en la base de datos
@@ -111,7 +112,7 @@ async def join_partnership(request: JoinRequest):
         response = supabase.table("partnerships").update({
             "user2_id": request.user2_id,
             "status": "active"
-        }).eq("pairing_token", request.token).eq("status", "pending").execute()
+        }).eq("pairing_token", clean_token).eq("status", "pending").execute()
         
         if not response.data:
             print(f"DEBUG: No data returned from partnerships update. Token might be invalid, already used, or not pending. Token: {request.token}")

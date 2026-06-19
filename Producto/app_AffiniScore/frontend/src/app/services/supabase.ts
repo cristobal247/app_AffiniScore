@@ -165,10 +165,11 @@ export class SupabaseService {
   // Unirse a la pareja: envía el token
   async getPartnerNameByToken(token: string): Promise<{ name?: string; error?: string }> {
     try {
+      const cleanToken = token.replace(/\s/g, '').toUpperCase();
       const { data: partnership, error: pError } = await this.supabase
         .from('partnerships')
         .select('user1_id')
-        .eq('pairing_token', token)
+        .eq('pairing_token', cleanToken)
         .eq('status', 'pending')
         .single();
 
@@ -198,7 +199,7 @@ export class SupabaseService {
       });
 
       // Se asume que el backend recibe el token limpio (sin espacios) y el user2_id
-      const body = { token: token.replace(/\s/g, ''), user2_id };
+      const body = { token: token.replace(/\s/g, '').toUpperCase(), user2_id };
 
       await firstValueFrom(
         this.http.post<any>(`${this.apiUrl}/api/v1/partnerships/join`, body, { headers })

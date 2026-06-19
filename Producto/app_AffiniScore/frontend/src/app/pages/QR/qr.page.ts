@@ -121,6 +121,7 @@ export class QrPage implements OnInit, OnDestroy {
 
   async processJoin(token: string) {
     if (!this.currentUserId) return;
+    const cleanToken = token.replace(/\s/g, '').toUpperCase();
 
     const loading = await this.loadingCtrl.create({
       message: 'Buscando pareja...',
@@ -128,7 +129,7 @@ export class QrPage implements OnInit, OnDestroy {
     });
     await loading.present();
 
-    const partnerInfo = await this.supabaseSvc.getPartnerNameByToken(token);
+    const partnerInfo = await this.supabaseSvc.getPartnerNameByToken(cleanToken);
     await loading.dismiss();
 
     if (partnerInfo.error) {
@@ -164,7 +165,7 @@ export class QrPage implements OnInit, OnDestroy {
             });
             await joinLoading.present();
             
-            const response = await this.supabaseSvc.joinPartnership(token, this.currentUserId!);
+            const response = await this.supabaseSvc.joinPartnership(cleanToken, this.currentUserId!);
             await joinLoading.dismiss();
 
             if (response.success) {
