@@ -17,7 +17,7 @@ class ChatMessagePayload(BaseModel):
     sender_id: Optional[str] = None
     session_id: Optional[str] = None
 
-async def get_gemini_ai_response(user_message: str, is_group: bool, image_url: Optional[str] = None, history: Optional[list] = None, emisor_name: Optional[str] = None) -> str:
+async def get_gemini_ai_response(user_message: str, is_group: bool, image_url: Optional[str] = None, history: Optional[list] = None, emisor_name: Optional[str] = None, partner_name: Optional[str] = None) -> str:
     gemini_api_key = os.environ.get("GEMINI_API_KEY", "")
     if not gemini_api_key:
         gemini_api_key = os.environ.get("GROQ_API_KEY", "")
@@ -48,14 +48,16 @@ async def get_gemini_ai_response(user_message: str, is_group: bool, image_url: O
     )
 
     if is_group:
+        partner_info = f" La pareja de {emisor_name} se llama {partner_name}." if partner_name else ""
         system_prompt = (
             f"{base_prompt}\n\n"
-            "CONTEXTO ACTUAL: Chat Grupal de Pareja. Estás interactuando con ambos miembros a la vez. "
+            f"CONTEXTO ACTUAL: Chat Grupal de Pareja. Estás interactuando con la pareja formada por {emisor_name} y {partner_name}.{partner_info}\n"
             "Cada mensaje de los usuarios vendrá precedido por su nombre entre corchetes, por ejemplo: '[Juan]: mi pareja me ignora'.\n"
             "INSTRUCCIONES CLAVE DE GRUPO:\n"
             "- Identifica quién está hablando gracias a la etiqueta de su nombre.\n"
-            "- Cuando un usuario exprese una preocupación, dolor o queja (ej. 'mi pareja me ignora'), valida sus sentimientos con empatía.\n"
-            "- Inmediatamente después, dirígete al otro miembro de la pareja por su nombre (si está en el historial reciente o si lo puedes deducir) y pídele amablemente su perspectiva u opinión al respecto para involucrarlo en la terapia. Ejemplo: '[Valida al emisor]... y cuéntame [Nombre de la pareja], ¿cómo vives tú esta situación?' o '¿qué opinas sobre esto que nos comparte [Nombre]?'\n"
+            "- Cuando un usuario exprese una preocupación, dolor o queja, valida sus sentimientos con empatía.\n"
+            f"- Dirígete siempre a los usuarios por sus nombres reales ({emisor_name} y {partner_name}). JAMÁS uses placeholders genéricos como '[Usuario]', '[Nombre de la pareja]' o '[Nombre]'.\n"
+            f"- Inmediatamente después de validar al emisor ({emisor_name}), dirígete a su pareja ({partner_name}) por su nombre real para involucrarla en la terapia (ejemplo: 'y cuéntame {partner_name}, ¿cómo vives tú esta situación?' o '¿qué opinas sobre esto que nos comparte {emisor_name}?').\n"
             "- Mantén el hilo de la conversación y no desvíes el tema. Fomenta que hablen y se escuchen mutuamente sin tomar bandos."
         )
     else:
@@ -146,12 +148,14 @@ async def process_group_chat_3_message(
     id_usuario: str = Path(..., description="ID del usuario emisor")
 ):
     try:
-        p_res = supabase.table("partnerships").select("id").or_(f"user1_id.eq.{id_usuario},user2_id.eq.{id_usuario}").eq("status", "active").execute()
+        p_res = supabase.table("partnerships").select("id, user1_id, user2_id").or_(f"user1_id.eq.{id_usuario},user2_id.eq.{id_usuario}").eq("status", "active").execute()
         
         if not p_res.data:
             raise HTTPException(status_code=400, detail="El usuario no tiene una pareja vinculada activa")
             
         partnership_id = p_res.data[0]["id"]
+        user1_id = p_res.data[0]["user1_id"]
+        user2_id = p_res.data[0]["user2_id"]
 
         room_check = supabase.table("chat_rooms").select("id").eq("id", partnership_id).execute()
         if not room_check.data:
@@ -163,8 +167,14 @@ async def process_group_chat_3_message(
             }
             supabase.table("chat_rooms").insert(new_room).execute()
 
-        profile_res = supabase.table("profiles").select("full_name").eq("id", id_usuario).execute()
-        emisor_name = profile_res.data[0].get("full_name", "Usuario") if profile_res.data else "Usuario"
+        u1_res = supabase.table("profiles").select("full_name").eq("id", user1_id).execute()
+        u2_res = supabase.table("profiles").select("full_name").eq("id", user2_id).execute()
+        
+        name1 = u1_res.data[0].get("full_name", "Miembro 1") if u1_res.data else "Miembro 1"
+        name2 = u2_res.data[0].get("full_name", "Miembro 2") if u2_res.data else "Miembro 2"
+        
+        emisor_name = name1 if id_usuario == user1_id else name2
+        partner_name = name2 if id_usuario == user1_id else name1
         
         user_metadata = {"emisor": emisor_name, "canal": 3}
         if payload.image_url:
@@ -191,7 +201,7 @@ async def process_group_chat_3_message(
             print(f"Error cargando historial de chat grupal: {he}")
 
         # 4. Obtener respuesta de la IA configurada como moderadora grupal
-        ai_text = await get_gemini_ai_response(payload.message, is_group=True, image_url=payload.image_url, history=history, emisor_name=emisor_name)
+        ai_text = await get_gemini_ai_response(payload.message, is_group=True, image_url=payload.image_url, history=history, emisor_name=emisor_name, partner_name=partner_name)
         
         # 5. Guardar respuesta de la IA
         ai_msg_data = {
@@ -318,6 +328,22 @@ async def process_chat_message(
             
         elif canal_id in [2, 3]:
             is_group = (canal_id == 3)
+            partner_name = None
+            
+            if is_group:
+                try:
+                    p_res = supabase.table("partnerships").select("user1_id, user2_id").eq("id", room_id).execute()
+                    if p_res.data:
+                        user1_id = p_res.data[0]["user1_id"]
+                        user2_id = p_res.data[0]["user2_id"]
+                        
+                        sender_id = payload.sender_id
+                        partner_id = user2_id if sender_id == user1_id else user1_id
+                        
+                        p_profile = supabase.table("profiles").select("full_name").eq("id", partner_id).execute()
+                        partner_name = p_profile.data[0].get("full_name", "Pareja") if p_profile.data else "Pareja"
+                except Exception as pe:
+                    print(f"Error cargando nombre del partner: {pe}")
             
             # Obtener el historial de la conversación (últimos 8 mensajes)
             history = []
@@ -328,7 +354,7 @@ async def process_chat_message(
             except Exception as he:
                 print(f"Error cargando historial de chat: {he}")
 
-            ai_text = await get_gemini_ai_response(payload.message, is_group, payload.image_url, history=history, emisor_name=emisor)
+            ai_text = await get_gemini_ai_response(payload.message, is_group, payload.image_url, history=history, emisor_name=emisor, partner_name=partner_name)
             
             ai_msg_data = {
                 "room_id": room_id,
