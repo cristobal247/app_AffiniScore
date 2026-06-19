@@ -1715,7 +1715,10 @@ export class SupabaseService {
               await firstValueFrom(
                 this.http.post<any>(`${this.apiUrl}/api/v1/notifications/sos`, {
                   partner_id: partnerId,
-                  sender_name: userProfile.name || 'Tu pareja'
+                  sender_name: userProfile.name || 'Tu pareja',
+                  audio_url: audioUrl,
+                  latitude: latitude,
+                  longitude: longitude
                 }, {
                   headers: {
                     'Authorization': `Bearer ${tokenHeader}`,

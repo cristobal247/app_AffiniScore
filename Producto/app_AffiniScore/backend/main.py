@@ -244,7 +244,7 @@ async def register_memory_metadata(request: MemoryRegisterRequest, authorization
 
         if response.status_code not in (200, 201):
             raise HTTPException(status_code=400, detail=response.text)
-
+ 
         data = response.json()
         return {"success": True, "data": data[0] if isinstance(data, list) and data else data}
     except Exception as e:
@@ -267,6 +267,20 @@ async def send_push_notification(request: NotificationRequest):
                 title="¡Tu pareja te ha consentido! 💖",
                 body=f"¿Confirmas que realizó la acción: {request.action_name}?"
             ),
+            android=messaging.AndroidConfig(
+                priority="high",
+                notification=messaging.AndroidNotification(
+                    sound="default",
+                    channel_id="chat-channel"
+                )
+            ),
+            apns=messaging.APNSConfig(
+                payload=messaging.APNSPayload(
+                    aps=messaging.Aps(
+                        sound="default"
+                    )
+                )
+            ),
             data={
                 "type": "validation_request",
                 "log_id": request.log_id,
@@ -281,11 +295,14 @@ async def send_push_notification(request: NotificationRequest):
     except Exception as e:
         print(f"Error enviando push: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-
+ 
 class SosNotificationRequest(BaseModel):
     partner_id: str
     sender_name: str
-
+    audio_url: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+ 
 @app.post("/api/v1/notifications/sos")
 async def send_sos_push_notification(request: SosNotificationRequest):
     try:
@@ -304,12 +321,23 @@ async def send_sos_push_notification(request: SosNotificationRequest):
             android=messaging.AndroidConfig(
                 priority="high",
                 notification=messaging.AndroidNotification(
-                    sound="default"
+                    sound="sos_sound",
+                    channel_id="sos-channel"
+                )
+            ),
+            apns=messaging.APNSConfig(
+                payload=messaging.APNSPayload(
+                    aps=messaging.Aps(
+                        sound="sos_sound.caf"
+                    )
                 )
             ),
             data={
                 "type": "sos_alert",
-                "sender_name": request.sender_name
+                "sender_name": request.sender_name,
+                "audio_url": request.audio_url or "",
+                "latitude": str(request.latitude) if request.latitude is not None else "",
+                "longitude": str(request.longitude) if request.longitude is not None else ""
             },
             token=token,
         )
