@@ -42,6 +42,7 @@ export class QrPage implements OnInit, OnDestroy {
   // CORRECCIÓN TS2709: Se usa any para evitar conflictos de namespace
   private html5Qrcode: any = null;
   private currentUserId: string | null = null;
+  private partnershipSubscription: any = null;
 
   isCameraReady = false;
   cameraError: string | null = null;
@@ -66,8 +67,51 @@ export class QrPage implements OnInit, OnDestroy {
     const user = await this.supabaseSvc.getCurrentUser();
     if (user?.id) {
       this.currentUserId = user.id;
-      // Ya no generamos el código automáticamente
+      this.setupPartnershipSubscription();
     }
+  }
+
+  async setupPartnershipSubscription() {
+    if (!this.currentUserId) return;
+
+    this.partnershipSubscription = this.supabaseSvc.supabase
+      .channel('qr-partnership-status-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'partnerships',
+        },
+        async (payload: any) => {
+          const updated = payload.new;
+          if (updated.user1_id === this.currentUserId && updated.status === 'active') {
+            console.log('Detectada vinculación en tiempo real desde QR');
+            let partnerName = 'tu pareja';
+            if (updated.user2_id) {
+              const { data: partnerProfile } = await this.supabaseSvc.supabase
+                .from('profiles')
+                .select('full_name')
+                .eq('id', updated.user2_id)
+                .single();
+              if (partnerProfile?.full_name) {
+                partnerName = partnerProfile.full_name;
+              }
+            }
+
+            const successToast = await this.toastCtrl.create({
+              message: `¡Vinculación exitosa con ${partnerName}!`,
+              duration: 3000,
+              color: 'success',
+              position: 'top'
+            });
+            await successToast.present();
+
+            this.navCtrl.navigateRoot('/profile', { animationDirection: 'forward' });
+          }
+        }
+      )
+      .subscribe();
   }
 
   async loadInviteCode() {
@@ -93,6 +137,9 @@ export class QrPage implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.stopScanner();
+    if (this.partnershipSubscription) {
+      this.supabaseSvc.supabase.removeChannel(this.partnershipSubscription);
+    }
   }
 
   async switchTab(tab: 'qr' | 'scan') {

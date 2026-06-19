@@ -130,11 +130,18 @@ export class ProfilePage implements OnInit {
         },
         (payload: any) => {
           const updated = payload.new;
-          // Si el cambio afecta a mi vinculación y el estado ya no es active
-          if ((updated.user1_id === user.id || updated.user2_id === user.id) && updated.status !== 'active') {
-            console.log('Detectada desvinculación en tiempo real');
-            this.loadProfileData();
-            this.showToast('Tu pareja ha desvinculado la cuenta.', 'warning');
+          // Si el cambio afecta a mi vinculación
+          if (updated.user1_id === user.id || updated.user2_id === user.id) {
+            if (updated.status === 'active') {
+              console.log('Detectada vinculación activa en tiempo real');
+              this.loadProfileData().then(() => {
+                this.showToast(`¡Vinculación exitosa con ${this.partnerName}!`, 'success');
+              });
+            } else if (updated.status !== 'active') {
+              console.log('Detectada desvinculación en tiempo real');
+              this.loadProfileData();
+              this.showToast('Tu pareja ha desvinculado la cuenta.', 'warning');
+            }
           }
         }
       )
