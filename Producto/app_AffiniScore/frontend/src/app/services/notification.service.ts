@@ -33,6 +33,12 @@ export class NotificationService {
   private notificationClickSubject = new Subject<any>();
   public notificationClick$ = this.notificationClickSubject.asObservable();
 
+  triggerNotificationClick(extra: any) {
+    if (extra) {
+      this.notificationClickSubject.next(extra);
+    }
+  }
+
   private initialized = false;
   private userId: string | null = null;
   private partnerId: string | null = null;

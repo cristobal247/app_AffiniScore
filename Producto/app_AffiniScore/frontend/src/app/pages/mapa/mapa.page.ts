@@ -524,7 +524,7 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
         }
       };
 
-      this.mediaRecorder.start();
+      this.mediaRecorder.start(250);
       this.isRecording = true;
       
       this.showToast('Grabando audio SOS... Vuelve a tocar para enviar', 'danger');

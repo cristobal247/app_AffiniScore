@@ -180,6 +180,13 @@ export class AppComponent implements OnInit, OnDestroy {
       const data = notification.notification.data;
       if (data && data.type === 'validation_request') {
         this.showValidationAlert(data.log_id, data.action_name);
+      } else if (data && data.type === 'sos_alert') {
+        this.notificationSvc.triggerNotificationClick({
+          type: 'sos_alert',
+          audioUrl: data.audio_url || null,
+          latitude: data.latitude || null,
+          longitude: data.longitude || null
+        });
       }
     });
   }
