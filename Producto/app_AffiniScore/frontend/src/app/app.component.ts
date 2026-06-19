@@ -5,6 +5,7 @@ import { SupabaseService } from './services/supabase';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { Capacitor } from '@capacitor/core';
 import { AlertController } from '@ionic/angular/standalone';
+import { NotificationService } from './services/notification.service';
 
 @Component({
   selector: 'app-root',
@@ -21,10 +22,46 @@ export class AppComponent implements OnInit, OnDestroy {
   constructor(
     private router: Router, 
     private supabaseSvc: SupabaseService,
-    private alertCtrl: AlertController
+    private alertCtrl: AlertController,
+    private notificationSvc: NotificationService
   ) {}
 
   ngOnInit() {
+    // Suscribirse a clics de notificaciones nativas/locales/web
+    this.notificationSvc.notificationClick$.subscribe(async (extra) => {
+      console.log('AppComponent: Notificación local/web tocada:', extra);
+      if (!extra) return;
+
+      if (extra.type === 'sos_alert') {
+        // Reproducir audio si existe
+        if (extra.audioUrl) {
+          try {
+            let audioSrc = extra.audioUrl;
+            if (audioSrc && !audioSrc.startsWith('http') && !audioSrc.startsWith('data:')) {
+              audioSrc = 'data:audio/webm;base64,' + audioSrc;
+            }
+            const audio = new Audio(audioSrc);
+            audio.play().catch(err => console.warn('SOS click playback failed:', err));
+          } catch (e) {
+            console.error('Error reproduciendo audio SOS desde click:', e);
+          }
+        }
+
+        // Guardar coordenadas de la alerta en la caché temporal del partner
+        if (extra.latitude && extra.longitude) {
+          localStorage.setItem('partner_last_lat', String(extra.latitude));
+          localStorage.setItem('partner_last_lng', String(extra.longitude));
+        }
+
+        // Navegar a la pestaña del mapa
+        this.router.navigate(['/tabs/mapa']);
+      } else if (extra.type === 'action_validation') {
+        if (extra.logId) {
+          this.showValidationAlert(extra.logId, extra.actionName || 'Acción registrada');
+        }
+      }
+    });
+
     this.supabaseSvc.onAuthStateChange((event, session) => {
       // Si el evento es un cierre de sesión (manual o por expiración del token)
       if (event === 'SIGNED_OUT') {

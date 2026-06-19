@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { SupabaseService } from './supabase';
-import { BehaviorSubject, Subscription } from 'rxjs';
+import { BehaviorSubject, Subscription, Subject } from 'rxjs';
 import { GeolocationService } from './geolocation.service';
 import { ToastController } from '@ionic/angular/standalone';
 import { LocalNotifications } from '@capacitor/local-notifications';
@@ -29,6 +29,9 @@ export class NotificationService {
 
   private pendingCountSubject = new BehaviorSubject<number>(0);
   public pendingCount$ = this.pendingCountSubject.asObservable();
+
+  private notificationClickSubject = new Subject<any>();
+  public notificationClick$ = this.notificationClickSubject.asObservable();
 
   private initialized = false;
   private userId: string | null = null;
@@ -60,6 +63,15 @@ export class NotificationService {
         await this.init();
       }
     });
+
+    if (Capacitor.isNativePlatform()) {
+      LocalNotifications.addListener('localNotificationActionPerformed', (notificationAction) => {
+        const extra = notificationAction.notification.extra;
+        if (extra) {
+          this.notificationClickSubject.next(extra);
+        }
+      });
+    }
   }
 
   async init() {
@@ -360,7 +372,7 @@ export class NotificationService {
     this.pendingCountSubject.next(0);
   }
 
-  async showNativeNotification(title: string, message: string) {
+  async showNativeNotification(title: string, message: string, extraData?: any) {
     if (Capacitor.isNativePlatform()) {
       try {
         await LocalNotifications.schedule({
@@ -369,6 +381,7 @@ export class NotificationService {
               title: title,
               body: message,
               id: Math.floor(Math.random() * 100000),
+              extra: extraData || {},
               schedule: { at: new Date(Date.now() + 100) },
               sound: 'default'
             }
@@ -379,9 +392,15 @@ export class NotificationService {
       }
     } else if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
       try {
-        new Notification(title, {
+        const n = new Notification(title, {
           body: message
         });
+        n.onclick = () => {
+          window.focus();
+          if (extraData) {
+            this.notificationClickSubject.next(extraData);
+          }
+        };
       } catch (e) {
         console.warn('Error al mostrar notificación en web:', e);
       }
@@ -405,7 +424,8 @@ export class NotificationService {
             if (payload.eventType === 'INSERT') {
               this.showNativeNotification(
                 '💖 Validación de acción',
-                'Tu pareja ha registrado una nueva acción que requiere tu confirmación.'
+                'Tu pareja ha registrado una nueva acción que requiere tu confirmación.',
+                { type: 'action_validation', logId: payload.new.id, actionName: 'una acción' }
               );
             }
           }
@@ -419,12 +439,21 @@ export class NotificationService {
         .on(
           'postgres_changes',
           { event: 'INSERT', schema: 'public', table: 'sos_alerts', filter: `user_id=eq.${this.partnerId}` },
-          () => {
+          (payload: any) => {
             this.fetchNotifications();
-            this.showNativeNotification(
-              '🚨 ¡ALERTA SOS URGENTE! 🚨',
-              'Tu pareja necesita ayuda urgente. Revisa su ubicación inmediatamente.'
-            );
+            if (payload.new) {
+              this.showNativeNotification(
+                '🚨 ¡ALERTA SOS URGENTE! 🚨',
+                'Tu pareja necesita ayuda urgente. Revisa su ubicación inmediatamente.',
+                { 
+                  type: 'sos_alert', 
+                  audioUrl: payload.new.audio_url, 
+                  latitude: payload.new.latitude, 
+                  longitude: payload.new.longitude,
+                  userId: payload.new.user_id
+                }
+              );
+            }
           }
         )
         .subscribe();
@@ -443,7 +472,8 @@ export class NotificationService {
             if (payload.new && payload.new.user_id === this.partnerId) {
               this.showNativeNotification(
                 '📸 Nuevo recuerdo',
-                'Tu pareja ha subido un nuevo recuerdo especial.'
+                'Tu pareja ha subido un nuevo recuerdo especial.',
+                { type: 'new_memory', memoryId: payload.new.id }
               );
             }
           }
