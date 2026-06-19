@@ -503,7 +503,19 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
   private async startRecording() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      this.mediaRecorder = new MediaRecorder(stream);
+      
+      // Detectar formato de audio soportado por el dispositivo/navegador
+      let mimeType = '';
+      const types = ['audio/webm', 'audio/mp4', 'audio/aac', 'audio/ogg', 'audio/wav'];
+      for (const type of types) {
+        if (MediaRecorder.isTypeSupported(type)) {
+          mimeType = type;
+          break;
+        }
+      }
+
+      const options = mimeType ? { mimeType } : {};
+      this.mediaRecorder = new MediaRecorder(stream, options);
       this.audioChunks = [];
 
       this.mediaRecorder.ondataavailable = (event) => {
@@ -527,6 +539,7 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
     if (!this.mediaRecorder) return;
 
     this.isRecording = false;
+    const recordedMimeType = this.mediaRecorder.mimeType || 'audio/webm';
     
     // Configuramos el callback para cuando el MediaRecorder se detenga
     this.mediaRecorder.onstop = async () => {
@@ -537,20 +550,19 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
       await loading.present();
 
       try {
-        const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
+        const audioBlob = new Blob(this.audioChunks, { type: recordedMimeType });
         
         // 1. Obtener coordenadas actuales
         const currentLocation = await this.geolocationService.getCurrentPosition();
         const lat = currentLocation.latitude;
         const lng = currentLocation.longitude;
 
-        // Convertir el audio a Base64 para mandarlo al backend
+        // Convertir el audio a Data URI completo (mantiene la cabecera del tipo de audio)
         const base64Audio = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
           reader.readAsDataURL(audioBlob);
           reader.onloadend = () => {
-            const base64String = (reader.result as string).split(',')[1];
-            resolve(base64String);
+            resolve(reader.result as string);
           };
           reader.onerror = reject;
         });

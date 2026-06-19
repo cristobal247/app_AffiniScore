@@ -360,6 +360,34 @@ export class NotificationService {
     this.pendingCountSubject.next(0);
   }
 
+  async showNativeNotification(title: string, message: string) {
+    if (Capacitor.isNativePlatform()) {
+      try {
+        await LocalNotifications.schedule({
+          notifications: [
+            {
+              title: title,
+              body: message,
+              id: Math.floor(Math.random() * 100000),
+              schedule: { at: new Date(Date.now() + 100) },
+              sound: 'default'
+            }
+          ]
+        });
+      } catch (e) {
+        console.warn('Error al enviar notificación nativa:', e);
+      }
+    } else if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+      try {
+        new Notification(title, {
+          body: message
+        });
+      } catch (e) {
+        console.warn('Error al mostrar notificación en web:', e);
+      }
+    }
+  }
+
   setupRealtimeSubscriptions() {
     this.cleanupSubscriptions();
 
@@ -372,8 +400,14 @@ export class NotificationService {
         .on(
           'postgres_changes',
           { event: '*', schema: 'public', table: 'user_actions_log', filter: `user_id=eq.${this.partnerId}` },
-          () => {
+          (payload: any) => {
             this.fetchNotifications();
+            if (payload.eventType === 'INSERT') {
+              this.showNativeNotification(
+                '💖 Validación de acción',
+                'Tu pareja ha registrado una nueva acción que requiere tu confirmación.'
+              );
+            }
           }
         )
         .subscribe();
@@ -387,6 +421,10 @@ export class NotificationService {
           { event: 'INSERT', schema: 'public', table: 'sos_alerts', filter: `user_id=eq.${this.partnerId}` },
           () => {
             this.fetchNotifications();
+            this.showNativeNotification(
+              '🚨 ¡ALERTA SOS URGENTE! 🚨',
+              'Tu pareja necesita ayuda urgente. Revisa su ubicación inmediatamente.'
+            );
           }
         )
         .subscribe();
@@ -400,8 +438,14 @@ export class NotificationService {
         .on(
           'postgres_changes',
           { event: 'INSERT', schema: 'public', table: 'memories', filter: `partnership_id=eq.${this.partnershipId}` },
-          () => {
+          (payload: any) => {
             this.fetchNotifications();
+            if (payload.new && payload.new.user_id === this.partnerId) {
+              this.showNativeNotification(
+                '📸 Nuevo recuerdo',
+                'Tu pareja ha subido un nuevo recuerdo especial.'
+              );
+            }
           }
         )
         .subscribe();
