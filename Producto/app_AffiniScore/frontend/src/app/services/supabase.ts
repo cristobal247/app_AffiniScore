@@ -150,6 +150,10 @@ export class SupabaseService {
         this.http.post<any>(`${this.apiUrl}/api/v1/partnerships/invite`, { user1_id }, { headers })
       );
 
+      // Limpiar caché al generar invitación
+      this.profileCache = null;
+      this.pointsUpdated.next();
+
       return { token: response.token || response.invite_token };
     } catch (err: any) {
       console.error('Error in invitePartner:', err);
@@ -204,6 +208,10 @@ export class SupabaseService {
       await firstValueFrom(
         this.http.post<any>(`${this.apiUrl}/api/v1/partnerships/join`, body, { headers })
       );
+
+      // Limpiar caché al vincular
+      this.profileCache = null;
+      this.pointsUpdated.next();
 
       return { success: true };
     } catch (err: any) {
@@ -2212,6 +2220,10 @@ export class SupabaseService {
       await firstValueFrom(
         this.http.post<any>(`${this.apiUrl}/api/v1/partnerships/unlink`, body, { headers })
       );
+
+      // Limpiar caché al desvincular
+      this.profileCache = null;
+      this.pointsUpdated.next();
 
       return { success: true };
     } catch (err: any) {
