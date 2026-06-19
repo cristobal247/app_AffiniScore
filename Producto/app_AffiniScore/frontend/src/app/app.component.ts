@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { SupabaseService } from './services/supabase';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { Capacitor } from '@capacitor/core';
-import { AlertController } from '@ionic/angular/standalone';
+import { AlertController, ToastController } from '@ionic/angular/standalone';
 import { NotificationService } from './services/notification.service';
 
 @Component({
@@ -23,7 +23,8 @@ export class AppComponent implements OnInit, OnDestroy {
     private router: Router, 
     private supabaseSvc: SupabaseService,
     private alertCtrl: AlertController,
-    private notificationSvc: NotificationService
+    private notificationSvc: NotificationService,
+    private toastCtrl: ToastController
   ) {}
 
   ngOnInit() {
@@ -136,6 +137,44 @@ export class AppComponent implements OnInit, OnDestroy {
       console.warn('DEBUG: El usuario denegó los permisos. No se podrán recibir notificaciones.');
     }
 
+    // Crear canales nativos de alta prioridad
+    try {
+      await PushNotifications.createChannel({
+        id: 'sos-channel',
+        name: 'Alertas SOS Urgentes',
+        description: 'Canal de alerta de emergencia de tu pareja con sonido prioritario.',
+        importance: 5, // 5 = IMPORTANCE_HIGH / MAX
+        visibility: 1, // VISIBILITY_PUBLIC
+        sound: 'sos_sound',
+        vibration: true,
+        lights: true,
+        lightColor: '#FF0000'
+      });
+
+      await PushNotifications.createChannel({
+        id: 'chat-channel',
+        name: 'Mensajes de Chat',
+        description: 'Mensajes directos de pareja y consejos terapéuticos de AffiniCoach IA.',
+        importance: 4,
+        visibility: 1,
+        sound: 'default',
+        vibration: true
+      });
+
+      await PushNotifications.createChannel({
+        id: 'gamification-channel',
+        name: 'Logros e Interacciones',
+        description: 'Notificaciones sobre Bingo, Retos de desconexión y Recuerdos.',
+        importance: 4,
+        visibility: 1,
+        sound: 'default',
+        vibration: true
+      });
+      console.log('Canales nativos de alta prioridad creados.');
+    } catch (e) {
+      console.warn('Error al crear canales de PushNotifications:', e);
+    }
+
     // Limpiar listeners previos para evitar alertas duplicadas al reconectar o cambiar estado de auth
     try {
       await PushNotifications.removeAllListeners();
@@ -169,24 +208,43 @@ export class AppComponent implements OnInit, OnDestroy {
     PushNotifications.addListener('pushNotificationReceived', (notification) => {
       console.log('Notificación recibida: ', notification);
       const data = notification.data;
-      if (data && data.type === 'validation_request') {
+      if (!data) return;
+
+      // REGLA DE EXCLUSIÓN: ¿Está el usuario ya en la vista del chat correspondiente?
+      const isCurrentlyInChatRoom = this.checkIfUserIsActiveInChat(data.room_id, data.type);
+
+      if (isCurrentlyInChatRoom) {
+        console.log('Exclusión activa: El usuario está viendo este chat. Omitiendo banner.');
+        return;
+      }
+
+      if (data.type === 'validation_request') {
         this.showValidationAlert(data.log_id, data.action_name);
+      } else if (data.type === 'sos_alert' || data.type === 'chat_message') {
+        this.showLocalOverlayBanner(notification);
       }
     });
 
     // 5. ¿Qué pasa si el usuario toca la notificación desde fuera de la app?
-    PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
-      console.log('Notificación tocada: ', notification);
-      const data = notification.notification.data;
-      if (data && data.type === 'validation_request') {
-        this.showValidationAlert(data.log_id, data.action_name);
-      } else if (data && data.type === 'sos_alert') {
-        this.notificationSvc.triggerNotificationClick({
-          type: 'sos_alert',
-          audioUrl: data.audio_url || null,
-          latitude: data.latitude || null,
-          longitude: data.longitude || null
-        });
+    PushNotifications.addListener('pushNotificationActionPerformed', (notificationAction) => {
+      console.log('Notificación tocada: ', notificationAction);
+      const data = notificationAction.notification.data;
+      if (data) {
+        if (data.type === 'validation_request') {
+          this.showValidationAlert(data.log_id, data.action_name);
+        } else if (data.type === 'sos_alert') {
+          this.notificationSvc.triggerNotificationClick({
+            type: 'sos_alert',
+            audioUrl: data.audio_url || null,
+            latitude: data.latitude || null,
+            longitude: data.longitude || null
+          });
+        } else if (data.type === 'chat_message') {
+          this.notificationSvc.triggerNotificationClick({
+            type: 'chat_message',
+            room_id: data.room_id
+          });
+        }
       }
     });
   }
@@ -283,5 +341,55 @@ export class AppComponent implements OnInit, OnDestroy {
     });
 
     await alert.present();
+  }
+
+  private checkIfUserIsActiveInChat(notificationRoomId: string, notificationType: string): boolean {
+    const currentUrl = this.router.url;
+    if (notificationType === 'chat_message') {
+      if (currentUrl.includes('/tabs/group-chat')) {
+        return true;
+      }
+      if (currentUrl.includes('/tabs/chat-partner')) {
+        return true;
+      }
+      if (currentUrl.includes('/tabs/chat') && notificationRoomId) {
+        return currentUrl.includes(notificationRoomId);
+      }
+    }
+    return false;
+  }
+
+  private async showLocalOverlayBanner(notification: any) {
+    const toast = await this.toastCtrl.create({
+      header: notification.title || 'Nueva Notificación',
+      message: notification.body || '',
+      position: 'top',
+      duration: 4000,
+      color: 'light',
+      buttons: [
+        {
+          text: 'Ver',
+          handler: () => {
+            const data = notification.data;
+            if (data) {
+              if (data.type === 'sos_alert') {
+                this.notificationSvc.triggerNotificationClick({
+                  type: 'sos_alert',
+                  audioUrl: data.audio_url || null,
+                  latitude: data.latitude || null,
+                  longitude: data.longitude || null
+                });
+              } else if (data.type === 'chat_message') {
+                this.notificationSvc.triggerNotificationClick({
+                  type: 'chat_message',
+                  room_id: data.room_id
+                });
+              }
+            }
+          }
+        }
+      ]
+    });
+    await toast.present();
   }
 }
