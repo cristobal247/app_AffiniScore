@@ -1,13 +1,12 @@
 <ion-header class="ion-no-border">
-  <ion-toolbar mode="ios">
+  <ion-toolbar mode="ios" class="main-header-toolbar">
     <ion-buttons slot="start">
-      <ion-back-button defaultHref="/profile" text="Atrás" color="danger"></ion-back-button>
+      <ion-back-button defaultHref="/profile" text="" style="--color: #FA8072;"></ion-back-button>
     </ion-buttons>
-    <ion-title class="header-title">Vinculación</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ion-padding custom-bg">
+<ion-content class="ion-padding dashboard-bg" [fullscreen]="true">
   <div class="header-section">
     <h1 class="page-title">Conecta tu Relación</h1>
     <p class="page-subtitle">Escanea el código de tu pareja o comparte el tuyo para sincronizar vuestros puntajes.</p>
@@ -29,7 +28,7 @@
     <!-- TAB: Mi Código QR -->
     <div class="tab-content" *ngIf="activeTab === 'qr'">
       <ng-container *ngIf="!qrData(); else qrGenerated">
-        <ion-button expand="block" color="primary" (click)="loadInviteCode()">
+        <ion-button expand="block" class="primary-gradient-btn" (click)="loadInviteCode()">
           <ion-icon slot="start" name="qr-code-outline"></ion-icon>
           Generar código de vinculación
         </ion-button>
@@ -41,11 +40,11 @@
         </div>
         <div class="short-code">{{ shortCode() }}</div>
         <p class="helper-text">MUESTRA ESTE CÓDIGO A TU PAREJA</p>
-        <ion-button expand="block" class="copy-btn" (click)="copyCode()">
+        <ion-button expand="block" class="primary-gradient-btn" (click)="copyCode()">
           <ion-icon slot="start" name="copy-outline"></ion-icon>
           Copiar Código
         </ion-button>
-        <ion-button expand="block" fill="outline" color="medium" (click)="clearInviteCode()" style="margin-top: 8px;">
+        <ion-button expand="block" fill="outline" color="medium" (click)="clearInviteCode()" style="margin-top: 8px; --border-radius: 24px;">
           Limpiar código
         </ion-button>
       </ng-template>

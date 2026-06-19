@@ -71,9 +71,9 @@ async def create_partnership(request: InviteRequest):
     token = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
     
     try:
-        # 1. Eliminar cualquier vinculación previa donde este usuario haya sido user2
-        # para liberar la restricción UNIQUE de user2_id
-        supabase.table("partnerships").delete().eq("user2_id", request.user1_id).execute()
+        # 1. Desvincular cualquier relación previa donde este usuario haya sido user2
+        # para liberar la restricción UNIQUE de user2_id (sin borrar el registro para evitar romper claves foráneas)
+        supabase.table("partnerships").update({"user2_id": None, "status": "unlinked"}).eq("user2_id", request.user1_id).execute()
         
         # 2. Verificar si el usuario ya tiene una invitación generada como user1
         existing = supabase.table("partnerships").select("*").eq("user1_id", request.user1_id).execute()
@@ -103,10 +103,10 @@ async def join_partnership(request: JoinRequest):
         clean_token = request.token.replace(" ", "").upper()
         print(f"DEBUG: Attempting to join with token: {clean_token} (original: {request.token}) and user2_id: {request.user2_id}")
         
-        # 1. Eliminar cualquier vinculación previa del usuario que se está uniendo (sea como user1 o user2)
-        # para evitar violar la restricción UNIQUE en la base de datos
-        supabase.table("partnerships").delete().eq("user1_id", request.user2_id).execute()
-        supabase.table("partnerships").delete().eq("user2_id", request.user2_id).execute()
+        # 1. Desvincular cualquier relación previa del usuario que se está uniendo (sea como user1 o user2)
+        # para liberar la restricción UNIQUE en la base de datos sin borrar el registro
+        supabase.table("partnerships").update({"user1_id": None, "status": "unlinked"}).eq("user1_id", request.user2_id).execute()
+        supabase.table("partnerships").update({"user2_id": None, "status": "unlinked"}).eq("user2_id", request.user2_id).execute()
         
         # 2. Verificar que el token exista y el status sea pending, e insertar la vinculación
         response = supabase.table("partnerships").update({
