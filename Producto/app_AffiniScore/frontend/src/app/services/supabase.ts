@@ -364,6 +364,13 @@ export class SupabaseService {
     }
 
     try {
+      // 1. Intentar leer la sesión local (instantánea, no requiere red)
+      const { data: { session } } = await this.supabase.auth.getSession();
+      if (session?.user) {
+        return session.user;
+      }
+      
+      // 2. Si no hay sesión local, recurrir al servidor de Supabase
       const { data: { user } } = await this.supabase.auth.getUser();
       return user;
     } catch (error) {
