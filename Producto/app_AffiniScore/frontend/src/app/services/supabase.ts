@@ -358,6 +358,26 @@ export class SupabaseService {
     }
   }
 
+  // Función auxiliar para forzar un tiempo límite (timeout) a cualquier promesa
+  private withTimeout<T>(promise: Promise<T>, timeoutMs: number = 2500): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        reject(new Error('Timeout de ejecución de Supabase superado'));
+      }, timeoutMs);
+
+      promise.then(
+        (res) => {
+          clearTimeout(timer);
+          resolve(res);
+        },
+        (err) => {
+          clearTimeout(timer);
+          reject(err);
+        }
+      );
+    });
+  }
+
   // Obtener el usuario que está logueado actualmente
   async getCurrentUser() {
     if (this._devMode) {
@@ -369,17 +389,17 @@ export class SupabaseService {
     }
 
     try {
-      // 1. Intentar leer la sesión local (instantánea, no requiere red)
-      const { data: { session } } = await this.supabase.auth.getSession();
+      // 1. Intentar leer la sesión local (con timeout para evitar bloqueos por Navigator Locks)
+      const { data: { session } } = await this.withTimeout(this.supabase.auth.getSession(), 2000);
       if (session?.user) {
         return session.user;
       }
       
-      // 2. Si no hay sesión local, recurrir al servidor de Supabase
-      const { data: { user } } = await this.supabase.auth.getUser();
+      // 2. Si no hay sesión local, recurrir al servidor de Supabase con timeout
+      const { data: { user } } = await this.withTimeout(this.supabase.auth.getUser(), 2000);
       return user;
     } catch (error) {
-      console.warn('getCurrentUser falló en modo sin Supabase:', error);
+      console.warn('getCurrentUser falló o superó el tiempo límite de espera:', error);
       return null;
     }
   }
