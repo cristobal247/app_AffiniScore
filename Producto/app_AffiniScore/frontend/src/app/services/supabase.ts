@@ -735,7 +735,6 @@ export class SupabaseService {
       .update({ current_month_percentage: percentage, current_month_snapshot_at: now })
       .eq('id', user.id);
 
-    if (!res.error) this.pointsUpdated.next();
     return res;
   }
 

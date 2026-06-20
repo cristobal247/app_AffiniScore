@@ -63,8 +63,8 @@ export class MemoryHistoryPage implements OnInit, OnDestroy {
   roundKey = '';
   activeMemory: HistoricMemoryImage | null = null;
   sessionStartedAt = new Date();
-  sessionEndsAt = new Date(Date.now() + 5 * 60 * 1000);
-  remainingSeconds = 300;
+  sessionEndsAt = new Date(Date.now() + 3 * 60 * 1000);
+  remainingSeconds = 180;
 
   private timerId?: ReturnType<typeof setInterval>;
   private channel: any;
@@ -78,12 +78,6 @@ export class MemoryHistoryPage implements OnInit, OnDestroy {
   }
 
   async ngOnInit() {
-    this.pointsSub = this.supabaseSvc.pointsUpdated.subscribe(() => {
-      if (this.completed) {
-        this.presentCelebrationToast('La recompensa ya quedó registrada para la pareja.');
-      }
-    });
-
     await this.initializeGame();
   }
 
@@ -96,9 +90,7 @@ export class MemoryHistoryPage implements OnInit, OnDestroy {
       this.supabaseSvc.supabase.removeChannel(this.channel);
     }
 
-    if (this.pointsSub) {
-      this.pointsSub.unsubscribe();
-    }
+
   }
 
   private async initializeGame() {
@@ -127,6 +119,7 @@ export class MemoryHistoryPage implements OnInit, OnDestroy {
       .on('broadcast', { event: 'memory-completed' }, ({ payload }: { payload: { user_id?: string; memory_id?: string } }) => {
         if (payload?.user_id && payload.user_id !== this.currentUserId) {
           this.completed = true;
+          this.presentCelebrationToast('¡Tu pareja completó el recuerdo! Recompensa registrada.');
         }
       })
       .subscribe();
@@ -157,8 +150,12 @@ export class MemoryHistoryPage implements OnInit, OnDestroy {
   private syncRound(round: HistoricMemoryRound, announce: boolean) {
     this.roundKey = round.round_key;
     this.activeMemory = round.memory;
-    this.sessionStartedAt = new Date(round.started_at);
-    this.sessionEndsAt = new Date(this.sessionStartedAt.getTime() + 5 * 60 * 1000);
+    let startedStr = round.started_at;
+    if (startedStr && !startedStr.endsWith('Z') && !startedStr.includes('+')) {
+      startedStr += 'Z';
+    }
+    this.sessionStartedAt = new Date(startedStr);
+    this.sessionEndsAt = new Date(this.sessionStartedAt.getTime() + 3 * 60 * 1000);
     this.completed = false;
     this.tickTimer();
 
@@ -181,7 +178,7 @@ export class MemoryHistoryPage implements OnInit, OnDestroy {
   }
 
   get timerProgress() {
-    return Math.max(0, Math.min(1, this.remainingSeconds / 300));
+    return Math.max(0, Math.min(1, this.remainingSeconds / 180));
   }
 
   get timerLabel() {

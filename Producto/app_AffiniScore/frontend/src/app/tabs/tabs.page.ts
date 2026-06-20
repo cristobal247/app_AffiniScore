@@ -52,7 +52,8 @@ export class TabsPage {
       '/tabs/mapa', 
       '/tabs/chat-partner', 
       '/tabs/chat-ai', 
-      '/tabs/group-chat'
+      '/tabs/group-chat',
+      '/tabs/memory-history'
     ];
     return !hiddenRoutes.some(route => this.router.url.includes(route));
   }
