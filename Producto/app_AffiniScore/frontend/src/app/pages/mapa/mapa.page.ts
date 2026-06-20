@@ -637,10 +637,29 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
       const mimeType = result.value.mimeType || 'audio/webm';
       const audioBlob = this.base64ToBlob(base64Audio, mimeType);
 
-      // 1. Obtener coordenadas actuales
-      const currentLocation = await this.geolocationService.getCurrentPosition();
-      const lat = currentLocation.latitude;
-      const lng = currentLocation.longitude;
+      // 1. Obtener coordenadas actuales (con fallback resiliente)
+      let lat: number;
+      let lng: number;
+      try {
+        const currentLocation = await this.geolocationService.getCurrentPosition();
+        lat = currentLocation.latitude;
+        lng = currentLocation.longitude;
+      } catch (geoErr) {
+        console.warn('Error al obtener ubicación en tiempo real para SOS, usando caché:', geoErr);
+        const cachedUserLat = localStorage.getItem('user_last_lat');
+        const cachedUserLng = localStorage.getItem('user_last_lng');
+        if (cachedUserLat && cachedUserLng) {
+          lat = parseFloat(cachedUserLat);
+          lng = parseFloat(cachedUserLng);
+        } else if (this.currentLat && this.currentLng) {
+          lat = this.currentLat;
+          lng = this.currentLng;
+        } else {
+          // Si no hay coordenadas en absoluto, tiramos del valor por defecto de Santiago, Chile
+          lat = -33.447487;
+          lng = -70.673676;
+        }
+      }
 
       // 2. Subir audio a Supabase Storage
       const { url: publicUrl, error: uploadError } = await this.supabaseSvc.uploadSosAudio(audioBlob);

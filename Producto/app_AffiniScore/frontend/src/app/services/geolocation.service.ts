@@ -77,12 +77,43 @@ export class GeolocationService {
       throw new Error('Permiso de ubicación no concedido.');
     }
 
-    const position = await Geolocation.getCurrentPosition(this.currentOptions);
-    if (!position || !position.coords) {
-      throw new Error('Posición no disponible.');
+    try {
+      const position = await Geolocation.getCurrentPosition(this.currentOptions);
+      if (!position || !position.coords) {
+        throw new Error('Posición no disponible.');
+      }
+      return this.parsePosition(position);
+    } catch (e: any) {
+      console.warn('Fallo al obtener ubicación con alta precisión, intentando con baja precisión y caché:', e);
+      try {
+        const fallbackOptions: PositionOptions = {
+          enableHighAccuracy: false,
+          timeout: 10000,
+          maximumAge: 300000 // 5 minutos de antigüedad permitida
+        };
+        const position = await Geolocation.getCurrentPosition(fallbackOptions);
+        if (!position || !position.coords) {
+          throw new Error('Posición no disponible en fallback.');
+        }
+        return this.parsePosition(position);
+      } catch (fallbackError) {
+        console.error('Error total al obtener ubicación (baja precisión fallido):', fallbackError);
+        
+        // Último recurso: usar última ubicación conocida del localStorage
+        const cachedUserLat = localStorage.getItem('user_last_lat');
+        const cachedUserLng = localStorage.getItem('user_last_lng');
+        if (cachedUserLat && cachedUserLng) {
+          console.warn('Usando última ubicación conocida del localStorage como fallback definitivo.');
+          return {
+            latitude: parseFloat(cachedUserLat),
+            longitude: parseFloat(cachedUserLng),
+            accuracy: 150, // Aproximado
+            timestamp: Date.now()
+          };
+        }
+        throw e; // Si no hay nada de nada, lanzamos el error original
+      }
     }
-
-    return this.parsePosition(position);
   }
 
   async startTracking(): Promise<void> {
