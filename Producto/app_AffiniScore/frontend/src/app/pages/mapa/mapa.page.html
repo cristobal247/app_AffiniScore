@@ -241,4 +241,43 @@
     </ng-template>
   </ion-modal>
 
+  <!-- 4. Floating SOS Playback Controller -->
+  <div class="sos-player-card-container" *ngIf="activeSosAlert">
+    <div class="sos-player-card">
+      <div class="sos-player-header">
+        <div class="sos-player-title-row">
+          <span class="sos-pulse-dot"></span>
+          <span class="sos-player-title">ALERTA SOS ACTIVA</span>
+        </div>
+        <button class="sos-player-close" (click)="closeActiveSosPlayer()">&times;</button>
+      </div>
+      <div class="sos-player-body">
+        <p class="sos-player-subtitle">Escuchando audio de {{ activeSosAlert.senderName }}</p>
+        
+        <div class="sos-audio-slider-row">
+          <span class="audio-time">{{ currentPlaybackTime }}</span>
+          <ion-range 
+            [min]="0" 
+            [max]="audioDuration || 100" 
+            [(ngModel)]="audioProgress"
+            (ionChange)="seekAudio($event)"
+            class="sos-audio-range"
+            mode="md">
+          </ion-range>
+          <span class="audio-time">{{ totalDurationFormatted }}</span>
+        </div>
+
+        <div class="sos-player-controls">
+          <button class="sos-control-btn play-pause-btn" (click)="toggleActiveSosPlayback()">
+            <ion-icon [name]="isActiveSosPlaying ? 'pause' : 'play'"></ion-icon>
+          </button>
+          <button class="sos-control-btn center-map-btn" (click)="centerMapOnActiveSos()">
+            <ion-icon name="locate-outline"></ion-icon>
+            <span>Centrar en Mapa</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </ion-content>

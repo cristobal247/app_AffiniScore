@@ -1714,18 +1714,32 @@ export class SupabaseService {
      5. SOS Y GEOLOCALIZACIÓN
      ======================================================================== */
 
+  private getExtensionFromMimeType(mimeType: string): string {
+    if (!mimeType) return 'webm';
+    const type = mimeType.toLowerCase();
+    if (type.includes('aac')) return 'aac';
+    if (type.includes('3gpp') || type.includes('3gp')) return '3gp';
+    if (type.includes('wav') || type.includes('wave')) return 'wav';
+    if (type.includes('ogg')) return 'ogg';
+    if (type.includes('mp3')) return 'mp3';
+    if (type.includes('m4a')) return 'm4a';
+    return 'webm';
+  }
+
   // Subir audio al Storage
   async uploadSosAudio(audioBlob: Blob): Promise<{ url: string | null, error: any }> {
     const user = await this.getCurrentUser();
     if (!user) return { url: null, error: 'Usuario no autenticado' };
 
-    const fileName = `${user.id}_${new Date().getTime()}.webm`; // o .mp3/.ogg dependiendo del mimeType
+    const ext = this.getExtensionFromMimeType(audioBlob.type);
+    const fileName = `${user.id}_${new Date().getTime()}.${ext}`;
 
     const { data, error } = await this.supabase.storage
       .from('sos_audio')
       .upload(fileName, audioBlob, {
         cacheControl: '3600',
-        upsert: false
+        upsert: false,
+        contentType: audioBlob.type
       });
 
     if (error) {

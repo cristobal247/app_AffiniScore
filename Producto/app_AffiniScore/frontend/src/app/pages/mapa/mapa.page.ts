@@ -20,16 +20,17 @@ import {
   IonTitle,
   IonSegment,
   IonSegmentButton,
-  IonCard
+  IonCard,
+  IonRange
 } from '@ionic/angular/standalone';
 import { SupabaseService } from '../../services/supabase';
 import { GeolocationService } from '../../services/geolocation.service';
 import { NotificationService } from '../../services/notification.service';
 import { Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { addIcons } from 'ionicons';
-import { addCircleOutline, cogOutline, warningOutline, square, locationOutline, checkmarkCircleOutline, closeOutline, trashOutline, chevronBackOutline, alertCircleOutline, alertCircle, playOutline, pauseOutline, musicalNotesOutline, ellipsisHorizontalOutline } from 'ionicons/icons';
+import { addCircleOutline, cogOutline, warningOutline, square, locationOutline, checkmarkCircleOutline, closeOutline, trashOutline, chevronBackOutline, alertCircleOutline, alertCircle, playOutline, pauseOutline, musicalNotesOutline, ellipsisHorizontalOutline, play, pause, locateOutline } from 'ionicons/icons';
 import { environment } from '../../../environments/environment';
 import { FormsModule } from '@angular/forms';
 import { VoiceRecorder } from 'capacitor-voice-recorder';
@@ -61,6 +62,7 @@ let mapboxgl: any = null;
     IonSegment,
     IonSegmentButton,
     IonCard,
+    IonRange,
     CommonModule,
     RouterModule,
     FormsModule
@@ -129,14 +131,34 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
   audioObj: HTMLAudioElement | null = null;
   userId: string = '';
 
+  // Variables para el Reproductor SOS flotante
+  activeSosAlert: { audioUrl: string; latitude: number; longitude: number; senderName?: string } | null = null;
+  isActiveSosPlaying: boolean = false;
+  sosAudioObj: HTMLAudioElement | null = null;
+  audioProgress: number = 0;
+  audioDuration: number = 0;
+  currentPlaybackTime: string = '0:00';
+  totalDurationFormatted: string = '0:00';
+  private updateTimerInterval: any = null;
+  private pendingSosState: { audioUrl: string; latitude: number; longitude: number; senderName?: string } | null = null;
+
   constructor(
     private supabaseSvc: SupabaseService,
     private geolocationService: GeolocationService,
     private toastCtrl: ToastController,
     private loadingCtrl: LoadingController,
     private alertCtrl: AlertController,
-    private notificationSvc: NotificationService
+    private notificationSvc: NotificationService,
+    private router: Router
   ) {
+    // Recuperar el estado SOS proveniente de la notificación
+    const navigation = this.router.getCurrentNavigation();
+    const state = navigation?.extras.state as { audioUrl: string; latitude: number; longitude: number; senderName?: string };
+    if (state && state.audioUrl) {
+      console.log('MapaPage constructor: Estado SOS recibido por navegación:', state);
+      this.pendingSosState = state;
+    }
+
     addIcons({ 
       addCircleOutline, 
       cogOutline, 
@@ -152,6 +174,9 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
       pauseOutline,
       musicalNotesOutline,
       ellipsisHorizontalOutline,
+      play,
+      pause,
+      locateOutline,
       'chevron-back-outline': chevronBackOutline
     });
   }
@@ -167,10 +192,16 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
       this.map.resize();
     }
     await this.startActiveStreams();
+
+    if (this.pendingSosState) {
+      this.setupActiveSosPlayer(this.pendingSosState);
+      this.pendingSosState = null;
+    }
   }
 
   ionViewWillLeave() {
     this.stopActiveStreams();
+    this.closeActiveSosPlayer();
   }
 
   ionViewDidEnter() {
@@ -1002,6 +1033,115 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
         .setHTML(`<p style="margin:0;font-weight:700;color:#FA8072;font-size:13px;text-align:center;">🚨 Alerta SOS</p>`)
         .addTo(this.map);
     }
+  }
+
+  // Métodos del Reproductor SOS Flotante Activo
+  setupActiveSosPlayer(state: { audioUrl: string; latitude: number; longitude: number; senderName?: string }) {
+    this.closeActiveSosPlayer();
+
+    let audioUrl = state.audioUrl;
+    if (audioUrl && !audioUrl.startsWith('http') && !audioUrl.startsWith('data:')) {
+      audioUrl = 'data:audio/webm;base64,' + audioUrl;
+    }
+
+    this.activeSosAlert = {
+      audioUrl,
+      latitude: Number(state.latitude),
+      longitude: Number(state.longitude),
+      senderName: state.senderName || 'Tu pareja'
+    };
+
+    this.sosAudioObj = new Audio(audioUrl);
+    
+    this.sosAudioObj.onloadedmetadata = () => {
+      this.audioDuration = this.sosAudioObj?.duration || 0;
+      this.totalDurationFormatted = this.formatTime(this.audioDuration);
+    };
+
+    this.sosAudioObj.onended = () => {
+      this.isActiveSosPlaying = false;
+      this.audioProgress = 0;
+      this.currentPlaybackTime = '0:00';
+      this.stopTimer();
+    };
+
+    this.toggleActiveSosPlayback();
+    this.centerMapOnActiveSos();
+  }
+
+  toggleActiveSosPlayback() {
+    if (!this.sosAudioObj || !this.activeSosAlert) return;
+
+    if (this.isActiveSosPlaying) {
+      this.sosAudioObj.pause();
+      this.isActiveSosPlaying = false;
+      this.stopTimer();
+    } else {
+      this.sosAudioObj.play().then(() => {
+        this.isActiveSosPlaying = true;
+        this.startTimer();
+      }).catch((err) => {
+        console.warn('Reproducción de audio bloqueada o fallida:', err);
+      });
+    }
+  }
+
+  seekAudio(event: any) {
+    const val = event.detail.value;
+    if (this.sosAudioObj && Math.abs(this.sosAudioObj.currentTime - val) > 1) {
+      this.sosAudioObj.currentTime = val;
+    }
+  }
+
+  centerMapOnActiveSos() {
+    if (!this.activeSosAlert || !this.map) return;
+    const { latitude, longitude } = this.activeSosAlert;
+    this.map.flyTo({
+      center: [longitude, latitude],
+      zoom: 17,
+      duration: 1500
+    });
+
+    new mapboxgl.Popup({ offset: 25 })
+      .setLngLat([longitude, latitude])
+      .setHTML(`<p style="margin:0;font-weight:800;color:#ff0844;font-size:13px;text-align:center;">🚨 SOS de tu pareja aquí 🚨</p>`)
+      .addTo(this.map);
+  }
+
+  closeActiveSosPlayer() {
+    if (this.sosAudioObj) {
+      this.sosAudioObj.pause();
+      this.sosAudioObj = null;
+    }
+    this.activeSosAlert = null;
+    this.isActiveSosPlaying = false;
+    this.audioProgress = 0;
+    this.audioDuration = 0;
+    this.stopTimer();
+  }
+
+  private startTimer() {
+    this.stopTimer();
+    this.updateTimerInterval = setInterval(() => {
+      if (this.sosAudioObj) {
+        this.audioProgress = this.sosAudioObj.currentTime;
+        this.currentPlaybackTime = this.formatTime(this.sosAudioObj.currentTime);
+      }
+    }, 250);
+  }
+
+  private stopTimer() {
+    if (this.updateTimerInterval) {
+      clearInterval(this.updateTimerInterval);
+      this.updateTimerInterval = null;
+    }
+  }
+
+  private formatTime(secs: number): string {
+    if (isNaN(secs) || secs === Infinity) return '0:00';
+    const m = Math.floor(secs / 60);
+    const s = Math.floor(secs % 60);
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
   }
 
 }
