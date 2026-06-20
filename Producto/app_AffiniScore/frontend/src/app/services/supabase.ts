@@ -86,10 +86,15 @@ export class SupabaseService {
   private apiUrl: string;
   public pointsUpdated = new BehaviorSubject<void>(undefined);
   private profileCache: any = null;
+  private catalogCache = new Map<string, any>();
   // Modo de desarrollo: autentificación simulada cuando environment.devAuth = true
   private _devMode = false;
   private _devUser: any = null;
   private _devSessionToken: string | null = null;
+
+  clearCatalogCache() {
+    this.catalogCache.clear();
+  }
 
   constructor(private http: HttpClient) {
     this.pointsUpdated.subscribe(() => {
@@ -641,7 +646,7 @@ export class SupabaseService {
     const { data: catalog } = await this.getFullCatalog();
 
     const history = (logs || []).map(log => {
-      const act = catalog?.find(c => c.id === log.action_id);
+      const act = (catalog as any[])?.find((c: any) => c.id === log.action_id);
       return {
         ...log,
         action_name: act ? act.name : 'Acción registrada',
@@ -670,7 +675,7 @@ export class SupabaseService {
     const { data: catalog } = await this.getFullCatalog();
 
     const history = (logs || []).map(log => {
-      const act = catalog?.find(c => c.id === log.action_id);
+      const act = (catalog as any[])?.find((c: any) => c.id === log.action_id);
       return {
         ...log,
         action_name: act ? act.name : 'Acción registrada',
@@ -1320,6 +1325,10 @@ export class SupabaseService {
 
   // Traer 6 acciones para la vista rápida
   async getCatalog(activityType: 'ROUTINE' | 'CHALLENGE' = 'ROUTINE') {
+    const cacheKey = `getCatalog_${activityType}`;
+    if (this.catalogCache.has(cacheKey)) {
+      return this.catalogCache.get(cacheKey);
+    }
     const partnership = await this.getActivePartnership();
     let query = this.supabase
       .from('activity_catalog')
@@ -1333,13 +1342,22 @@ export class SupabaseService {
       query = query.is('partnership_id', null);
     }
 
-    return await query
+    const result = await query
       .limit(6)
       .order('default_points', { ascending: false });
+
+    if (!result.error) {
+      this.catalogCache.set(cacheKey, result);
+    }
+    return result;
   }
 
   // Traer el catálogo completo para el buscador
   async getFullCatalog(activityType?: 'ROUTINE' | 'CHALLENGE') {
+    const cacheKey = `getFullCatalog_${activityType || 'ALL'}`;
+    if (this.catalogCache.has(cacheKey)) {
+      return this.catalogCache.get(cacheKey);
+    }
     const partnership = await this.getActivePartnership();
     let query = this.supabase
       .from('activity_catalog')
@@ -1355,7 +1373,11 @@ export class SupabaseService {
     if (activityType) {
       query = query.eq('activity_type', activityType);
     }
-    return query.order('name', { ascending: true });
+    const result = await query.order('name', { ascending: true });
+    if (!result.error) {
+      this.catalogCache.set(cacheKey, result);
+    }
+    return result;
   }
 
   // Registrar una acción y sumar puntos (Modificado para validación)
@@ -1509,6 +1531,7 @@ export class SupabaseService {
 
   // Crear una nueva acción en el catálogo
   async createCatalogAction(name: string, category: string, defaultPoints: number, activityType: 'ROUTINE' | 'CHALLENGE' = 'ROUTINE', description?: string, subcategory?: string) {
+    this.clearCatalogCache();
     const partnership = await this.getActivePartnership();
     return await this.supabase
       .from('activity_catalog')
@@ -1710,9 +1733,11 @@ export class SupabaseService {
         latitude,
         longitude,
         audio_url: audioUrl
-      });
+      })
+      .select('*')
+      .single();
 
-    if (!result.error) {
+    if (!result.error && result.data) {
       try {
         const { data: userProfile } = await this.getUserProfile();
         if (userProfile && userProfile.partnership_id) {
@@ -1734,7 +1759,8 @@ export class SupabaseService {
                   sender_name: userProfile.name || 'Tu pareja',
                   audio_url: audioUrl,
                   latitude: latitude,
-                  longitude: longitude
+                  longitude: longitude,
+                  audio_id: result.data.id
                 }, {
                   headers: {
                     'Authorization': `Bearer ${tokenHeader}`,
@@ -2483,7 +2509,7 @@ export class SupabaseService {
       const { data: catalog } = await this.getFullCatalog();
 
       const actionsDetail = (logs || []).map(log => {
-        const act = catalog?.find(c => c.id === log.action_id);
+        const act = (catalog as any[])?.find((c: any) => c.id === log.action_id);
         const userProfile = profileMap[log.user_id];
         return {
           id: log.id,

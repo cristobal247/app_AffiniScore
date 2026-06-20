@@ -248,10 +248,10 @@ export class NotificationService {
 
       if (!logError && pendingLogs) {
         const { data: catalog } = await this.supabaseSvc.getFullCatalog();
-        const catalogMap = new Map(catalog?.map(c => [c.id, c]) || []);
+        const catalogMap = new Map((catalog as any[])?.map((c: any) => [c.id, c]) || []);
 
         for (const log of pendingLogs) {
-          const actionDetails = catalogMap.get(log.action_id);
+          const actionDetails = catalogMap.get(log.action_id) as any;
           if (actionDetails?.activity_type === 'CHALLENGE') {
             // Ignorar propuestas de retos en este bloque de validación rápida de acciones de servicio
             continue;

@@ -32,6 +32,7 @@ import { addIcons } from 'ionicons';
 import { addCircleOutline, cogOutline, warningOutline, square, locationOutline, checkmarkCircleOutline, closeOutline, trashOutline, chevronBackOutline, alertCircleOutline, alertCircle, playOutline, pauseOutline, musicalNotesOutline, ellipsisHorizontalOutline } from 'ionicons/icons';
 import { environment } from '../../../environments/environment';
 import { FormsModule } from '@angular/forms';
+import { VoiceRecorder } from 'capacitor-voice-recorder';
 
 // Mapbox se carga de forma lazy para no bloquear el arranque de Angular ni el WebView del APK
 let mapboxgl: any = null;
@@ -70,8 +71,6 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
   
   // Estado para el SOS
   isRecording: boolean = false;
-  private mediaRecorder: MediaRecorder | null = null;
-  private audioChunks: Blob[] = [];
   
   // Datos de usuario y pareja
   userAvatarUrl: string | null = null;
@@ -167,6 +166,11 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
     if (this.map) {
       this.map.resize();
     }
+    await this.startActiveStreams();
+  }
+
+  ionViewWillLeave() {
+    this.stopActiveStreams();
   }
 
   ionViewDidEnter() {
@@ -181,22 +185,7 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    // Los canales de Supabase se cierran con removeChannel(), NO con .unsubscribe()
-    if (this.partnerSubscription) {
-      this.supabaseSvc.supabase.removeChannel(this.partnerSubscription)
-        .catch((err: any) => console.warn('Error cerrando canal de pareja:', err));
-      this.partnerSubscription = null;
-      console.log('Canal de ubicación de pareja cerrado correctamente.');
-    }
-    if (this.geoPositionSubscription) {
-      this.geoPositionSubscription.unsubscribe();
-      this.geoPositionSubscription = null;
-    }
-    if (this.geoErrorSubscription) {
-      this.geoErrorSubscription.unsubscribe();
-      this.geoErrorSubscription = null;
-    }
-    this.geolocationService.stopTracking().catch((err) => console.warn('Error al detener el seguimiento de ubicación:', err));
+    this.stopActiveStreams();
   }
 
   async loadUserProfile() {
@@ -463,58 +452,9 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
         this.updatePartnerMarker(this.partnerLat, this.partnerLng);
         this.fitBothMarkers();
       }
-      // Suscribirse a la ubicación de la pareja en tiempo real
-      if (this.partnerId) {
-        console.log('Suscripción activa a la pareja:', this.partnerId);
-        this.partnerSubscription = this.supabaseSvc.subscribeToPartnerLocation(this.partnerId, (newLoc) => {
-          console.log('Nueva ubicación de pareja recibida:', newLoc);
-          if (newLoc.latitude && newLoc.longitude) {
-            this.updatePartnerMarker(newLoc.latitude, newLoc.longitude);
-            this.fitBothMarkers();
-          }
-        });
-      }
     }).catch(err => console.warn('Error cargando perfiles en background:', err));
 
-    // 1. Configuramos las suscripciones de tracking y eventos ANTES de pedir la ubicación
-    this.geoErrorSubscription = this.geolocationService.error$.subscribe((message) => {
-      if (message) {
-        this.showToast(message, 'warning');
-      }
-    });
-
-    this.geoPositionSubscription = this.geolocationService.position$.subscribe(async (position) => {
-      if (!position) {
-        return;
-      }
-
-      this.updateUserMarker(position.latitude, position.longitude);
-      
-      // Centramos automáticamente de forma fluida
-      if (!this.isFirstLocationLock) {
-        if (this.map) {
-          this.map.flyTo({ center: [position.longitude, position.latitude], zoom: 17, duration: 1000 });
-        }
-        this.isFirstLocationLock = true;
-      } else {
-        this.centerMapOnUser(position.latitude, position.longitude);
-      }
-      
-      // THROTTLE: Solo escribir en BD si el usuario se movió más de 10 metros.
-      // Evita 2 llamadas HTTP a Supabase por cada pulso GPS (causa principal de congelación).
-      const movedEnough = !this.lastDbWriteLat || !this.lastDbWriteLng ||
-        this.calculateDistance(this.lastDbWriteLat, this.lastDbWriteLng, position.latitude, position.longitude) * 1000 > 10;
-      
-      if (movedEnough) {
-        this.lastDbWriteLat = position.latitude;
-        this.lastDbWriteLng = position.longitude;
-        // Fire-and-forget: no await para no bloquear el hilo del mapa
-        this.supabaseSvc.updateUserLocation(position.latitude, position.longitude)
-          .catch(err => console.warn('Error actualizando ubicación en BD:', err));
-      }
-    });
-
-    // 3. Intentamos obtener la posición inicial del GPS rápidamente
+    // Intentamos obtener la posición inicial del GPS rápidamente para posicionar el mapa
     try {
       const currentPosition = await this.geolocationService.getCurrentPosition();
       lat = currentPosition.latitude;
@@ -553,17 +493,88 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
       this.showToast(helpfulMsg, toastColor);
     }
 
-    // 4. Iniciar seguimiento continuo SIEMPRE (incluso si la petición inicial falló)
+    // Cargar lugares especiales en el mapa de forma asíncrona
+    this.cargarLugaresEspeciales().catch((err) => {
+      console.warn('Error al cargar lugares especiales:', err);
+    });
+  }
+
+  async startActiveStreams() {
+    // 1. Evitar duplicación deteniendo antes
+    this.stopActiveStreams();
+
+    // 2. Suscribirse a la ubicación de la pareja en tiempo real
+    if (this.partnerId) {
+      console.log('Suscripción activa a la pareja:', this.partnerId);
+      this.partnerSubscription = this.supabaseSvc.subscribeToPartnerLocation(this.partnerId, (newLoc) => {
+        console.log('Nueva ubicación de pareja recibida:', newLoc);
+        if (newLoc.latitude && newLoc.longitude) {
+          this.updatePartnerMarker(newLoc.latitude, newLoc.longitude);
+          this.fitBothMarkers();
+        }
+      });
+    }
+
+    // 3. Suscribirse a los observables de Geolocalización
+    this.geoErrorSubscription = this.geolocationService.error$.subscribe((message) => {
+      if (message) {
+        this.showToast(message, 'warning');
+      }
+    });
+
+    this.geoPositionSubscription = this.geolocationService.position$.subscribe(async (position) => {
+      if (!position) {
+        return;
+      }
+
+      this.updateUserMarker(position.latitude, position.longitude);
+      
+      // Centramos automáticamente de forma fluida
+      if (!this.isFirstLocationLock) {
+        if (this.map) {
+          this.map.flyTo({ center: [position.longitude, position.latitude], zoom: 17, duration: 1000 });
+        }
+        this.isFirstLocationLock = true;
+      } else {
+        this.centerMapOnUser(position.latitude, position.longitude);
+      }
+      
+      // THROTTLE: Solo escribir en BD si el usuario se movió más de 10 metros.
+      const movedEnough = !this.lastDbWriteLat || !this.lastDbWriteLng ||
+        this.calculateDistance(this.lastDbWriteLat, this.lastDbWriteLng, position.latitude, position.longitude) * 1000 > 10;
+      
+      if (movedEnough) {
+        this.lastDbWriteLat = position.latitude;
+        this.lastDbWriteLng = position.longitude;
+        this.supabaseSvc.updateUserLocation(position.latitude, position.longitude)
+          .catch(err => console.warn('Error actualizando ubicación en BD:', err));
+      }
+    });
+
+    // 4. Iniciar seguimiento continuo del GPS
     try {
       await this.geolocationService.startTracking();
     } catch (err) {
       console.warn('No se pudo iniciar el tracking constante:', err);
     }
+  }
 
-    // 5. Cargar lugares especiales en el mapa de forma asíncrona
-    this.cargarLugaresEspeciales().catch((err) => {
-      console.warn('Error al cargar lugares especiales:', err);
-    });
+  stopActiveStreams() {
+    if (this.partnerSubscription) {
+      this.supabaseSvc.supabase.removeChannel(this.partnerSubscription)
+        .catch((err: any) => console.warn('Error cerrando canal de pareja:', err));
+      this.partnerSubscription = null;
+      console.log('Canal de ubicación de pareja cerrado.');
+    }
+    if (this.geoPositionSubscription) {
+      this.geoPositionSubscription.unsubscribe();
+      this.geoPositionSubscription = null;
+    }
+    if (this.geoErrorSubscription) {
+      this.geoErrorSubscription.unsubscribe();
+      this.geoErrorSubscription = null;
+    }
+    this.geolocationService.stopTracking().catch((err) => console.warn('Error al detener el seguimiento de ubicación:', err));
   }
 
   async handleSOS() {
@@ -576,92 +587,80 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
 
   private async startRecording() {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      
-      // Detectar formato de audio soportado por el dispositivo/navegador
-      let mimeType = '';
-      const types = ['audio/webm', 'audio/mp4', 'audio/aac', 'audio/ogg', 'audio/wav'];
-      for (const type of types) {
-        if (MediaRecorder.isTypeSupported(type)) {
-          mimeType = type;
-          break;
+      const permission = await VoiceRecorder.hasAudioRecordingPermission();
+      if (!permission.value) {
+        const request = await VoiceRecorder.requestAudioRecordingPermission();
+        if (!request.value) {
+          this.showToast('Permiso de grabación de audio denegado 🔒', 'warning');
+          return;
         }
       }
 
-      const options = mimeType ? { mimeType } : {};
-      this.mediaRecorder = new MediaRecorder(stream, options);
-      this.audioChunks = [];
-
-      this.mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          this.audioChunks.push(event.data);
-        }
-      };
-
-      this.mediaRecorder.start(250);
-      this.isRecording = true;
-      
-      this.showToast('Grabando audio SOS... Vuelve a tocar para enviar', 'danger');
+      const started = await VoiceRecorder.startRecording();
+      if (started.value) {
+        this.isRecording = true;
+        this.showToast('Grabando audio SOS... Vuelve a tocar para enviar 🚨', 'danger');
+      } else {
+        this.showToast('No se pudo iniciar la grabación de audio', 'warning');
+      }
     } catch (err: any) {
-      console.error('Error al acceder al micrófono:', err);
-      const errMsg = err?.name ? `${err.name}: ${err.message}` : err;
-      this.showToast(`No se pudo acceder al micrófono: ${errMsg}`, 'warning');
+      console.error('Error al acceder al micrófono o grabar:', err);
+      this.showToast(`No se pudo iniciar la grabación: ${err.message || err}`, 'warning');
     }
   }
 
+  private base64ToBlob(base64: string, mimeType: string): Blob {
+    const byteCharacters = atob(base64);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    return new Blob([byteArray], { type: mimeType });
+  }
+
   private async stopRecordingAndSend() {
-    if (!this.mediaRecorder) return;
-
     this.isRecording = false;
-    const recordedMimeType = this.mediaRecorder.mimeType || 'audio/webm';
-    
-    // Configuramos el callback para cuando el MediaRecorder se detenga
-    this.mediaRecorder.onstop = async () => {
-      const loading = await this.loadingCtrl.create({
-        message: 'Enviando alerta SOS...',
-        spinner: 'crescent'
-      });
-      await loading.present();
+    const loading = await this.loadingCtrl.create({
+      message: 'Enviando alerta SOS...',
+      spinner: 'crescent'
+    });
+    await loading.present();
 
-      try {
-        const audioBlob = new Blob(this.audioChunks, { type: recordedMimeType });
-        
-        // 1. Obtener coordenadas actuales
-        const currentLocation = await this.geolocationService.getCurrentPosition();
-        const lat = currentLocation.latitude;
-        const lng = currentLocation.longitude;
-
-        // Convertir el audio a Data URI completo (mantiene la cabecera del tipo de audio)
-        const base64Audio = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.readAsDataURL(audioBlob);
-          reader.onloadend = () => {
-            resolve(reader.result as string);
-          };
-          reader.onerror = reject;
-        });
-
-        // 2. Enviar el registro completo (URL/Base64 + coordenadas) directamente al backend
-        const { error: dbError } = await this.supabaseSvc.sendSosAlert(lat, lng, base64Audio);
-        
-        if (dbError) {
-          throw new Error('Error al procesar el SOS en el backend');
-        }
-
-        await loading.dismiss();
-        this.showToast('¡Alerta SOS enviada con éxito!', 'success');
-        
-      } catch (error) {
-        console.error('Error en el flujo SOS:', error);
-        await loading.dismiss();
-        this.showToast('Hubo un error al enviar la alerta', 'warning');
+    try {
+      const result = await VoiceRecorder.stopRecording();
+      if (!result.value || !result.value.recordDataBase64) {
+        throw new Error('No se generaron datos de audio grabados');
       }
-    };
 
-    // Al llamar a stop(), se disparará el evento onstop configurado arriba
-    this.mediaRecorder.stop();
-    // Detener todas las pistas de audio para liberar el micrófono
-    this.mediaRecorder.stream.getTracks().forEach(track => track.stop());
+      const base64Audio = result.value.recordDataBase64;
+      const mimeType = result.value.mimeType || 'audio/webm';
+      const audioBlob = this.base64ToBlob(base64Audio, mimeType);
+
+      // 1. Obtener coordenadas actuales
+      const currentLocation = await this.geolocationService.getCurrentPosition();
+      const lat = currentLocation.latitude;
+      const lng = currentLocation.longitude;
+
+      // 2. Subir audio a Supabase Storage
+      const { url: publicUrl, error: uploadError } = await this.supabaseSvc.uploadSosAudio(audioBlob);
+      if (uploadError || !publicUrl) {
+        throw new Error('Error al subir el audio de SOS a Supabase Storage');
+      }
+
+      // 3. Registrar el SOS en la base de datos y enviar notificaciones
+      const { error: dbError } = await this.supabaseSvc.sendSosAlert(lat, lng, publicUrl);
+      if (dbError) {
+        throw new Error('Error al registrar la alerta SOS');
+      }
+
+      await loading.dismiss();
+      this.showToast('¡Alerta SOS enviada con éxito!', 'success');
+    } catch (error: any) {
+      console.error('Error en el flujo SOS:', error);
+      await loading.dismiss();
+      this.showToast(`Error al enviar alerta SOS: ${error.message || error}`, 'warning');
+    }
   }
 
   async showToast(message: string, color: string) {

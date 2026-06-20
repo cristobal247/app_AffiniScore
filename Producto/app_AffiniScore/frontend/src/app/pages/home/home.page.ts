@@ -99,32 +99,6 @@ export class HomePage implements OnInit {
       this.cargarDatosAfinidad();
     });
 
-    // Suscribirse en tiempo real a los puntos de la pareja en Supabase
-    const channels = await this.supabaseSvc.subscribeToPointsRealtime(async (payload) => {
-      const user = await this.supabaseSvc.getCurrentUser();
-      
-      // Solo reaccionamos si la acción es de la pareja (no propia)
-      if (payload.new.user_id !== user?.id) {
-        await this.cargarDatosAfinidad();
-        
-        // Solo mostramos el Toast si la acción ya está CONFIRMADA (puntos sumados)
-        if (payload.new.status === 'CONFIRMED') {
-          const toast = await this.toastCtrl.create({
-            message: '¡Tu pareja ha ganado puntos!',
-            duration: 3000,
-            position: 'top',
-            color: 'success',
-            icon: 'sparkles',
-            cssClass: 'custom-toast'
-          });
-          await toast.present();
-        }
-      }
-    });
-    if (channels) {
-      this.realtimeChannels = channels;
-    }
-
     // Inicializar y suscribirse al NotificationService
     await this.notificationSvc.init();
     this.notificationSvc.notifications$.subscribe(notifs => {
@@ -170,20 +144,53 @@ export class HomePage implements OnInit {
     if (this.pointsSub) {
       this.pointsSub.unsubscribe();
     }
-    
-    // Limpiar canales de Supabase Realtime
-    this.realtimeChannels.forEach(channel => {
-      if (channel) {
-        this.supabaseSvc['supabase'].removeChannel(channel);
-      }
-    });
-
+    this.unsubscribePoints();
     if (this.audioObj) {
       this.audioObj.pause();
     }
-  }  // Se ejecuta cada vez que el usuario vuelve a esta pestaña
+  }
+
   async ionViewWillEnter() {
     await this.cargarDatosAfinidad();
+    await this.subscribePoints();
+  }
+
+  ionViewWillLeave() {
+    this.unsubscribePoints();
+  }
+
+  async subscribePoints() {
+    this.unsubscribePoints();
+    const channels = await this.supabaseSvc.subscribeToPointsRealtime(async (payload) => {
+      const user = await this.supabaseSvc.getCurrentUser();
+      if (payload.new.user_id !== user?.id) {
+        await this.cargarDatosAfinidad();
+        if (payload.new.status === 'CONFIRMED') {
+          const toast = await this.toastCtrl.create({
+            message: '¡Tu pareja ha ganado puntos!',
+            duration: 3000,
+            position: 'top',
+            color: 'success',
+            icon: 'sparkles',
+            cssClass: 'custom-toast'
+          });
+          await toast.present();
+        }
+      }
+    });
+    if (channels) {
+      this.realtimeChannels = channels;
+    }
+  }
+
+  unsubscribePoints() {
+    this.realtimeChannels.forEach(channel => {
+      if (channel) {
+        this.supabaseSvc.supabase.removeChannel(channel)
+          .catch((err: any) => console.warn('Error cerrando canal de puntos:', err));
+      }
+    });
+    this.realtimeChannels = [];
   }
 
   async cargarDatosAfinidad() {

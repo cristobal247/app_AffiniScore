@@ -90,10 +90,6 @@ export class ActionsPage implements OnInit {
   }
 
   async ngOnInit() {
-    await this.refreshCatalog();
-    await this.cargarDatosAfinidad();
-    await this.loadDisconnectChallenges();
-
     await this.notificationSvc.init();
     this.notificationSvc.notifications$.subscribe(notifs => {
       this.notifications = notifs;
@@ -144,7 +140,9 @@ export class ActionsPage implements OnInit {
   }
 
   async ionViewWillEnter() {
+    await this.refreshCatalog();
     await this.cargarDatosAfinidad();
+    await this.loadDisconnectChallenges();
   }
 
   async cargarDatosAfinidad() {

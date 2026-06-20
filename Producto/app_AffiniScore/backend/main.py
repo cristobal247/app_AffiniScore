@@ -299,9 +299,10 @@ async def send_push_notification(request: NotificationRequest):
 class SosNotificationRequest(BaseModel):
     partner_id: str
     sender_name: str
-    audio_url: Optional[str] = None
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
+    audio_url: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
+    audio_id: str | None = None
  
 @app.post("/api/v1/notifications/sos")
 async def send_sos_push_notification(request: SosNotificationRequest):
@@ -337,7 +338,8 @@ async def send_sos_push_notification(request: SosNotificationRequest):
                 "sender_name": request.sender_name,
                 "audio_url": request.audio_url or "",
                 "latitude": str(request.latitude) if request.latitude is not None else "",
-                "longitude": str(request.longitude) if request.longitude is not None else ""
+                "longitude": str(request.longitude) if request.longitude is not None else "",
+                "audio_id": request.audio_id or ""
             },
             token=token,
         )
