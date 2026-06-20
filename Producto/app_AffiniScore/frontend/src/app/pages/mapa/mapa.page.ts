@@ -685,7 +685,7 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
       // 2. Subir audio a Supabase Storage
       const { url: publicUrl, error: uploadError } = await this.supabaseSvc.uploadSosAudio(audioBlob);
       if (uploadError || !publicUrl) {
-        throw new Error('Error al subir el audio de SOS a Supabase Storage');
+        throw new Error('Error al subir el audio de SOS a Supabase Storage: ' + (uploadError?.message || JSON.stringify(uploadError) || 'Error desconocido'));
       }
 
       // 3. Registrar el SOS en la base de datos y enviar notificaciones
