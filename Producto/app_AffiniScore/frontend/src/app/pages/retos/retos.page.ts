@@ -41,6 +41,9 @@ export class RetosPage implements OnInit {
   searchTerm = '';
   filteredChallenges: DisconnectChallenge[] = [];
 
+  individualPoints = 0;
+  couplePoints = 0;
+
   constructor(
     private supabaseSvc: SupabaseService,
     private alertCtrl: AlertController,
@@ -62,6 +65,41 @@ export class RetosPage implements OnInit {
   async loadDisconnectChallenges() {
     this.disconnectChallenges = await this.supabaseSvc.getDisconnectChallenges();
     this.filterChallenges();
+    await this.cargarPuntos();
+  }
+
+  async cargarPuntos() {
+    try {
+      const { data: profile } = await this.supabaseSvc.getUserProfile(true);
+      if (profile) {
+        this.individualPoints = profile.total_points || profile.points_total || 0;
+        
+        // Cargar puntos de pareja si está vinculado
+        const partnership = await this.supabaseSvc.getActivePartnership();
+        if (partnership) {
+          const user = await this.supabaseSvc.getCurrentUser();
+          if (user) {
+            const partnerId = partnership.user1_id === user.id ? partnership.user2_id : partnership.user1_id;
+            if (partnerId) {
+              const { data: partnerProfile } = await this.supabaseSvc.supabase
+                .from('profiles')
+                .select('total_points')
+                .eq('id', partnerId)
+                .single();
+              
+              if (partnerProfile) {
+                this.couplePoints = this.individualPoints + (partnerProfile.total_points || 0);
+                return;
+              }
+            }
+          }
+        }
+        // Fallback si no hay pareja o error
+        this.couplePoints = this.individualPoints;
+      }
+    } catch (err) {
+      console.error('Error al cargar puntos:', err);
+    }
   }
 
   toggleSearch() {
