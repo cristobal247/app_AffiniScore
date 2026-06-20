@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -9,6 +9,7 @@ import {
 import { addIcons } from 'ionicons';
 import { chevronBackOutline, checkmarkCircle, alertCircleOutline } from 'ionicons/icons';
 import { BingoBonusAward, BingoCard, BingoCellTask, BingoProgress, BingoService } from './bingo.service';
+import { SupabaseService } from '../services/supabase';
 
 @Component({
   selector: 'app-bingo',
@@ -20,7 +21,7 @@ import { BingoBonusAward, BingoCard, BingoCellTask, BingoProgress, BingoService 
     IonIcon, IonButton, IonSpinner, CommonModule, FormsModule
   ]
 })
-export class BingoPage implements OnInit {
+export class BingoPage implements OnInit, OnDestroy {
   bingoCard: BingoCard | null = null;
   progress: BingoProgress | null = null;
   completedCellIds: Set<string> = new Set();
@@ -31,8 +32,11 @@ export class BingoPage implements OnInit {
   isCelebratingFullCard = false;
   fullCardCelebrationMessage = '';
 
+  private channel: any = null;
+
   constructor(
     private bingoService: BingoService,
+    private supabaseSvc: SupabaseService,
     private loadingCtrl: LoadingController,
     private toastCtrl: ToastController,
     private cdr: ChangeDetectorRef,
@@ -75,6 +79,56 @@ export class BingoPage implements OnInit {
 
   async ngOnInit() {
     await this.loadBingo();
+    await this.subscribeRealtimeBingo();
+  }
+
+  ngOnDestroy() {
+    this.unsubscribeRealtimeBingo();
+  }
+
+  async subscribeRealtimeBingo() {
+    try {
+      const user = await this.supabaseSvc.getCurrentUser();
+      if (!user) return;
+
+      const partnership = await this.supabaseSvc.getActivePartnership();
+      const ownerIds = partnership
+        ? [partnership.user1_id, partnership.user2_id]
+        : [user.id];
+
+      const bingoCellIds = this.bingoCard?.cells.map(c => c.id) || [];
+
+      this.channel = this.supabaseSvc.supabase
+        .channel('bingo-realtime')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'user_actions_log' },
+          async (payload: any) => {
+            const newRow = payload.new;
+            // Si hay cambio en la fila, y el user_id pertenece al grupo (pareja o individual)
+            if (newRow && ownerIds.includes(newRow.user_id)) {
+              if (bingoCellIds.includes(newRow.action_id)) {
+                console.log('Bingo realtime change detected, reloading progress:', payload);
+                await this.loadBingo();
+                this.cdr.detectChanges();
+              }
+            }
+          }
+        )
+        .subscribe();
+    } catch (e) {
+      console.error('Error setting up bingo realtime subscription:', e);
+    }
+  }
+
+  unsubscribeRealtimeBingo() {
+    if (this.channel) {
+      this.supabaseSvc.supabase.removeChannel(this.channel)
+        .then(() => {
+          this.channel = null;
+        })
+        .catch((err: any) => console.warn('Error removing bingo channel:', err));
+    }
   }
 
   goBack() {

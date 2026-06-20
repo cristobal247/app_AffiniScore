@@ -1,123 +1,138 @@
 import { Injectable } from '@angular/core';
 import { SupabaseService } from '../services/supabase';
 
-export interface TriviaQuestion {
-  id: string;
-  question: string;
-  category: 'preference' | 'memory' | 'personality' | 'relationship';
-  difficulty: 'easy' | 'medium' | 'hard';
-  points: number;
-}
-
-export interface QuickGameSession {
-  id: string;
-  partnership_id: string;
-  game_type: 'trivia';
-  questions: TriviaQuestion[];
-  current_question_index: number;
-  player1_score: number;
-  player2_score: number;
-  is_active: boolean;
-  started_at: string;
-  ended_at?: string;
-  created_at?: string;
-}
-
-export interface GameRound {
-  question: TriviaQuestion;
-  player1_answer?: string;
-  player2_answer?: string;
-  correct_answer?: string;
-  is_correct?: boolean;
-  points_awarded?: number;
-}
-
 @Injectable({
   providedIn: 'root'
 })
 export class QuickInteractionService {
-  private readonly TRIVIA_POOL: TriviaQuestion[] = [
-    { id: 'q1', question: '¿Cuál es mi color favorito?', category: 'preference', difficulty: 'easy', points: 10 },
-    { id: 'q2', question: '¿Cuál es mi película favorita?', category: 'preference', difficulty: 'easy', points: 10 },
-    { id: 'q3', question: '¿Cuál es mi comida favorita?', category: 'preference', difficulty: 'easy', points: 10 },
-    { id: 'q4', question: '¿Cuál es mi música favorita?', category: 'preference', difficulty: 'easy', points: 10 },
-    { id: 'q5', question: '¿Cuál es mi deporte favorito?', category: 'preference', difficulty: 'easy', points: 10 },
-    { id: 'q6', question: '¿Dónde nos conocimos?', category: 'memory', difficulty: 'easy', points: 10 },
-    { id: 'q7', question: '¿Cuál fue nuestro primer viaje juntos?', category: 'memory', difficulty: 'medium', points: 15 },
-    { id: 'q8', question: '¿Cuál es la fecha de nuestro aniversario?', category: 'memory', difficulty: 'medium', points: 15 },
-    { id: 'q9', question: '¿Qué regalo me diste en mi último cumpleaños?', category: 'memory', difficulty: 'hard', points: 20 },
-    { id: 'q10', question: '¿Cuál es mi mayor sueño?', category: 'personality', difficulty: 'hard', points: 20 },
-    { id: 'q11', question: '¿Cuál es mi mayor miedo?', category: 'personality', difficulty: 'hard', points: 20 },
-    { id: 'q12', question: '¿Cuál es mi cualidad que más te gusta?', category: 'personality', difficulty: 'medium', points: 15 },
-    { id: 'q13', question: '¿Qué es lo que más amas de nuestra relación?', category: 'relationship', difficulty: 'hard', points: 20 },
-    { id: 'q14', question: '¿Cuál fue el momento más romántico que hemos compartido?', category: 'relationship', difficulty: 'hard', points: 20 },
-    { id: 'q15', question: '¿Qué te gustaría mejorar de nuestra relación?', category: 'relationship', difficulty: 'hard', points: 20 }
+  private readonly QUESTION_TEMPLATES = [
+    '{user1}, ¿qué le regalaste a {user2} en su cumpleaños pasado?',
+    '{user1}, ¿cuál es la comida favorita de {user2}?',
+    '{user1}, ¿cuál es el mayor sueño de {user2}?',
+    '{user1}, ¿adónde fue el primer viaje que hicieron juntos con {user2}?',
+    '{user1}, ¿cuál es el color favorito de {user2}?',
+    '{user1}, ¿cuál es la película favorita de {user2}?',
+    '{user1}, ¿qué es lo que más le gusta a {user2} hacer en su tiempo libre?',
+    '{user1}, ¿cuál es el mayor miedo de {user2}?'
   ];
 
   constructor(private supabaseSvc: SupabaseService) {}
 
-  private async ensureCatalogEntry() {
-    try {
-      await this.supabaseSvc.supabase.from('activity_catalog').upsert([
-        {
-          id: 'quick-interaction-trivia',
-          name: 'Quick Interaction: ¿Dónde estábamos?',
-          category: 'RETO_INTERACCION',
-          default_points: 10,
-          activity_type: 'CHALLENGE',
-          description: 'Juego rápido de memoria y conversación para la pareja.'
-        }
-      ], { onConflict: 'id' });
-    } catch (error) {
-      console.warn('No se pudo registrar el catálogo del juego rápido:', error);
+  generateCustomQuestion(user1Name: string, user2Name: string): string {
+    const template = this.QUESTION_TEMPLATES[Math.floor(Math.random() * this.QUESTION_TEMPLATES.length)];
+    // Elegimos al azar quién pregunta y a quién se pregunta
+    if (Math.random() > 0.5) {
+      return template.replace('{user1}', user1Name).replace('{user2}', user2Name);
+    } else {
+      return template.replace('{user1}', user2Name).replace('{user2}', user1Name);
     }
   }
-  getRandomQuestions(count: number = 3): TriviaQuestion[] {
-    const shuffled = [...this.TRIVIA_POOL].sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, count);
+
+  async getActiveTriviaSession(partnershipId: string): Promise<{ data: any; error: any }> {
+    const { data, error } = await this.supabaseSvc.supabase
+      .from('trivia_sessions')
+      .select('*')
+      .eq('partnership_id', partnershipId)
+      .in('status', ['waiting', 'active'])
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (error) return { data: null, error };
+    return { data: data && data.length > 0 ? data[0] : null, error: null };
   }
 
-  getQuestion(questionId: string): TriviaQuestion | undefined {
-    return this.TRIVIA_POOL.find(question => question.id === questionId);
+  async createTriviaSession(partnershipId: string, question: string, user1Id: string, user2Id: string): Promise<{ data: any; error: any }> {
+    const { data, error } = await this.supabaseSvc.supabase
+      .from('trivia_sessions')
+      .insert({
+        partnership_id: partnershipId,
+        question,
+        user1_id: user1Id,
+        user2_id: user2Id,
+        user1_status: 'pending',
+        user2_status: 'pending',
+        status: 'waiting'
+      })
+      .select()
+      .single();
+
+    return { data, error };
   }
 
-  getQuestionsByCategory(category: string): TriviaQuestion[] {
-    return this.TRIVIA_POOL.filter(question => question.category === category);
-  }
+  async submitTriviaAnswer(sessionId: string, userNumber: 1 | 2, answer: string): Promise<{ error: any }> {
+    const updates: any = {};
+    if (userNumber === 1) {
+      updates.user1_answer = answer;
+      updates.user1_status = 'answered';
+    } else {
+      updates.user2_answer = answer;
+      updates.user2_status = 'answered';
+    }
+    updates.updated_at = new Date().toISOString();
 
-  async createGameSession(partnershipId: string, gameType: 'trivia' = 'trivia'): Promise<{ data: QuickGameSession | null; error: any }> {
-    await this.ensureCatalogEntry();
-    const questions = this.getRandomQuestions(3);
+    const { error } = await this.supabaseSvc.supabase
+      .from('trivia_sessions')
+      .update(updates)
+      .eq('id', sessionId);
 
-    const session: QuickGameSession = {
-      id: `session-${Date.now()}`,
-      partnership_id: partnershipId,
-      game_type: gameType,
-      questions,
-      current_question_index: 0,
-      player1_score: 0,
-      player2_score: 0,
-      is_active: true,
-      started_at: new Date().toISOString()
-    };
-
-    return { data: session, error: null };
-  }
-
-  async recordAnswer(
-    sessionId: string,
-    playerNumber: 1 | 2,
-    questionIndex: number,
-    answer: string,
-    isCorrect: boolean,
-    pointsAwarded: number = 10
-  ): Promise<{ error: any }> {
-    return { error: null };
-  }
-
-  async endGameSession(sessionId: string): Promise<{ error: any }> {
-    await this.ensureCatalogEntry();
-    const { error } = await this.supabaseSvc.saveActionPoint('quick-interaction-trivia', 10);
     return { error };
+  }
+
+  async finishTriviaSession(sessionId: string): Promise<{ error: any }> {
+    const { error } = await this.supabaseSvc.supabase
+      .from('trivia_sessions')
+      .update({ status: 'finished', updated_at: new Date().toISOString() })
+      .eq('id', sessionId);
+
+    return { error };
+  }
+
+  async getOrCreateTriviaActivity(partnershipId: string): Promise<string> {
+    // 1. Buscar si ya existe la actividad "Trivia de Pareja"
+    const { data: existing } = await this.supabaseSvc.supabase
+      .from('activity_catalog')
+      .select('id')
+      .eq('name', 'Trivia de Pareja')
+      .limit(1);
+
+    if (existing && existing.length > 0) {
+      return existing[0].id;
+    }
+
+    // 2. Si no existe, crearla para esta sociedad
+    const { data: inserted, error } = await this.supabaseSvc.supabase
+      .from('activity_catalog')
+      .insert({
+        name: 'Trivia de Pareja',
+        category: 'Trivia',
+        default_points: 10,
+        activity_type: 'ROUTINE',
+        subcategory: 'Trivia',
+        description: 'Juego de trivia rápida con la pareja.',
+        partnership_id: partnershipId
+      })
+      .select('id')
+      .single();
+
+    if (error || !inserted) {
+      console.error('Error al crear actividad de trivia:', error);
+      // Retornar un ID por defecto o intentar obtener cualquier ID del catálogo como fallback
+      const { data: fallback } = await this.supabaseSvc.supabase
+        .from('activity_catalog')
+        .select('id')
+        .limit(1);
+      return fallback && fallback.length > 0 ? fallback[0].id : '';
+    }
+
+    return inserted.id;
+  }
+
+  async awardTriviaPoints(partnershipId: string): Promise<{ error: any }> {
+    const activityId = await this.getOrCreateTriviaActivity(partnershipId);
+    if (!activityId) {
+      return { error: 'No se pudo obtener ni crear una actividad de trivia válida en el catálogo' };
+    }
+    // Registrar la acción de trivia completada y sumar 10 puntos al usuario
+    return await this.supabaseSvc.saveActionPoint(activityId, 10);
   }
 }

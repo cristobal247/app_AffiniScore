@@ -172,6 +172,25 @@ CREATE TABLE public.chat_rooms (
   CONSTRAINT chat_rooms_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
 
+CREATE TABLE public.trivia_sessions (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  partnership_id uuid,
+  question text NOT NULL,
+  user1_id uuid,
+  user2_id uuid,
+  user1_answer text,
+  user2_answer text,
+  user1_status varchar(20) DEFAULT 'pending'::character varying,
+  user2_status varchar(20) DEFAULT 'pending'::character varying,
+  status varchar(20) DEFAULT 'active'::character varying,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT trivia_sessions_pkey PRIMARY KEY (id),
+  CONSTRAINT trivia_sessions_partnership_id_fkey FOREIGN KEY (partnership_id) REFERENCES public.partnerships(id) ON DELETE CASCADE,
+  CONSTRAINT trivia_sessions_user1_id_fkey FOREIGN KEY (user1_id) REFERENCES public.profiles(id),
+  CONSTRAINT trivia_sessions_user2_id_fkey FOREIGN KEY (user2_id) REFERENCES public.profiles(id)
+);
+
 -- ==========================================
 -- 4. TABLAS DE CUARTO NIVEL (Dependen de activity_catalog u otras secundarias)
 -- ==========================================
@@ -265,5 +284,7 @@ INSERT INTO public.daily_reflections (phrase, author) VALUES
   ('Un abrazo silencioso a veces dice más que mil palabras de consuelo.', 'Anónimo'),
   ('El amor verdadero no es la ausencia de dificultades, sino la fuerza para superarlas en equipo.', 'Anónimo'),
   ('Valorar los pequeños esfuerzos de tu pareja crea un espacio donde el amor florece naturalmente.', 'Anónimo');
+
+ALTER PUBLICATION supabase_realtime ADD TABLE public.trivia_sessions;
 
 */
