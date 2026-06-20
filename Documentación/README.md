@@ -14,10 +14,10 @@ Además, integra un "Terapeuta de Pareja IA" como mediador, una bandeja de comun
 
 ## 🛠️ Tecnologías Utilizadas
 * **Frontend:** Ionic Framework y Angular (Aplicación Móvil).
-* **Backend (Intermedio y WebSockets):** FastAPI (Python) para la gestión de la bandeja de chats en tiempo real y la orquestación de la IA.
-* **Backend y Base de Datos:** Supabase (Almacenamiento y sincronización).
+* **Backend (Servicios en Tiempo Real e IA):** FastAPI (Python) desplegado de forma externa para la orquestación del chat en tiempo real y servicios de IA.
+* **Backend y Base de Datos:** Supabase (Almacenamiento, autenticación y sincronización).
 * **Geolocalización:** API de Mapbox.
-* **Inteligencia Artificial:** Gemini / Google AI Studio (Procesamiento de Terapeuta IA, análisis de interacciones y validación de puntos).
+* **Inteligencia Artificial:** Gemini / Google AI Studio (Procesamiento de la Terapeuta IA Sinclair, análisis relacional y validación de retos multimedia).
 
 ## 📁 Estructura del Repositorio (Control de Auditoría)
 Para dar cumplimiento a las normativas de auditoría, este repositorio se divide en tres directorios:
@@ -27,20 +27,25 @@ Para dar cumplimiento a las normativas de auditoría, este repositorio se divide
 
 ---
 
-## 🚀 Estado de Avance del Proyecto
+## 🚀 Despliegue en la Nube (Render & Supabase)
+Para evitar la dependencia de la ejecución del backend en modo local y permitir una interacción multidispositivo real entre ambos integrantes de la pareja, los servicios de backend se encuentran alojados en la nube:
 
-### ✅ Módulos y Entregables Terminados
-* **Diseño UX/UI:** Mockups finalizados bajo el estándar "Clean UI" enfocados en el panel de control, mapa y chat.
-* **Planificación Técnica:** Diagramas de Casos de Uso, Diagrama de Ishikawa y alcance del proyecto definidos.
+* **Servidor Backend (FastAPI):** Hospedado en **Render** (Capa gratuita / *Free Tier*).
+  > [!NOTE]
+  > Debido a las políticas del plan *Free Tier* de Render, si el backend no recibe peticiones durante unos minutos entra en estado de suspensión. La primera petición web del día o tras inactividad tardará aproximadamente **50 segundos** en responder mientras el contenedor vuelve a iniciarse ("despierta"). 
+* **Base de Datos y Seguridad:** Alojada en **Supabase** bajo motor PostgreSQL con políticas activas de RLS (Row Level Security).
 
-### 🚧 Módulos en Construcción (Desarrollo Activo)
-* **1. Módulo de Puntos y Recompensas (Core):** Programación del sistema de "Affini Points". Incluye el registro de actos de servicio, el canje de recompensas en la vida real y la gestión de retos de desconexión (ej. citas sin celular).
-* **2. Módulo de Comunicación y Asistencia IA:** Desarrollo con FastAPI de la bandeja de 3 chats (privado de pareja, individual con IA y terapia grupal con IA), incorporando análisis de sentimiento y sugerencia de respuestas empáticas.
-* **3. Módulo de Gestión y Reportería (CRUD):** Login, vinculación de cuentas por código QR, panel de dashboard con el índice de afinidad y exportación de reportes de la relación.
-* **4. Módulo de Mapa y Seguridad:** Integración de Mapbox para ubicación en tiempo real, botón de pánico S.O.S y activación de geofencing para detectar "Tiempo de Calidad" al estar físicamente juntos.
-* **5. Validación Multimedia IA:** Lógica para asignar puntos de forma automática al analizar el nivel de bienestar en fotos o evidencias de salidas de la pareja.
+Si deseas realizar pruebas de integración y QA inmediatas sin experimentar los tiempos de espera de la nube al iniciar, puedes arrancar el backend en un entorno local.
 
-## ⚙️ Ejecución local completa
+---
+
+## 📲 Descarga de la Aplicación (APK)
+La última versión construida y empaquetada de la aplicación móvil para dispositivos Android está disponible para su instalación y prueba:
+* **Enlace de descarga:** [Carpeta Google Drive - APK AffiniScore](https://drive.google.com/drive/folders/18e-Ejemplo-AffiniScore-Drive-APK) *(Por favor, solicita los permisos correspondientes de ser necesario)*.
+
+---
+
+## ⚙️ Ejecución local completa (Desarrollo y Pruebas rápidas)
 
 ### Requisitos previos
 * Windows 10/11
@@ -48,7 +53,7 @@ Para dar cumplimiento a las normativas de auditoría, este repositorio se divide
 * Node.js 18+ y npm
 * Git
 
-### 1) Arrancar backend
+### 1) Arrancar backend localmente
 ```powershell
 cd producto\app_AffiniScore\backend
 .venv\Scripts\activate.bat
@@ -67,14 +72,15 @@ Desde la raíz del repositorio, ejecuta:
 ```powershell
 start_local.bat
 ```
-Esto abrirá una ventana para el backend y otra para el frontend.
+Esto abrirá automáticamente una ventana para el backend local y otra para el frontend.
 
 ### 4) Credenciales de Supabase
 El archivo local de configuración `producto/app_AffiniScore/frontend/src/environments/environment.ts` está en `.gitignore`, por lo que no se sube a GitHub.
 El script `start_local.bat` escribe automáticamente las credenciales de Supabase en ese archivo local antes de iniciar el frontend.
 
-### URL de acceso
+### URL de acceso local
 * Frontend: `http://localhost:4201`
 * Backend: `http://localhost:8000`
 
 ---
+
