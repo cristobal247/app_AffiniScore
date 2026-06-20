@@ -13,6 +13,7 @@ import {
   copyOutline, informationCircle, cameraReverseOutline, videocamOffOutline
 } from 'ionicons/icons';
 import { SupabaseService } from '../../services/supabase';
+import { CameraService } from '../../services/camera.service';
 import { QRCodeComponent } from 'angularx-qrcode';
 
 // Importación flexible para evitar errores de tipos
@@ -55,7 +56,8 @@ export class QrPage implements OnInit, OnDestroy {
     private toastCtrl: ToastController,
     private loadingCtrl: LoadingController,
     private navCtrl: NavController,
-    private alertCtrl: AlertController
+    private alertCtrl: AlertController,
+    private cameraSvc: CameraService
   ) {
     addIcons({
       heartOutline, qrCodeOutline, scanOutline, cameraOutline,
@@ -258,14 +260,12 @@ export class QrPage implements OnInit, OnDestroy {
     this.cameraError = null;
 
     try {
-      // Solicitar permisos de cámara formalmente a través de getUserMedia para forzar el prompt nativo
-      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-          stream.getTracks().forEach(track => track.stop()); // Detener stream para no bloquear
-        } catch (e) {
-          console.warn('getUserMedia error requesting camera permission:', e);
-        }
+      // Solicitar permisos nativos a través de CameraService (@capacitor/camera)
+      // Esto dispara el diálogo del SO en Android/iOS si no se han concedido aún
+      const hasPermission = await this.cameraSvc.ensurePermissions();
+      if (!hasPermission) {
+        this.cameraError = 'Permiso de cámara denegado.';
+        return;
       }
 
       const devices = await Html5Qrcode.getCameras();
@@ -275,10 +275,10 @@ export class QrPage implements OnInit, OnDestroy {
         this.currentCameraIndex = devices.length > 1 ? 1 : 0;
         await this.initCamera(this.cameras[this.currentCameraIndex].id);
       } else {
-        this.cameraError = "No se encontraron cámaras.";
+        this.cameraError = 'No se encontraron cámaras.';
       }
     } catch (err) {
-      this.cameraError = "Permiso de cámara denegado.";
+      this.cameraError = 'Error al iniciar el escáner.';
     }
   }
 

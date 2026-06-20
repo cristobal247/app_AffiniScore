@@ -114,8 +114,11 @@ export class PartnerChatPage implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    // FIX #7: Los canales de Supabase se cierran con removeChannel(), NO con .unsubscribe()
     if (this.subscription) {
-      this.subscription.unsubscribe();
+      this.supabaseSvc.supabase.removeChannel(this.subscription)
+        .catch((err: any) => console.warn('Error al cerrar canal de chat de pareja:', err));
+      this.subscription = null;
     }
   }
 

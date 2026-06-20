@@ -80,7 +80,7 @@
         <div class="modal-body-content">
           <!-- Polaroid emergiendo de la ranura -->
           <div class="polaroid-slit-container">
-            <div class="polaroid-print-card" (click)="fileInput.click()">
+            <div class="polaroid-print-card" (click)="openCameraOrGallery()">
               <!-- Si no hay foto seleccionada, muestra el estado inicial (Broccoli + Añadir Foto) -->
               <div *ngIf="!pendingPreviewUrl" class="placeholder-polaroid-content">
                 <img src="assets/images/mascota_camara.png" class="mascot-illust" alt="Añadir recuerdo" />

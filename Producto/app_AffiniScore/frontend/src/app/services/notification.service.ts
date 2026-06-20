@@ -64,6 +64,8 @@ export class NotificationService {
         this.cleanupSubscriptions();
         this.notificationsSubject.next([]);
         this.pendingCountSubject.next(0);
+        // Invalidar cache de preferences para que la próxima sesión lea datos frescos
+        this.supabaseSvc.invalidatePreferencesCache();
       } else if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
         this.initialized = false;
         await this.init();

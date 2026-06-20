@@ -5,9 +5,11 @@ import { Router } from '@angular/router';
 import { 
   IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, 
   IonBackButton, IonIcon, IonButton, IonCard, IonCardHeader, 
-  IonCardTitle, IonCardContent, LoadingController, AlertController, IonSpinner
+  IonCardTitle, IonCardContent, LoadingController, AlertController, IonSpinner,
+  ActionSheetController
 } from '@ionic/angular/standalone';
 import { SupabaseService } from '../../services/supabase';
+import { CameraService } from '../../services/camera.service';
 import { addIcons } from 'ionicons';
 import { cameraOutline, checkmarkCircleOutline, alertCircleOutline, imageOutline, sparklesOutline } from 'ionicons/icons';
 
@@ -35,7 +37,9 @@ export class ChallengeValidationPage implements OnInit {
     private supabaseSvc: SupabaseService,
     private router: Router,
     private loadingCtrl: LoadingController,
-    private alertCtrl: AlertController
+    private alertCtrl: AlertController,
+    private actionSheetCtrl: ActionSheetController,
+    private cameraSvc: CameraService
   ) {
     addIcons({ cameraOutline, checkmarkCircleOutline, alertCircleOutline, imageOutline, sparklesOutline });
     
@@ -60,6 +64,48 @@ export class ChallengeValidationPage implements OnInit {
     }
   }
 
+  /**
+   * Abre el ActionSheet para que el usuario elija tomar foto o seleccionar de galería.
+   * Usa CameraService para gestionar permisos nativos de forma correcta.
+   */
+  async openCameraOrGallery() {
+    const actionSheet = await this.actionSheetCtrl.create({
+      header: 'Foto del Reto',
+      mode: 'ios',
+      buttons: [
+        {
+          text: 'Tomar Foto',
+          icon: 'camera-outline',
+          handler: async () => {
+            const result = await this.cameraSvc.takePicture('CAMERA');
+            if (result) {
+              this.selectedFile = this.cameraSvc.resultToFile(result, `reto_${Date.now()}.${result.format}`);
+              this.imagePreview = result.dataUrl;
+            }
+          },
+        },
+        {
+          text: 'Elegir de la Galería',
+          icon: 'image-outline',
+          handler: async () => {
+            const result = await this.cameraSvc.takePicture('PHOTOS');
+            if (result) {
+              this.selectedFile = this.cameraSvc.resultToFile(result, `reto_${Date.now()}.${result.format}`);
+              this.imagePreview = result.dataUrl;
+            }
+          },
+        },
+        {
+          text: 'Cancelar',
+          role: 'cancel',
+          icon: 'close-outline',
+        },
+      ],
+    });
+    await actionSheet.present();
+  }
+
+  /** Mantener compatibilidad con el input[type=file] oculto del template (web fallback) */
   onFileSelected(ev: any) {
     const file = ev.target?.files?.[0];
     if (!file) return;

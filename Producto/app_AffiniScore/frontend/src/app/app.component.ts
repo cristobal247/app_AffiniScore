@@ -16,6 +16,8 @@ export class AppComponent implements OnInit, OnDestroy {
   private partnerId: string | null = null;
   private partnerName: string = 'Pareja';
   private sosSub: any = null;
+  // FIX #6: Guardar referencia para cleanup en ngOnDestroy
+  private notificationClickSub: any = null;
   private currentUserId: string | null = null;
   private activeValidationAlerts = new Set<string>();
 
@@ -28,8 +30,33 @@ export class AppComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
-    // Suscribirse a clics de notificaciones nativas/locales/web
-    this.notificationSvc.notificationClick$.subscribe(async (extra) => {
+    try {
+      this.initializeApp();
+    } catch (err) {
+      console.error('[AppComponent] Error crítico en ngOnInit. Redirigiendo a /welcome.', err);
+      this.handleStartupError();
+    }
+  }
+
+  private handleStartupError(): void {
+    // Limpiar solo las claves de sesión de Supabase para no perder preferencias del usuario
+    try {
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (key.startsWith('sb-') || key.includes('auth-token') || key.includes('session'))) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(k => localStorage.removeItem(k));
+    } catch { /* ignorar errores secundarios */ }
+
+    this.router.navigate(['/welcome']);
+  }
+
+  private initializeApp(): void {
+    // FIX #6: Guardamos la suscripción para poder destruirla en ngOnDestroy
+    this.notificationClickSub = this.notificationSvc.notificationClick$.subscribe(async (extra) => {
       console.log('AppComponent: Notificación local/web tocada:', extra);
       if (!extra) return;
 
@@ -84,6 +111,11 @@ export class AppComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.cleanupSosListener();
+    // FIX #6: Destruir suscripción al Subject de notificaciones
+    if (this.notificationClickSub) {
+      this.notificationClickSub.unsubscribe();
+      this.notificationClickSub = null;
+    }
   }
 
   setupSosListener() {

@@ -33,7 +33,8 @@ import { addCircleOutline, cogOutline, warningOutline, square, locationOutline, 
 import { environment } from '../../../environments/environment';
 import { FormsModule } from '@angular/forms';
 
-declare var mapboxgl: any;
+// Mapbox se carga de forma lazy para no bloquear el arranque de Angular ni el WebView del APK
+let mapboxgl: any = null;
 
 @Component({
   selector: 'app-mapa',
@@ -96,6 +97,9 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
   private isFirstLocationLock: boolean = false;
   private geoPositionSubscription: Subscription | null = null;
   private geoErrorSubscription: Subscription | null = null;
+  // Throttle de escritura a BD: solo escribe si el usuario se movió >10 metros
+  private lastDbWriteLat: number | null = null;
+  private lastDbWriteLng: number | null = null;
 
   // Variables para Modal de Geocodificación Mapbox Autocomplete
   isModalOpen: boolean = false;
@@ -158,7 +162,11 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
   }
 
   async ionViewWillEnter() {
-    await this.loadUserProfile();
+    // No recargar el perfil completo en cada visita para evitar requests duplicados.
+    // El mapa y marcadores ya están inicializados desde ngAfterViewInit.
+    if (this.map) {
+      this.map.resize();
+    }
   }
 
   ionViewDidEnter() {
@@ -167,20 +175,26 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
     }
   }
 
-  ngAfterViewInit() {
+  async ngAfterViewInit() {
+    await this.loadMapbox();
     this.initMap();
   }
 
   ngOnDestroy() {
+    // Los canales de Supabase se cierran con removeChannel(), NO con .unsubscribe()
     if (this.partnerSubscription) {
-      this.partnerSubscription.unsubscribe();
-      console.log('Suscripción de ubicación de pareja cerrada.');
+      this.supabaseSvc.supabase.removeChannel(this.partnerSubscription)
+        .catch((err: any) => console.warn('Error cerrando canal de pareja:', err));
+      this.partnerSubscription = null;
+      console.log('Canal de ubicación de pareja cerrado correctamente.');
     }
     if (this.geoPositionSubscription) {
       this.geoPositionSubscription.unsubscribe();
+      this.geoPositionSubscription = null;
     }
     if (this.geoErrorSubscription) {
       this.geoErrorSubscription.unsubscribe();
+      this.geoErrorSubscription = null;
     }
     this.geolocationService.stopTracking().catch((err) => console.warn('Error al detener el seguimiento de ubicación:', err));
   }
@@ -356,7 +370,56 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
     this.map.panTo([lng, lat], { duration: 500 });
   }
 
+  /**
+   * Carga dinámica de Mapbox GL JS y su CSS.
+   * Se inyectan en el DOM solo cuando el usuario abre esta página, evitando
+   * que el script sincrónico bloquee el arranque de Angular en browser y APK.
+   */
+  private loadMapbox(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      // Si ya está cargado (el usuario volvió a la página), reutilizamos la instancia
+      if (mapboxgl) {
+        resolve();
+        return;
+      }
+
+      // Inyectar el CSS de Mapbox si no existe todavía
+      if (!document.getElementById('mapbox-css')) {
+        const link = document.createElement('link');
+        link.id = 'mapbox-css';
+        link.rel = 'stylesheet';
+        link.href = 'https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css';
+        document.head.appendChild(link);
+      }
+
+      // Inyectar el script de Mapbox si no existe todavía
+      if (!document.getElementById('mapbox-js')) {
+        const script = document.createElement('script');
+        script.id = 'mapbox-js';
+        script.src = 'https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js';
+        script.onload = () => {
+          mapboxgl = (window as any)['mapboxgl'];
+          resolve();
+        };
+        script.onerror = (err) => {
+          console.error('Error al cargar Mapbox GL JS:', err);
+          reject(err);
+        };
+        document.head.appendChild(script);
+      } else {
+        // El script ya existe en el DOM (volvimos a la página)
+        mapboxgl = (window as any)['mapboxgl'];
+        resolve();
+      }
+    });
+  }
+
   private async initMap(): Promise<void> {
+    if (!mapboxgl) {
+      console.error('Mapbox GL JS no pudo cargarse. El mapa no se inicializará.');
+      return;
+    }
+
     // Coordenadas por defecto (Santiago, Chile) o tomadas de la caché para carga instantánea
     const cachedUserLat = localStorage.getItem('user_last_lat');
     const cachedUserLng = localStorage.getItem('user_last_lng');
@@ -437,7 +500,18 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
         this.centerMapOnUser(position.latitude, position.longitude);
       }
       
-      await this.supabaseSvc.updateUserLocation(position.latitude, position.longitude);
+      // THROTTLE: Solo escribir en BD si el usuario se movió más de 10 metros.
+      // Evita 2 llamadas HTTP a Supabase por cada pulso GPS (causa principal de congelación).
+      const movedEnough = !this.lastDbWriteLat || !this.lastDbWriteLng ||
+        this.calculateDistance(this.lastDbWriteLat, this.lastDbWriteLng, position.latitude, position.longitude) * 1000 > 10;
+      
+      if (movedEnough) {
+        this.lastDbWriteLat = position.latitude;
+        this.lastDbWriteLng = position.longitude;
+        // Fire-and-forget: no await para no bloquear el hilo del mapa
+        this.supabaseSvc.updateUserLocation(position.latitude, position.longitude)
+          .catch(err => console.warn('Error actualizando ubicación en BD:', err));
+      }
     });
 
     // 3. Intentamos obtener la posición inicial del GPS rápidamente

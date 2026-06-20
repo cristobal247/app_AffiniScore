@@ -42,6 +42,7 @@ export class GroupChatPage implements OnDestroy {
   isUploadingImage: boolean = false;
   
   private subscription: any;
+  private httpSubscription: any; // Suscripción HTTP activa para poder cancelarla al salir
 
   constructor(
     private supabaseSvc: SupabaseService,
@@ -78,12 +79,10 @@ export class GroupChatPage implements OnDestroy {
 
   cleanupRealtime() {
     if (this.subscription) {
-      console.log('DEBUG Realtime: Desuscribiendo canal para la sala:', this.partnershipId);
-      try {
-        this.subscription.unsubscribe();
-      } catch (e) {
-        console.warn('Error al desuscribir canal:', e);
-      }
+      console.log('DEBUG Realtime: Cerrando canal para la sala:', this.partnershipId);
+      // FIX: Los canales de Supabase se cierran con removeChannel(), NO con .unsubscribe()
+      this.supabaseSvc.supabase.removeChannel(this.subscription)
+        .catch((err: any) => console.warn('Error al cerrar canal de chat grupal:', err));
       this.subscription = null;
     }
   }
@@ -180,6 +179,11 @@ export class GroupChatPage implements OnDestroy {
 
   ngOnDestroy() {
     this.cleanupRealtime();
+    // Cancelar el request HTTP si el usuario sale antes de recibir respuesta
+    if (this.httpSubscription) {
+      this.httpSubscription.unsubscribe();
+      this.httpSubscription = null;
+    }
   }
 
   cancelSelectedImage() {
@@ -241,16 +245,16 @@ export class GroupChatPage implements OnDestroy {
       image_url: imageUrl || null
     };
 
-    this.http.post<any>(url, payload).pipe(
+    this.httpSubscription = this.http.post<any>(url, payload).pipe(
       retry({
-        count: 12,
+        count: 3, // Máximo 3 reintentos (era 12) — evita 60 segundos de Observable vivo
         delay: (error, retryCount) => {
           console.warn(`Intento de conexión grupal ${retryCount} fallido. Reintentando...`);
           this.zone.run(() => {
             this.loadingStatus = 'Escribiendo';
             this.cdr.detectChanges();
           });
-          return timer(5000);
+          return timer(3000); // 3s entre reintentos (era 5s)
         }
       })
     ).subscribe({

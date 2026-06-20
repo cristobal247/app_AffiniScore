@@ -44,7 +44,8 @@
       <p class="step-subtitle">Para validar el reto de desconexión con tu pareja, comparte una foto juntos realizando la
         actividad.</p>
 
-      <div class="upload-area" (click)="fileInput.click()">
+      <div class="upload-area" (click)="openCameraOrGallery()">
+        <!-- El input[type=file] se mantiene como fallback para navegador web -->
         <input type="file" #fileInput (change)="onFileSelected($event)" accept="image/*" style="display: none;">
 
         <ng-container *ngIf="!imagePreview">

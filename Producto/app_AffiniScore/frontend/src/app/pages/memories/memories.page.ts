@@ -4,10 +4,11 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonBadge, IonButton, IonCard, IonCardContent, IonContent, IonHeader, IonIcon, IonImg, IonModal, IonTitle, IonToolbar, ToastController, ActionSheetController, AlertController } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { imagesOutline, cloudUploadOutline, expandOutline, closeOutline, locationOutline, timeOutline, heartOutline, chevronBackOutline, cameraOutline, sparklesOutline, gameControllerOutline, chevronForwardOutline, shareOutline, ellipsisHorizontalOutline, trashOutline, createOutline } from 'ionicons/icons';
+import { imagesOutline, cloudUploadOutline, expandOutline, closeOutline, locationOutline, timeOutline, heartOutline, chevronBackOutline, cameraOutline, sparklesOutline, gameControllerOutline, chevronForwardOutline, shareOutline, ellipsisHorizontalOutline, trashOutline, createOutline, imageOutline } from 'ionicons/icons';
 import { SupabaseService } from '../../services/supabase';
+import { CameraService } from '../../services/camera.service';
 
-addIcons({ imagesOutline, cloudUploadOutline, expandOutline, closeOutline, locationOutline, timeOutline, heartOutline, chevronBackOutline, cameraOutline, sparklesOutline, gameControllerOutline, chevronForwardOutline, shareOutline, ellipsisHorizontalOutline, trashOutline, createOutline });
+addIcons({ imagesOutline, cloudUploadOutline, expandOutline, closeOutline, locationOutline, timeOutline, heartOutline, chevronBackOutline, cameraOutline, sparklesOutline, gameControllerOutline, chevronForwardOutline, shareOutline, ellipsisHorizontalOutline, trashOutline, createOutline, imageOutline });
 
 @Component({
   selector: 'app-memories',
@@ -50,7 +51,8 @@ export class MemoriesPage implements OnInit {
     private toastCtrl: ToastController,
     private router: Router,
     private actionSheetCtrl: ActionSheetController,
-    private alertCtrl: AlertController
+    private alertCtrl: AlertController,
+    private cameraSvc: CameraService
   ) {}
 
   openGame(path: string) {
@@ -142,6 +144,51 @@ export class MemoriesPage implements OnInit {
       description: '',
     };
     this.showUploadModal = true;
+    // Abrir el selector de fuente (cámara / galería) al abrir el modal
+    setTimeout(() => this.openCameraOrGallery(), 300);
+  }
+
+  /**
+   * Abre el ActionSheet nativo para elegir entre cámara o galería.
+   * Usa CameraService que gestiona permisos con @capacitor/camera.
+   */
+  async openCameraOrGallery() {
+    const actionSheet = await this.actionSheetCtrl.create({
+      header: 'Añadir Foto',
+      mode: 'ios',
+      buttons: [
+        {
+          text: 'Tomar Foto',
+          icon: 'camera-outline',
+          handler: async () => {
+            const result = await this.cameraSvc.takePicture('CAMERA');
+            if (result) {
+              const file = this.cameraSvc.resultToFile(result, `memory_${Date.now()}.${result.format}`);
+              this.pendingFile = file;
+              this.pendingPreviewUrl = result.dataUrl;
+            }
+          },
+        },
+        {
+          text: 'Elegir de la Galería',
+          icon: 'image-outline',
+          handler: async () => {
+            const result = await this.cameraSvc.takePicture('PHOTOS');
+            if (result) {
+              const file = this.cameraSvc.resultToFile(result, `memory_${Date.now()}.${result.format}`);
+              this.pendingFile = file;
+              this.pendingPreviewUrl = result.dataUrl;
+            }
+          },
+        },
+        {
+          text: 'Cancelar',
+          role: 'cancel',
+          icon: 'close-outline',
+        },
+      ],
+    });
+    await actionSheet.present();
   }
 
   async onFileSelected(ev: any) {
