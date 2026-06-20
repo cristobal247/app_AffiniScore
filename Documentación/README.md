@@ -17,7 +17,7 @@ Además, integra un "Terapeuta de Pareja IA" como mediador, una bandeja de comun
 * **Backend (Servicios en Tiempo Real e IA):** FastAPI (Python) desplegado de forma externa para la orquestación del chat en tiempo real y servicios de IA.
 * **Backend y Base de Datos:** Supabase (Almacenamiento, autenticación y sincronización).
 * **Geolocalización:** API de Mapbox.
-* **Inteligencia Artificial:** Gemini / Google AI Studio (Procesamiento de la Terapeuta IA Sinclair, análisis relacional y validación de retos multimedia).
+* **Inteligencia Artificial:** Gemini / Google AI Studio (Procesamiento del Terapeuta IA AffiniCoach, análisis relacional y validación de retos multimedia).
 
 ## 📁 Estructura del Repositorio (Control de Auditoría)
 Para dar cumplimiento a las normativas de auditoría, este repositorio se divide en tres directorios:
