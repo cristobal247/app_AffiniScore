@@ -159,9 +159,9 @@ export class ProfilePage implements OnInit {
     }
     this.userEmail = user.email;
 
-    // 1. Obtener mi perfil
-    const { data: profile } = await this.supabaseSvc.getUserProfile();
-    console.log('Current profile fetched:', profile);
+    // 1. Obtener mi perfil (forzar recarga para asegurar datos actualizados)
+    const { data: profile } = await this.supabaseSvc.getUserProfile(true);
+    console.log('Current profile fetched (forced refresh):', profile);
 
     if (profile && profile.avatar_url) {
       this.avatarUrl = profile.avatar_url;

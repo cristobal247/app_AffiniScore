@@ -86,28 +86,29 @@ export class QrPage implements OnInit, OnDestroy {
         async (payload: any) => {
           const updated = payload.new;
           if (updated.user1_id === this.currentUserId && updated.status === 'active') {
-            console.log('Detectada vinculación en tiempo real desde QR');
-            let partnerName = 'tu pareja';
-            if (updated.user2_id) {
-              const { data: partnerProfile } = await this.supabaseSvc.supabase
-                .from('profiles')
-                .select('full_name')
-                .eq('id', updated.user2_id)
-                .single();
-              if (partnerProfile?.full_name) {
-                partnerName = partnerProfile.full_name;
-              }
-            }
+             console.log('Detectada vinculación en tiempo real desde QR');
+             this.supabaseSvc.clearProfileCache(); // Limpiar la caché del perfil del Usuario 1 inmediatamente
+             let partnerName = 'tu pareja';
+             if (updated.user2_id) {
+               const { data: partnerProfile } = await this.supabaseSvc.supabase
+                 .from('profiles')
+                 .select('full_name')
+                 .eq('id', updated.user2_id)
+                 .single();
+               if (partnerProfile?.full_name) {
+                 partnerName = partnerProfile.full_name;
+               }
+             }
 
-            const successToast = await this.toastCtrl.create({
-              message: `¡Vinculación exitosa con ${partnerName}!`,
-              duration: 3000,
-              color: 'success',
-              position: 'top'
-            });
-            await successToast.present();
+             const successToast = await this.toastCtrl.create({
+               message: `¡Vinculación exitosa con ${partnerName}!`,
+               duration: 3000,
+               color: 'success',
+               position: 'top'
+             });
+             await successToast.present();
 
-            this.navCtrl.navigateRoot('/profile', { animationDirection: 'forward' });
+             this.navCtrl.navigateRoot('/profile', { animationDirection: 'forward' });
           }
         }
       )

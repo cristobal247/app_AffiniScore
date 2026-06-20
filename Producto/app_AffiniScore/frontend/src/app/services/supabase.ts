@@ -396,8 +396,17 @@ export class SupabaseService {
      2. PERFIL Y BALANCE (PARA EL DASHBOARD)
      ======================================================================== */
 
+  // Limpiar la caché del perfil en memoria para forzar recargas
+  clearProfileCache() {
+    this.profileCache = null;
+    this.pointsUpdated.next();
+  }
+
   // Obtener los datos del perfil (nombre, puntos totales, etc.)
   async getUserProfile(forceRefresh = false) {
+    if (forceRefresh) {
+      this.profileCache = null;
+    }
     if (!forceRefresh && this.profileCache) {
       return { data: this.profileCache, error: null };
     }
