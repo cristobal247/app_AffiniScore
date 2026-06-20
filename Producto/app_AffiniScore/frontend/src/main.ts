@@ -37,6 +37,16 @@ function sanitizeStorage(): void {
         }
       }
     }
+
+    // Limpiar coordenadas corruptas (ej. 'NaN', 'null', 'undefined') en el arranque
+    const latKeys = ['user_last_lat', 'user_last_lng', 'partner_last_lat', 'partner_last_lng'];
+    for (const key of latKeys) {
+      const val = localStorage.getItem(key);
+      if (val === 'NaN' || val === 'null' || val === 'undefined') {
+        console.warn(`[Startup] Coordenada inválida "${val}" detectada en localStorage["${key}"]. Limpiando...`);
+        localStorage.removeItem(key);
+      }
+    }
   } catch (e) {
     // Si incluso leer el localStorage falla (cuota excedida, etc.), limpiamos todo
     console.error('[Startup] Error crítico al leer localStorage. Limpiando todo el almacenamiento.', e);

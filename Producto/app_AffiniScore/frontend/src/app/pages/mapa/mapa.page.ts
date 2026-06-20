@@ -227,6 +227,10 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
 
   // Dibujar o actualizar marcador de Usuario (Borde Rosa)
   private updateUserMarker(lat: number, lng: number) {
+    if (isNaN(lat) || isNaN(lng)) {
+      console.warn('updateUserMarker ignorado: Coordenadas NaN detectadas:', lat, lng);
+      return;
+    }
     this.currentLat = lat;
     this.currentLng = lng;
     
@@ -268,6 +272,10 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
 
   // Dibujar o actualizar marcador de Pareja (Borde Azul)
   private updatePartnerMarker(lat: number, lng: number) {
+    if (isNaN(lat) || isNaN(lng)) {
+      console.warn('updatePartnerMarker ignorado: Coordenadas NaN detectadas:', lat, lng);
+      return;
+    }
     this.partnerLat = lat;
     this.partnerLng = lng;
 
@@ -415,12 +423,25 @@ export class MapaPage implements AfterViewInit, OnInit, OnDestroy {
     const cachedPartnerLat = localStorage.getItem('partner_last_lat');
     const cachedPartnerLng = localStorage.getItem('partner_last_lng');
 
-    let lat = cachedUserLat ? parseFloat(cachedUserLat) : -33.447487;
-    let lng = cachedUserLng ? parseFloat(cachedUserLng) : -70.673676;
+    let lat = -33.447487;
+    let lng = -70.673676;
+
+    if (cachedUserLat && cachedUserLng) {
+      const parsedLat = parseFloat(cachedUserLat);
+      const parsedLng = parseFloat(cachedUserLng);
+      if (!isNaN(parsedLat) && !isNaN(parsedLng)) {
+        lat = parsedLat;
+        lng = parsedLng;
+      }
+    }
 
     if (cachedPartnerLat && cachedPartnerLng) {
-      this.partnerLat = parseFloat(cachedPartnerLat);
-      this.partnerLng = parseFloat(cachedPartnerLng);
+      const parsedPartnerLat = parseFloat(cachedPartnerLat);
+      const parsedPartnerLng = parseFloat(cachedPartnerLng);
+      if (!isNaN(parsedPartnerLat) && !isNaN(parsedPartnerLng)) {
+        this.partnerLat = parsedPartnerLat;
+        this.partnerLng = parsedPartnerLng;
+      }
     }
 
     // Inicializamos el mapa con la ubicación por defecto o en caché usando Mapbox GL JS
