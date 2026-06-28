@@ -302,12 +302,15 @@ async def get_group_chat_welcome_message(
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/api/chat/{room_id}/{emisor}")
+@router.post("/api/chat/{room_id}")
 async def process_chat_message(
     payload: ChatMessagePayload,
     room_id: str = Path(..., description="ID de la sala (UUID)"),
-    emisor: str = Path(..., description="Nombre del usuario"),
+    emisor: Optional[str] = None,
     canal_id: int = Query(1, description="1: Pareja, 2: Indiv+IA, 3: Grupal+IA")
 ):
+    if not emisor:
+        emisor = "Tú"
     timestamp = datetime.utcnow().isoformat()
     
     user_msg_data = {

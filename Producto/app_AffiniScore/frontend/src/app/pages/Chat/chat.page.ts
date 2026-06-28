@@ -62,6 +62,8 @@ export class ChatPage implements OnDestroy {
     const user = await this.supabaseSvc.getCurrentUser();
     if (user) {
       this.currentUserId = user.id;
+      this.currentUserName = '';
+      
       const { data: profile } = await this.supabaseSvc.getUserProfile();
       if (profile?.full_name) {
         this.currentUserName = profile.full_name;
@@ -212,7 +214,8 @@ export class ChatPage implements OnDestroy {
     }
 
     const apiUrl = (environment as any).apiUrl || 'http://localhost:8000';
-    const url = `${apiUrl}/api/chat/${this.roomId}/${this.currentUserName}?canal_id=2`;
+    const nameSegment = this.currentUserName ? `/${encodeURIComponent(this.currentUserName)}` : '';
+    const url = `${apiUrl}/api/chat/${this.roomId}${nameSegment}?canal_id=2`;
     const payload = {
       message: displayMsg,
       image_url: imageUrl || null,
