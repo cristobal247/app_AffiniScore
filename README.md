@@ -41,7 +41,7 @@ Si deseas realizar pruebas de integración y QA inmediatas sin experimentar los 
 
 ## 📲 Descarga de la Aplicación (APK)
 La última versión construida y empaquetada de la aplicación móvil para dispositivos Android está disponible para su instalación y prueba:
-* **Enlace de descarga:** [Carpeta Google Drive - APK AffiniScore] (https://drive.google.com/file/d/1pbLS6WxqSK-0YoLosFXoaSVz2vyYOt-K/view?usp=sharing) *(Por favor, solicita los permisos correspondientes de ser necesario)*.
+* **Enlace de descarga:** [Carpeta Google Drive - APK AffiniScore] (https://drive.google.com/file/d/1kyRr03WRsPn_gjGk0ACqlmRqnXJYF4YO/view?usp=sharing) *(Por favor, solicita los permisos correspondientes de ser necesario)*.
 
 ---
 
