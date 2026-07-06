@@ -41,7 +41,7 @@ Si deseas realizar pruebas de integración y QA inmediatas sin experimentar los 
 
 ## 📲 Descarga de la Aplicación (APK)
 La última versión construida y empaquetada de la aplicación móvil para dispositivos Android está disponible para su instalación y prueba:
-* **Enlace de descarga:** [Carpeta Google Drive - APK AffiniScore] (https://drive.google.com/file/d/1pbLS6WxqSK-0YoLosFXoaSVz2vyYOt-K/view?usp=sharing) *(Por favor, solicita los permisos correspondientes de ser necesario)*.
+* **Enlace de descarga:** [Carpeta Google Drive - APK AffiniScore] (https://drive.google.com/file/d/1kyRr03WRsPn_gjGk0ACqlmRqnXJYF4YO/view?usp=sharing) *(Por favor, solicita los permisos correspondientes de ser necesario)*.
 
 > [!IMPORTANT]
 > **Nota de Uso:** La aplicación está diseñada para fortalecer la relación de pareja y **no puede utilizarse de forma individual**. Para desbloquear y acceder a todas las funcionalidades del MVP (chat, retos, terapeuta IA, etc.), es obligatorio realizar el proceso de vinculación/emparejamiento con el otro usuario dentro de la app.
